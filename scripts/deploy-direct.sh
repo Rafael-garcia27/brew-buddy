@@ -11,9 +11,14 @@
 #
 set -euo pipefail
 
-REPO="Rafael-garcia27/cafe"
-ACCOUNT="Rafael-garcia27"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# Konto und Repo kommen aus dem Remote, nicht aus einer Konstante.
+# Sonst müsste dieses Skript bei jedem Umzug angefasst werden — und der
+# eine Ort, den man dabei vergisst, pusht dann ins alte Repo.
+REPO="$(git -C "$ROOT" remote get-url origin \
+  | sed -E 's#^(https://github\.com/|git@github\.com:)##; s#\.git$##')"
+ACCOUNT="${REPO%%/*}"
 
 # ── Richtiges Konto sicherstellen ────────────────────────────────────
 # Auf diesem Rechner hält der macOS-Schlüsselbund die CogniCore-Anmeldung
