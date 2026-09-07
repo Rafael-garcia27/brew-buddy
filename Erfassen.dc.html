@@ -8,6 +8,7 @@
 <x-dc>
 <helmet>
   <style>
+    /* Tokens 1:1 aus src/index.css — Pantone 476 C / 7401 C abgeleitet. */
     .app {
       --paper:#faf4ea; --card:#fffdf9; --raised:#f3e8d6; --line:#e2d2ba;
       --ink:#4e3629; --mute:#8a6f58; --faint:#807263; --crema:#8c5a2b;
@@ -34,18 +35,18 @@
     a { color: var(--crema); }
     a:hover { color: var(--ink); }
     .sect { padding: 24px 16px 0; }
-    .sect-h { font-size: 13px; font-weight: 600; letter-spacing: 0.03em; color: var(--mute); text-transform: uppercase; }
+    .sect-h { font-size: 13px; font-weight: 600; letter-spacing: 0.025em; color: var(--mute); text-transform: uppercase; }
     .dot { display: flex; height: 20px; width: 20px; align-items: center; justify-content: center; border-radius: 999px; border: 1px solid var(--line); font-size: 11px; font-weight: 600; color: var(--mute); flex-shrink: 0; }
     /* Stepper: 56er Tasten links und rechts, das Feld dazwischen */
     .step { display: flex; align-items: stretch; gap: 8px; }
     .step-b { height: 56px; width: 56px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 16px; border: 1px solid var(--line); background: var(--raised); font-size: 24px; color: var(--crema); }
-    .step-v { display: flex; flex: 1; align-items: center; justify-content: center; border-radius: 16px; border: 1px solid var(--line); background: var(--raised); }
-    .step-n { font-size: 22px; font-weight: 600; padding: 16px 0; }
+    .step-v { display: flex; flex: 1; min-width: 0; align-items: center; border-radius: 16px; border: 1px solid var(--line); background: var(--raised); }
+    .step-n { flex: 1; min-width: 0; padding: 16px 0; text-align: center; font-size: 22px; font-weight: 600; }
     .step-u { padding-right: 12px; font-size: 14px; color: var(--mute); }
     .f-l { margin-bottom: 6px; display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: var(--mute); }
     .f-h { margin-top: 4px; font-size: 12px; color: var(--faint); }
     .chip { min-height: 44px; display: inline-flex; align-items: center; border-radius: 999px; padding: 0 14px; font-size: 15px; border: 1px solid var(--line); background: var(--raised); color: var(--mute); }
-    .chip-on-good { border-color: color-mix(in srgb, var(--ok) 50%, transparent); background: color-mix(in srgb, var(--ok) 20%, transparent); color: var(--ok); font-weight: 500; }
+    .chip-on-good { border-color: color-mix(in oklab, var(--ok) 50%, transparent); background: color-mix(in oklab, var(--ok) 20%, transparent); color: var(--ok); font-weight: 500; }
   </style>
 </helmet>
 
@@ -58,7 +59,7 @@
       </svg>
     </div>
     <div style="min-width: 0; flex: 1">
-      <div style="font-size: 22px; line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Finca Testera</div>
+      <div style="font-size: 22px; line-height: 1.25; font-weight: 600; letter-spacing: -0.025em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Finca Testera</div>
       <div style="margin-top: 2px; font-size: 13px; color: var(--mute); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Espresso · 14 Tage — im Fenster</div>
     </div>
   </div>
@@ -85,7 +86,7 @@
           <div class="f-l"><span>Time</span><span class="dot">?</span></div>
           <div class="step">
             <div class="step-b">−</div>
-            <div class="step-v"><span class="tnum step-n">19</span><span class="step-u">s</span></div>
+            <div class="step-v"><span class="tnum step-n">25</span><span class="step-u">s</span></div>
             <div class="step-b">+</div>
           </div>
           <div class="f-h">Ziel 22–28 s</div>
@@ -139,7 +140,7 @@
   <!-- Die Zeit ist mit dem Ziel vorbelegt. Wer sie stehen lässt, wertet
        die Vorgabe der App aus — deshalb steht das hier, nicht im Kleingedruckten. -->
   <div class="sect">
-    <div style="margin-bottom: 8px; font-size: 13px; line-height: 1.35; color: var(--warn)">
+    <div style="margin-bottom: 8px; font-size: 13px; line-height: 1.375; color: var(--warn)">
       Die Zeit ist mit der <strong>Zielzeit</strong> vorbelegt, nicht gemessen. Lief dein Durchgang
       anders, trag ihn ein — sonst wertet die App ihre eigene Vorgabe aus.
     </div>

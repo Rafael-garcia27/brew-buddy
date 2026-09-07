@@ -8,6 +8,7 @@
 <x-dc>
 <helmet>
   <style>
+    /* Tokens 1:1 aus src/index.css — Pantone 476 C / 7401 C abgeleitet. */
     .app {
       --paper:#faf4ea; --card:#fffdf9; --raised:#f3e8d6; --line:#e2d2ba;
       --ink:#4e3629; --mute:#8a6f58; --faint:#807263; --crema:#8c5a2b;
@@ -34,8 +35,12 @@
     a { color: var(--crema); }
     a:hover { color: var(--ink); }
     .sect { padding: 24px 16px 0; }
-    .sect-h { margin-bottom: 8px; font-size: 13px; font-weight: 600; letter-spacing: 0.03em; color: var(--mute); text-transform: uppercase; }
-    .dot { display: flex; height: 20px; width: 20px; align-items: center; justify-content: center; border-radius: 999px; border: 1px solid var(--line); font-size: 11px; font-weight: 600; color: var(--mute); }
+    .sect-h { margin-bottom: 8px; font-size: 13px; font-weight: 600; letter-spacing: 0.025em; color: var(--mute); text-transform: uppercase; }
+    /* Ab vier Segmenten rückt die Schrift eine Stufe zurück (13 px)
+       und die Beschriftungen bleiben einzeilig. */
+    .seg { height: 44px; flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; border-radius: 12px; padding: 0 4px; font-size: 13px; color: var(--mute); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .seg-on { background: var(--crema); color: var(--on-crema); font-weight: 600; }
+    .dot { display: flex; height: 20px; width: 20px; flex-shrink: 0; align-items: center; justify-content: center; border-radius: 999px; border: 1px solid var(--line); font-size: 11px; font-weight: 600; color: var(--mute); }
   </style>
 </helmet>
 
@@ -49,7 +54,7 @@
       </svg>
     </div>
     <div style="min-width: 0; flex: 1">
-      <div style="font-size: 22px; line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Finca Testera</div>
+      <div style="font-size: 22px; line-height: 1.25; font-weight: 600; letter-spacing: -0.025em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Finca Testera</div>
       <div style="margin-top: 2px; font-size: 13px; color: var(--mute); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Espresso · 14 Tage — im Fenster</div>
     </div>
   </div>
@@ -58,37 +63,37 @@
   <div class="sect">
     <div class="sect-h">Methode</div>
     <div style="display: flex; gap: 4px; border-radius: 16px; background: var(--raised); padding: 4px">
-      <div style="height: 44px; flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; border-radius: 12px; background: var(--crema); color: var(--on-crema); font-size: 13px; font-weight: 600">Espresso</div>
-      <div style="height: 44px; flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; border-radius: 12px; color: var(--mute); font-size: 13px">V60</div>
-      <div style="height: 44px; flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; border-radius: 12px; color: var(--mute); font-size: 13px">AeroPress</div>
-      <div style="height: 44px; flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; border-radius: 12px; color: var(--mute); font-size: 13px">French</div>
+      <div class="seg seg-on">Espresso</div>
+      <div class="seg">V60</div>
+      <div class="seg">AeroPress</div>
+      <div class="seg">French</div>
     </div>
   </div>
 
   <!-- Das Rezept: drei Zahlen groß, alles andere leise darunter -->
   <div class="sect">
     <div class="sect-h">Dein Referenzpunkt</div>
-    <div style="border-radius: 16px; border: 1px solid color-mix(in srgb, var(--crema) 40%, transparent); background: var(--card); padding: 16px">
+    <div style="border-radius: 16px; border: 1px solid color-mix(in oklab, var(--crema) 40%, transparent); background: var(--card); padding: 16px">
 
       <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr))">
-        <div style="min-width: 0; padding: 0 2px; text-align: center">
+        <div class="tri-c">
           <div style="display: flex; align-items: center; justify-content: center; gap: 4px">
-            <span style="font-size: 11px; font-weight: 500; letter-spacing: 0.06em; color: var(--mute); text-transform: uppercase">In</span>
+            <span style="font-size: 11px; font-weight: 500; letter-spacing: 0.05em; color: var(--mute); text-transform: uppercase">In</span>
             <span class="dot">?</span>
           </div>
           <div class="tnum" style="margin-top: 6px; font-size: 29px; line-height: 1; font-weight: 600">18,0<span style="margin-left: 2px; font-size: 12px; font-weight: 400; color: var(--mute)">g</span></div>
         </div>
-        <div style="min-width: 0; padding: 0 2px; text-align: center; border-left: 1px solid var(--line); border-right: 1px solid var(--line)">
+        <div class="tri-c" style="border-left: 1px solid var(--line); border-right: 1px solid var(--line)">
           <div style="display: flex; align-items: center; justify-content: center; gap: 4px">
-            <span style="font-size: 11px; font-weight: 500; letter-spacing: 0.06em; color: var(--mute); text-transform: uppercase">Time</span>
+            <span style="font-size: 11px; font-weight: 500; letter-spacing: 0.05em; color: var(--mute); text-transform: uppercase">Time</span>
             <span class="dot">?</span>
           </div>
           <div class="tnum" style="margin-top: 6px; font-size: 29px; line-height: 1; font-weight: 600">25<span style="margin-left: 2px; font-size: 12px; font-weight: 400; color: var(--mute)">s</span></div>
-          <div style="margin-top: 4px; font-size: 11px; line-height: 1.2; color: var(--faint)">22–28 s</div>
+          <div style="margin-top: 4px; font-size: 11px; line-height: 1.25; color: var(--faint)">22–28 s</div>
         </div>
-        <div style="min-width: 0; padding: 0 2px; text-align: center">
+        <div class="tri-c">
           <div style="display: flex; align-items: center; justify-content: center; gap: 4px">
-            <span style="font-size: 11px; font-weight: 500; letter-spacing: 0.06em; color: var(--mute); text-transform: uppercase">Out</span>
+            <span style="font-size: 11px; font-weight: 500; letter-spacing: 0.05em; color: var(--mute); text-transform: uppercase">Out</span>
             <span class="dot">?</span>
           </div>
           <div class="tnum" style="margin-top: 6px; font-size: 29px; line-height: 1; font-weight: 600">36,0<span style="margin-left: 2px; font-size: 12px; font-weight: 400; color: var(--mute)">g</span></div>
@@ -116,9 +121,8 @@
       </div>
 
       <!-- Herkunft des Vorschlags: Vertrauen entsteht durch Nachvollziehbarkeit -->
-      <div style="margin-top: 12px; border-top: 1px solid var(--line); padding-top: 12px; display: flex; flex-direction: column; gap: 6px">
-        <div style="font-size: 13px; line-height: 1.35; color: var(--mute)">▸ Aus deinem besten Shot vom 07.09. (4★).</div>
-        <div style="font-size: 13px; line-height: 1.35; color: var(--mute)">· Herkunftstypisch um 1650 m angebaut — dichtere Bohne, deshalb feiner und heißer.</div>
+      <div style="margin-top: 12px; border-top: 1px solid var(--line); padding-top: 12px">
+        <div style="font-size: 13px; line-height: 1.375; color: var(--mute)">▸ Aus deinem besten Shot vom 07.09. (4★).</div>
       </div>
     </div>
   </div>
@@ -148,8 +152,9 @@
         <div style="position: absolute; left: 0; right: 0; top: 70px; height: 1px; background: #f2f0ec; opacity: .55"></div>
 
         <div style="position: absolute; left: 0; right: 0; top: 84px; height: 22px; overflow: hidden">
-          <span style="position: absolute; top: 4px; left: 172px; transform: translateX(-50%); opacity: .88; font-size: 10px; letter-spacing: .18em; color: #f2f0ec; white-space: nowrap">ESPRESSO 2-3</span>
-          <span style="position: absolute; top: 4px; left: 330px; transform: translateX(-50%) scaleX(.55); opacity: .35; font-size: 10px; letter-spacing: .18em; color: #f2f0ec; white-space: nowrap">MOKAPOT 3-4</span>
+          <sc-for list="{{ringLabels}}" as="l" hint-placeholder-count="2">
+            <span style="position: absolute; top: 4px; left: {{l.x}}px; transform: translateX(-50%) scaleX({{l.scale}}); opacity: {{l.opacity}}; font-size: 10px; letter-spacing: .18em; color: #f2f0ec; white-space: nowrap">{{l.text}}</span>
+          </sc-for>
         </div>
 
         <div style="position: absolute; left: 0; right: 0; top: 106px; height: 20px; background: repeating-linear-gradient(90deg, rgba(255,255,255,.09) 0 1px, transparent 1px 4px), linear-gradient(180deg,#2e221b,#1f1712)"></div>
@@ -192,7 +197,7 @@
   <div style="height: 40px"></div>
 </div>
 </x-dc>
-<script data-dc-script data-props='{"theme":{"editor":"enum","options":["Milchkaffee","Espresso"],"default":"Milchkaffee","section":"Darstellung"},"$preview":{"width":375,"height":1180}}'>
+<script data-dc-script data-props='{"theme":{"editor":"enum","options":["Milchkaffee","Espresso"],"default":"Milchkaffee","section":"Darstellung"},"$preview":{"width":375,"height":1000}}'>
 class Component extends DCLogic {
   renderVals() {
     const dunkel = (this.props.theme ?? 'Milchkaffee') === 'Espresso';
@@ -235,7 +240,26 @@ class Component extends DCLogic {
       });
     }
 
-    return { cls: dunkel ? 'app espresso' : 'app', numbers, ticks };
+    // Der Aufdruck läuft mit dem Ring: dieselbe Projektion, dieselbe
+    // Mindestbreite wie in GrinderDial. Von Hand gesetzt saß ESPRESSO
+    // links vom Index statt rechts davon.
+    const ringLabels = [
+      { text: 'ESPRESSO 2-3', range: [20, 30] },
+      { text: 'MOKAPOT 3-4', range: [30, 40] },
+    ]
+      .map((l) => {
+        const p = project((l.range[0] + l.range[1]) / 2);
+        if (!p) return null;
+        return {
+          text: l.text,
+          x: p.x,
+          scale: Math.round(Math.max(0.4, p.scale) * 100) / 100,
+          opacity: Math.round(p.opacity * 0.9 * 100) / 100,
+        };
+      })
+      .filter(Boolean);
+
+    return { cls: dunkel ? 'app espresso' : 'app', numbers, ticks, ringLabels };
   }
 }
 </script>

@@ -1,8 +1,8 @@
 {
   "artboards": [
     { "file": "Main.dc.html", "title": "Beans (Start)", "x": 0, "y": 0, "w": 375, "h": 812 },
-    { "file": "Startpunkt.dc.html", "title": "Brühen · Startpunkt", "x": 465, "y": 0, "w": 375, "h": 1020 },
-    { "file": "Erfassen.dc.html", "title": "Brühen · Erfassen", "x": 930, "y": 0, "w": 375, "h": 980 },
+    { "file": "Startpunkt.dc.html", "title": "Brühen · Startpunkt", "x": 465, "y": 0, "w": 375, "h": 980 },
+    { "file": "Erfassen.dc.html", "title": "Brühen · Erfassen", "x": 930, "y": 0, "w": 375, "h": 1030 },
     { "file": "Laufkontrolle.dc.html", "title": "Auswerten · Stufe 1", "x": 1395, "y": 0, "w": 375, "h": 1080 },
     { "file": "Ergebnis.dc.html", "title": "Auswerten · Ergebnis", "x": 1860, "y": 0, "w": 375, "h": 800 }
   ],

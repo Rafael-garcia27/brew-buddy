@@ -609,7 +609,12 @@ export function diagnose(input: DiagnoseInput): Diagnosis {
           ? 'zu viel extrahiert'
           : 'zu wenig extrahiert'
       }.`
-      sensoryGrind.confidence = 'sicher'
+      // „So sicher, wie es ohne Messung wird" — außer die Laufkontrolle
+      // hat die Konfidenz schon gedrückt. Streut die eigene Vorbereitung
+      // stärker als die Abweichung, schlagen auch zwei gleichgerichtete
+      // Signale das Rauschen nicht; hier trotzdem „sicher" zu behaupten
+      // würde der eigenen Regel D-9A widersprechen.
+      sensoryGrind.confidence = run.confidenceHeldBack ? runGrind.confidence : 'sicher'
     } else {
       // Widerspruch. Der ist selbst der Befund — und zwar ein wertvoller:
       // Nach der Zeit müsste es andersherum schmecken, als es schmeckt.

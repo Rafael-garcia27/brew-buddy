@@ -8,6 +8,7 @@
 <x-dc>
 <helmet>
   <style>
+    /* Tokens 1:1 aus src/index.css — Pantone 476 C / 7401 C abgeleitet. */
     .app {
       --paper:#faf4ea; --card:#fffdf9; --raised:#f3e8d6; --line:#e2d2ba;
       --ink:#4e3629; --mute:#8a6f58; --faint:#807263; --crema:#8c5a2b;
@@ -35,15 +36,18 @@
     a:hover { color: var(--ink); }
     .sect { padding: 24px 16px 0; }
     .sect-row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
-    .sect-h { font-size: 13px; font-weight: 600; letter-spacing: 0.03em; color: var(--mute); text-transform: uppercase; }
+    .sect-h { font-size: 13px; font-weight: 600; letter-spacing: 0.025em; color: var(--mute); text-transform: uppercase; }
     .dot { display: flex; height: 20px; width: 20px; align-items: center; justify-content: center; border-radius: 999px; border: 1px solid var(--line); font-size: 11px; font-weight: 600; color: var(--mute); flex-shrink: 0; }
-    .tri-l { font-size: 11px; font-weight: 500; letter-spacing: 0.06em; color: var(--mute); text-transform: uppercase; }
+    .tri-c { min-width: 0; padding: 0 2px; text-align: center; }
+    .tri-c:first-child { padding-left: 0; }
+    .tri-c:last-child { padding-right: 0; }
+    .tri-l { font-size: 11px; font-weight: 500; letter-spacing: 0.05em; color: var(--mute); text-transform: uppercase; }
     .tri-v { margin-top: 6px; font-size: 29px; line-height: 1; font-weight: 600; }
     .tri-u { margin-left: 2px; font-size: 12px; font-weight: 400; color: var(--mute); }
-    .tri-h { margin-top: 4px; font-size: 11px; line-height: 1.2; color: var(--faint); }
+    .tri-h { margin-top: 4px; font-size: 11px; line-height: 1.25; color: var(--faint); }
     .meta { display: inline-flex; align-items: baseline; gap: 4px; font-size: 13px; }
     .chip { min-height: 44px; display: inline-flex; align-items: center; border-radius: 999px; padding: 0 14px; font-size: 15px; border: 1px solid var(--line); background: var(--raised); color: var(--mute); }
-    .chip-on-bad { border-color: color-mix(in srgb, var(--bad) 50%, transparent); background: color-mix(in srgb, var(--bad) 20%, transparent); color: var(--bad); font-weight: 500; }
+    .chip-on-bad { border-color: color-mix(in oklab, var(--bad) 50%, transparent); background: color-mix(in oklab, var(--bad) 20%, transparent); color: var(--bad); font-weight: 500; }
   </style>
 </helmet>
 
@@ -56,7 +60,7 @@
       </svg>
     </div>
     <div style="min-width: 0; flex: 1">
-      <div style="font-size: 22px; line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Finca Testera</div>
+      <div style="font-size: 22px; line-height: 1.25; font-weight: 600; letter-spacing: -0.025em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Finca Testera</div>
       <div style="margin-top: 2px; font-size: 13px; color: var(--mute); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Espresso · 14 Tage — im Fenster</div>
     </div>
   </div>
@@ -66,16 +70,16 @@
     <div class="sect-row"><div class="sect-h">Der Durchlauf</div></div>
     <div style="border-radius: 16px; border: 1px solid var(--line); background: var(--card); padding: 16px">
       <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr))">
-        <div style="min-width: 0; padding: 0 2px; text-align: center">
+        <div class="tri-c">
           <div class="tri-l">Zeit</div>
           <div class="tnum tri-v" style="color: var(--bad)">19<span class="tri-u">s</span></div>
         </div>
-        <div style="min-width: 0; padding: 0 2px; text-align: center; border-left: 1px solid var(--line); border-right: 1px solid var(--line)">
+        <div class="tri-c" style="border-left: 1px solid var(--line); border-right: 1px solid var(--line)">
           <div class="tri-l">Ziel</div>
           <div class="tnum tri-v">25<span class="tri-u">s</span></div>
           <div class="tri-h">22–28 s</div>
         </div>
-        <div style="min-width: 0; padding: 0 2px; text-align: center">
+        <div class="tri-c">
           <div class="tri-l">Delta</div>
           <div class="tnum tri-v" style="color: var(--warn)">−6<span class="tri-u">s</span></div>
         </div>
@@ -103,7 +107,7 @@
       <div class="chip">Passt</div>
       <div class="chip">Zu langsam</div>
     </div>
-    <p style="margin: 8px 0 0; font-size: 13px; line-height: 1.35; color: var(--faint)">
+    <p style="margin: 8px 0 0; font-size: 13px; line-height: 1.375; color: var(--faint)">
       Deckt sich dein Eindruck mit der Uhr, steigt die Konfidenz der Empfehlung. Widerspricht er
       ihr, ist genau das der Befund.
     </p>
@@ -113,23 +117,23 @@
        Karte, die nur eine Überschrift enthält. -->
   <div class="sect">
     <div class="sect-row"><div class="sect-h">Einschätzung</div></div>
-    <div style="border-radius: 16px; border: 1px solid color-mix(in srgb, var(--crema) 40%, transparent); background: var(--card); padding: 16px">
-      <p style="margin: 0 0 4px; font-size: 13px; font-weight: 500; letter-spacing: 0.03em; color: var(--mute); text-transform: uppercase">Zu schnell durchgelaufen</p>
-      <p style="margin: 0; font-size: 22px; line-height: 1.15; font-weight: 600; color: var(--crema)">3 Klicks feiner (≈ −37 µm)</p>
-      <p style="margin: 8px 0 0; font-size: 15px; line-height: 1.5">Der Shot lief 19 s statt 22–28 s. Das sind −6 s auf die Zielmitte.</p>
+    <div style="border-radius: 16px; border: 1px solid color-mix(in oklab, var(--crema) 40%, transparent); background: var(--card); padding: 16px">
+      <p style="margin: 0 0 4px; font-size: 13px; font-weight: 500; letter-spacing: 0.025em; color: var(--mute); text-transform: uppercase">Zu schnell durchgelaufen</p>
+      <p style="margin: 0; font-size: 22px; line-height: 1.25; font-weight: 600; color: var(--crema)">3 Klicks feiner (≈ −37 µm)</p>
+      <p style="margin: 8px 0 0; font-size: 15px; line-height: 1.625">Der Shot lief 19 s statt 22–28 s. Das sind −6 s auf die Zielmitte.</p>
 
       <!-- Die überprüfbare Vorhersage. Trifft sie ein, glaubt der Nutzer
            auch der Geschmacksvorhersage. -->
       <div style="margin-top: 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--raised); padding: 12px">
-        <p style="margin: 0; font-size: 12px; font-weight: 500; letter-spacing: 0.03em; color: var(--mute); text-transform: uppercase">Erwartung</p>
-        <p style="margin: 4px 0 0; font-size: 14px; line-height: 1.35">Erwartete Zeit danach: 25 s.</p>
+        <p style="margin: 0; font-size: 12px; font-weight: 500; letter-spacing: 0.025em; color: var(--mute); text-transform: uppercase">Erwartung</p>
+        <p style="margin: 4px 0 0; font-size: 14px; line-height: 1.375">Erwartete Zeit danach: 25 s.</p>
       </div>
 
       <p style="margin: 8px 0 0; font-size: 12px; color: var(--faint)">Konfidenz: sicher</p>
       <p style="margin: 8px 0 0; font-size: 13px; color: var(--mute)">Falls das nicht reicht: Temperatur auf 96 °C.</p>
 
       <ul style="margin: 12px 0 0; padding: 12px 0 0; list-style: none; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 6px">
-        <li style="font-size: 13px; line-height: 1.35; color: var(--ok)">
+        <li style="font-size: 13px; line-height: 1.375; color: var(--ok)">
           ✓ Dein Eindruck deckt sich mit der gemessenen Zeit. Zwei unabhängige Signale in dieselbe
           Richtung — die Korrektur ist so sicher, wie sie ohne Messung werden kann.
         </li>

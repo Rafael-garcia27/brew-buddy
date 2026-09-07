@@ -334,6 +334,36 @@ describe('diagnose() führt Laufkontrolle und Sensorik zusammen', () => {
     expect(d.suggestions[0]!.direction).toBe('decrease')
   })
 
+  it('zieht die Konfidenz nicht hoch, wenn die Streuung sie gedrückt hat', () => {
+    // Zwei gleichgerichtete Signale sind viel wert — aber nicht mehr als
+    // die eigene Wiederholgenauigkeit hergibt (D-9A/D-08).
+    const brew = (timeS: number, i: number): Brew => ({
+      id: `y${i}`,
+      bagId: 'g1',
+      beanId: 'b1',
+      method: 'espresso',
+      actual: { doseG: 18, yieldG: 36, timeS },
+      isBest: false,
+      createdAt: daysAgo(i),
+    })
+    const streuend = [22, 34, 19, 31, 24].map(brew)
+    const d = diagnose({
+      ctx: ctx({ methodHistory: streuend }),
+      actual: {
+        doseG: 18,
+        yieldG: 36,
+        timeS: 31,
+        waterTempC: 93,
+        grindSetting: { equipmentId: 'gr1', value: 40, unit: 'clicks' },
+      },
+      observations: { flowState: 'normal' },
+      tasting: { rating: 2, defects: ['bitter'], characters: [], wouldRepeat: false },
+      targetTimeS: ESPRESSO_ZIEL,
+    })
+    expect(d.suggestions[0]!.why).toMatch(/Geschmack bestätigt/)
+    expect(d.suggestions[0]!.confidence).toBe('wahrscheinlich')
+  })
+
   it('verrechnet gleichgerichtete Signale zu einer sicheren Empfehlung', () => {
     const d = dia(40, ['bitter'])
     const s = d.suggestions[0]!

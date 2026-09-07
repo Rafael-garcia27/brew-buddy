@@ -92,6 +92,14 @@ export interface RunCheck {
   flowRateGs: number | null
   targetFlowGs: number | null
   suggestion?: Suggestion
+  /**
+   * Ein Vorbehalt hat die Konfidenz der Empfehlung schon gedrückt.
+   *
+   * Nötig, damit `diagnose()` sie nicht wieder hochzieht: Streut die
+   * eigene Vorbereitung stärker als die Abweichung, dann schlagen auch
+   * zwei gleichgerichtete Signale das Rauschen nicht (D-9A/D-08).
+   */
+  confidenceHeldBack?: boolean
   techniqueSteps?: string[]
   /** Zusatzbefunde aus dem übrigen Kaffeewissen — Frische, Streuung, Bloom. */
   notes: RunNote[]
@@ -429,6 +437,7 @@ export function checkRun(input: RunCheckInput): RunCheck {
   let sug: Suggestion | undefined
   let headline: string
   let summary: string
+  let zurueckgehalten = false
 
   if (band === 'onTarget') {
     if (feel && feel !== 'onPoint') {
@@ -504,7 +513,10 @@ export function checkRun(input: RunCheckInput): RunCheck {
         : 'wahrscheinlich'
     if (feel && gemessen && feel === gemessen) conf = shiftConf(conf, +1)
     if (feel && gemessen && feel !== gemessen && feel !== 'onPoint') conf = shiftConf(conf, -1)
-    if (streut) conf = shiftConf(conf, -1)
+    if (streut) {
+      conf = shiftConf(conf, -1)
+      zurueckgehalten = true
+    }
 
     sug = {
       ruleId,
@@ -582,6 +594,7 @@ export function checkRun(input: RunCheckInput): RunCheck {
     headline,
     summary,
     suggestion: sug,
+    confidenceHeldBack: zurueckgehalten,
     notes,
     tastingWorthwhile: true,
   }
