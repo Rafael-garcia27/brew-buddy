@@ -9,29 +9,22 @@
  * Erklärtexte, Schwellen, Technikschritte, Konfidenz — kommt aus
  * `data/diagnostics.json`. Fachliche Textänderungen brauchen keinen Codeeingriff.
  */
-import type { BrewActual, Observation, Measurement, Tasting, Defect, Brew, BrewMethod } from '@domain'
+import type { BrewActual, Observation, Measurement, Tasting, Defect, BrewMethod } from '@domain'
 import { extractionYield, beverageMass, flowRate } from '@domain'
 import type { EngineContext } from '@/domain'
 import { daysOffRoast } from '@/domain'
 import { getRule, lrrFor, TARGET_RANGES, HARD_LIMITS, tolerances, roastRuleFor, tempRange, targetTimeRange, isImmersion, correctionOrder } from '@/kb'
 import { correctionFromTime, describeCorrection, cappedNote, timeIsTrustworthy } from './grinder'
 import { restWindow } from './freshness'
+import { checkRun, detectLoop } from './runcheck'
+import { de, fmtDauer, fmtSpanne, tage } from './text'
+import type { Confidence, Suggestion, RunCheck } from './runcheck'
 
-export type Confidence = 'sicher' | 'wahrscheinlich' | 'Versuch'
-
-export interface Suggestion {
-  ruleId: string
-  what: string
-  why: string
-  expectation: string
-  confidence: Confidence
-  alternative?: string
-  variable: string
-  direction: 'increase' | 'decrease' | 'adjust' | 'technique' | 'none'
-  delta?: number
-  /** Direkt anwendbarer neuer Wert, wenn berechenbar */
-  newValue?: number
-}
+// Die Ausgabetypen gehören der unteren Stufe: Die Laufkontrolle liefert
+// dieselben Vorschläge wie die Sensorik, nur aus objektiven Größen. Ein
+// zweiter Typ mit gleichem Inhalt wäre eine Fehlerquelle.
+export type { Confidence, Suggestion, RunCheck, RunNote, TimeBand, LoopInfo } from './runcheck'
+export { detectLoop, checkRun, timeBand } from './runcheck'
 
 export interface Diagnosis {
   stage: 0 | 1 | 2 | 3
@@ -45,6 +38,11 @@ export interface Diagnosis {
   saveAsReference?: boolean
   /** Berechnete Kennzahlen zur Anzeige */
   metrics?: { ey?: number; tds?: number; flowRateGs?: number }
+  /**
+   * Die vorgelagerte Laufkontrolle, damit die Ergebnisseite beide Stufen
+   * zeigen kann: erst was die Uhr sagte, dann was der Geschmack ergänzt.
+   */
+  run?: RunCheck
 }
 
 export interface DiagnoseInput {
@@ -139,67 +137,10 @@ function fallbackAlternative(
   return 'Falls das nicht hilft: eine Größe zurück und in halben Schritten weiter.'
 }
 
-// ── Schleifenerkennung (Briefing D, kb/14 §7) ─────────────────────────
-
-interface LoopInfo {
-  stuck: boolean
-  oscillating: boolean
-  direction?: 'finer' | 'coarser'
-  lastTwoSettings?: [number, number]
-}
-
-export function detectLoop(history: Brew[]): LoopInfo {
-  const withGrind = history
-    .filter((b) => b.actual.grindSetting?.value !== undefined)
-    .slice(0, 4)
-  if (withGrind.length < 3) return { stuck: false, oscillating: false }
-
-  const settings = withGrind.map((b) => b.actual.grindSetting!.value)
-  const ratings = withGrind.map((b) => b.tasting?.rating ?? 0)
-  const deltas: number[] = []
-  for (let i = 0; i < settings.length - 1; i++) deltas.push(settings[i]! - settings[i + 1]!)
-
-  const last3 = deltas.slice(0, 3).filter((d) => d !== 0)
-  if (last3.length < 2) return { stuck: false, oscillating: false }
-
-  const allFiner = last3.every((d) => d < 0)
-  const allCoarser = last3.every((d) => d > 0)
-  const improved = ratings[0]! > Math.max(...ratings.slice(1))
-
-  if (last3.length >= 2 && !last3.every((d) => Math.sign(d) === Math.sign(last3[0]!))) {
-    return {
-      stuck: false,
-      oscillating: true,
-      lastTwoSettings: [settings[0]!, settings[1]!],
-    }
-  }
-  if ((allFiner || allCoarser) && last3.length >= 3 && !improved) {
-    return { stuck: true, oscillating: false, direction: allFiner ? 'finer' : 'coarser' }
-  }
-  return { stuck: false, oscillating: false }
-}
-
 /** Auf den Bereich klammern, den diese Methode wirklich fahren kann. */
 function clampTemp(method: BrewMethod, t: number): number {
   const tr = tempRange(method)
   return Math.round(Math.min(tr.max, Math.max(tr.min, t)))
-}
-
-/**
- * Zahl in deutscher Schreibweise für Texte, die der Nutzer liest.
- *
- * Die Engine formuliert ganze Sätze — dort darf kein „1:2.8" stehen,
- * während die Oberfläche daneben „1:2,8" zeigt.
- */
-function de(v: number, decimals = 1): string {
-  return v.toFixed(decimals).replace('.', ',')
-}
-
-/** Dauer lesbar: Sekunden beim Espresso, mm:ss beim Handfilter. */
-function fmtDauer(s: number): string {
-  const ganz = Math.round(s)
-  if (ganz < 60) return `${ganz} s`
-  return `${Math.floor(ganz / 60)}:${String(ganz % 60).padStart(2, '0')} min`
 }
 
 // ── Hauptfunktion ─────────────────────────────────────────────────────
@@ -306,7 +247,7 @@ export function diagnose(input: DiagnoseInput): Diagnosis {
       return blocked(
         'D-04',
         'Bohne überaltert',
-        `${days} Tage nach Röstung. Aromaverlust und oxidierte Fette lassen sich durch keine Einstellung reparieren.`,
+        `${tage(days)} nach Röstung. Aromaverlust und oxidierte Fette lassen sich durch keine Einstellung reparieren.`,
         { metrics },
       )
     }
@@ -314,7 +255,7 @@ export function diagnose(input: DiagnoseInput): Diagnosis {
       return blocked(
         'D-03',
         'Noch zu frisch',
-        `Erst ${days} Tage nach Röstung. Bis Tag ${win.min} verdrängt das CO₂ das Wasser — die Ergebnisse sind nicht stabil. Warte noch ${win.min - days} Tag${win.min - days === 1 ? '' : 'e'}.`,
+        `Erst ${tage(days)} nach Röstung. Bis Tag ${win.min} verdrängt das CO₂ das Wasser — die Ergebnisse sind nicht stabil. Warte noch ${win.min - days} Tag${win.min - days === 1 ? '' : 'e'}.`,
         { metrics },
       )
     }
@@ -431,6 +372,13 @@ export function diagnose(input: DiagnoseInput): Diagnosis {
     }
   }
 
+  // ════ STUFE 0,5 — LAUFKONTROLLE ══════════════════════════════════════
+  //
+  // Sie hat den Nutzer im Brüh-Screen schon gesehen; hier läuft sie noch
+  // einmal, weil ihr Befund mit dem Geschmack zusammengeführt werden muss.
+  // Reine Funktion, gleiche Eingaben, gleiches Ergebnis.
+  const run = checkRun({ ctx, actual, observations: obs, targetTimeS: input.targetTimeS })
+
   // ════ STUFE 2 — SENSORISCH ═══════════════════════════════════════════
 
   const sugg: Suggestion[] = []
@@ -514,7 +462,7 @@ export function diagnose(input: DiagnoseInput): Diagnosis {
         grindSuggestion(
           'D-22',
           true,
-          `${lauf} ${fmtDauer(actual.timeS)} statt ${fmtDauer(targetT![0])}–${fmtDauer(targetT![1])} — zu wenig Kontakt.`,
+          `${lauf} ${fmtDauer(actual.timeS)} statt ${fmtSpanne(targetT!)} — zu wenig Kontakt.`,
         ),
       )
     } else if ((actual.waterTempC ?? 93) < 96) {
@@ -570,7 +518,7 @@ export function diagnose(input: DiagnoseInput): Diagnosis {
         grindSuggestion(
           'D-31',
           false,
-          `${lauf} ${fmtDauer(actual.timeS)} statt ${fmtDauer(targetT![0])}–${fmtDauer(targetT![1])} — zu lange Kontaktzeit.`,
+          `${lauf} ${fmtDauer(actual.timeS)} statt ${fmtSpanne(targetT!)} — zu lange Kontaktzeit.`,
         ),
       )
     } else if ((ctx.bean.roastLevel === 'dark' || ctx.bean.roastLevel === 'medium-dark') && (actual.waterTempC ?? 93) > 88) {
@@ -633,6 +581,44 @@ export function diagnose(input: DiagnoseInput): Diagnosis {
     }
   }
 
+  // ── Die zwei Stufen zusammenführen ──────────────────────────────────
+  //
+  // Bisher ging die Zeitabweichung verloren, wenn kein Fehlertag gesetzt
+  // war: Ein Shot mit 19 s bei 28 s Ziel und leerem Tasting bekam „keine
+  // klare Korrektur", obwohl die Uhr die Antwort längst enthielt. Jetzt
+  // gilt: Was die Laufkontrolle gefunden hat, geht nie verloren — es wird
+  // mit dem Geschmack verrechnet.
+  const runGrind =
+    run.suggestion?.variable === 'grindSetting' ? run.suggestion : undefined
+  const sensoryGrind = sugg.find((x) => x.variable === 'grindSetting')
+
+  if (runGrind && sensoryGrind) {
+    if (runGrind.direction === sensoryGrind.direction) {
+      // Zwei unabhängige Signale, dieselbe Richtung. Die Zahl aus der Zeit
+      // ist die genauere (F-22), die Begründung aus dem Geschmack die
+      // verständlichere — beides zusammen, und die Konfidenz steigt.
+      sensoryGrind.what = runGrind.what
+      sensoryGrind.delta = runGrind.delta
+      sensoryGrind.newValue = runGrind.newValue
+      sensoryGrind.expectation = runGrind.expectation
+      // Nicht die beiden Begründungen aneinanderhängen: Beide beschreiben
+      // dieselbe Zeit, das ergäbe denselben Satz zweimal. Die Zeit kommt
+      // aus der Laufkontrolle, der Geschmack fügt nur seine Bestätigung an.
+      sensoryGrind.why = `${runGrind.why} Der Geschmack bestätigt es: ${
+        hasAny(defects, 'bitter', 'astringent', 'harsh', 'ashy')
+          ? 'zu viel extrahiert'
+          : 'zu wenig extrahiert'
+      }.`
+      sensoryGrind.confidence = 'sicher'
+    } else {
+      // Widerspruch. Der ist selbst der Befund — und zwar ein wertvoller:
+      // Nach der Zeit müsste es andersherum schmecken, als es schmeckt.
+      return conflictDiagnosis(run, sensoryGrind, actual, method, defects, metrics)
+    }
+  } else if (runGrind) {
+    push(runGrind)
+  }
+
   // ── Nichts gefunden ──
   if (sugg.length === 0) {
     const good = (tasting?.rating ?? 0) >= 4
@@ -664,10 +650,11 @@ export function diagnose(input: DiagnoseInput): Diagnosis {
       headline: good ? 'Sitzt' : 'Keine klare Korrektur',
       summary: good
         ? 'Keine Fehler markiert und gut bewertet — als Referenz speichern?'
-        : 'Aus deinen Angaben lässt sich keine eindeutige Richtung ableiten. Markier beim nächsten Mal, was konkret stört.',
+        : 'Zeit und Geschmack geben beide keine Richtung her. Markier beim nächsten Mal, was konkret stört.',
       suggestions: [],
       saveAsReference: good,
       metrics,
+      run,
     }
   }
 
@@ -710,7 +697,129 @@ export function diagnose(input: DiagnoseInput): Diagnosis {
     summary: primary.why,
     suggestions: [primary],
     metrics,
+    run,
   }
+}
+
+/**
+ * Zeit und Geschmack zeigen in verschiedene Richtungen.
+ *
+ * Das ist kein Fehler der Engine, sondern eine eigene Diagnose — und eine
+ * der wenigen Stellen, an denen die richtige Antwort „an keinem Parameter
+ * drehen" lautet. Wer hier trotzdem einen Mahlgrad ausgibt, macht genau
+ * die Hälfte der Tasse schlechter.
+ */
+function conflictDiagnosis(
+  run: RunCheck,
+  sensory: Suggestion,
+  actual: BrewActual,
+  method: BrewMethod,
+  defects: Defect[] | undefined,
+  metrics: Diagnosis['metrics'],
+): Diagnosis {
+  const zeitWillGroeber = run.suggestion!.direction === 'increase'
+  /**
+   * Der Zeitsatz gehört genau einmal auf den Bildschirm.
+   *
+   * Gibt dieser Zweig eine Empfehlung aus, blendet die Laufkontroll-Karte
+   * ihren eigenen Befund aus — dann muss er hier stehen. Gibt er keine aus,
+   * zeigt die Karte ihn selbst.
+   */
+  const zeitSatz = (mitEmpfehlung: boolean) => (mitEmpfehlung ? `${run.summary} ` : '')
+  const technik: Record<string, string[]> = {
+    espresso: ['WDT — das Mehl im Korb auflockern', 'Eben tampen, danach nicht klopfen', 'Präinfusion verlängern'],
+    v60: ['Nach dem Bloom swirlen', 'Nicht auf das Papier gießen', 'Rao Spin am Ende'],
+    aeropress: ['Gleichmäßig rühren', 'Mahlwerk auf Fines prüfen'],
+    frenchpress: ['Kruste brechen und umrühren', 'Langsam pressen'],
+  }
+
+  if (zeitWillGroeber) {
+    // Lange Zeit und trotzdem sauer. Bei so viel Kontakt fehlt keine
+    // Extraktion — sie war ungleichmäßig. Gröber zu mahlen würde die
+    // untererschöpfte Fraktion nur vergrößern (kb/14 D-02, kb/05 §1.2).
+    return {
+      stage: 2,
+      blocked: true,
+      headline: 'Zeit und Geschmack widersprechen sich',
+      summary:
+        `${zeitSatz(false)}Nach dieser Zeit dürfte nichts unterextrahiert schmecken — es schmeckt aber ` +
+        `${defectWord(defects)}. Das heißt: nicht zu wenig Extraktion, sondern ungleichmäßige. Ein Teil des ` +
+        'Kaffees ist erschöpft, ein anderer kaum berührt. Gröber mahlen würde die untererschöpfte Hälfte ' +
+        'größer machen, feiner die erschöpfte — deshalb hier kein Mahlgrad, sondern erst die Gleichmäßigkeit.',
+      suggestions: [],
+      techniqueSteps: technik[method],
+      escalation: [
+        'Verteilung korrigieren und genau dieselben Werte wiederholen',
+        'Röstdatum und Röstgrad prüfen — unterentwickelte Röstungen behalten die Säure',
+        'Wasser prüfen: Karbonathärte über 80 mg/L puffert die Süße weg',
+        'Bleibt es dabei, passt die Bohne nicht zur Methode',
+      ],
+      metrics,
+      run,
+    }
+  }
+
+  // Kurze Zeit und trotzdem bitter. Der Mahlgrad kann es nicht sein —
+  // feiner wäre für die Zeit richtig und für den Geschmack falsch. Was
+  // bleibt, ist die Selektivität: Bitterstoffe lösen sich stärker
+  // temperaturabhängig als Zucker und Säuren (kb/10 §5.1).
+  const tr = tempRange(method)
+  const temp = actual.waterTempC ?? 93
+  const ziel = clampTemp(method, temp - 3)
+  const amBoden = ziel >= Math.round(temp)
+
+  return {
+    stage: 2,
+    blocked: amBoden,
+    headline: 'Bitter, obwohl es zu schnell lief',
+    summary:
+      `${zeitSatz(!amBoden)}Bei so kurzem Kontakt kommt Bitterkeit nicht vom Mahlgrad — feiner zu mahlen wäre ` +
+      `für die Zeit richtig und für den Geschmack falsch. ` +
+      (amBoden
+        ? `Die Temperatur steht mit ${temp} °C schon am unteren Ende dieser Methode (${tr.min} °C), ` +
+          'als Hebel fällt sie damit weg. Dann bleibt die Röstung oder die Verteilung.'
+        : 'Der wirksame Hebel ist die Temperatur: Sie verschiebt die Selektivität zugunsten der süßen Fraktion.'),
+    suggestions: amBoden
+      ? []
+      : [
+          {
+            ruleId: 'D-32',
+            what: `Temperatur auf ${ziel} °C`,
+            why: 'Bitterkeit bei kurzer Kontaktzeit ist ein Temperatur- und kein Mahlgradbefund.',
+            expectation:
+              'Weniger Bitterkeit bei gleicher Süße. Die Zeit bleibt, wo sie ist — die musst du im nächsten Durchgang getrennt angehen.',
+            confidence: 'wahrscheinlich',
+            variable: 'waterTempC',
+            direction: 'decrease',
+            delta: ziel - Math.round(temp),
+            newValue: ziel,
+            alternative: `Falls das nicht hilft: Verteilung prüfen — ein Kanal lässt einen Shot schnell UND bitter werden. Danach ${sensory.what.toLowerCase()}.`,
+          },
+        ],
+    escalation: amBoden
+      ? [
+          'Verteilung prüfen — ein Kanal macht schnell und bitter gleichzeitig',
+          'Dosis um 0,5 g erhöhen: mehr Bett, mehr Widerstand',
+          'Röstgrad prüfen — dunkle Röstungen kippen früh in die Bitterkeit',
+        ]
+      : undefined,
+    metrics,
+    run,
+  }
+}
+
+/** Die Fehlertags in einem lesbaren Satzteil. */
+function defectWord(defects: Defect[] | undefined): string {
+  const worte: Partial<Record<Defect, string>> = {
+    sour: 'sauer',
+    salty: 'salzig',
+    thin: 'dünn',
+    shortFinish: 'kurz im Abgang',
+  }
+  const gefunden = (defects ?? []).map((d) => worte[d]).filter(Boolean) as string[]
+  if (!gefunden.length) return 'unterextrahiert'
+  if (gefunden.length === 1) return gefunden[0]!
+  return `${gefunden.slice(0, -1).join(', ')} und ${gefunden[gefunden.length - 1]}`
 }
 
 /**

@@ -13,12 +13,15 @@ Die Engine läuft in vier Stufen. **Eine Stufe darf erst feuern, wenn alle
 vorherigen leer sind.**
 
 ```
-STUFE 0  GATES        Ist das Ergebnis überhaupt interpretierbar?
-                      → Channeling, Messfehler, Bohne außerhalb des Fensters,
-                        Wasserverdacht. Blockiert alle weiteren Stufen.
-STUFE 1  OBJEKTIV     Nur wenn TDS gemessen: Position im Brew Control Chart.
-STUFE 2  SENSORISCH   Aus Fehlertags und Beobachtungen.
-STUFE 3  AUSGABE      Genau EINE Korrektur, mit Zahl und Erwartungswert.
+STUFE 0    GATES        Ist das Ergebnis überhaupt interpretierbar?
+                        → Channeling, Messfehler, Bohne außerhalb des Fensters,
+                          Wasserverdacht. Blockiert alle weiteren Stufen.
+STUFE 0,5  LAUFKONTROLLE Zeit, Fluss und Beobachtungen — ohne Geschmack.
+                        → Läuft VOR der Verkostung und trägt eine eigene
+                          Korrektur. Siehe §3b.
+STUFE 1    OBJEKTIV     Nur wenn TDS gemessen: Position im Brew Control Chart.
+STUFE 2    SENSORISCH   Aus Fehlertags und Beobachtungen.
+STUFE 3    AUSGABE      Genau EINE Korrektur, mit Zahl und Erwartungswert.
 ```
 
 **Kardinalregel (kb/00 §7):** Pro Iteration wird **genau eine** Variable
@@ -179,6 +182,100 @@ confidence: medium
 ```
 Maßnahmen: auf 0,1 g wiegen · RDT · Single Dosing mit Purge · kalibrierter
 Tamper. *„Bevor du das Rezept änderst, mach es erst wiederholbar."*
+
+---
+
+## 3b. STUFE 0,5 — Laufkontrolle
+
+Maschinenlesbar in `data/diagnostics.json` unter `runCheck`.
+
+Diese Stufe existiert, weil **kb/15 §3.1 Phase C und Phase D trennt**: Der
+Mahlgrad wird über die Zeit gefunden, der Geschmack erst danach feinjustiert.
+Eine Zeitabweichung ist ohne jeden Geschmackseindruck auswertbar — wer beides
+in einem Schritt abfragt, mischt zwei Signale und kann das Ergebnis hinterher
+keinem von beiden zuordnen.
+
+**Der Ausfall, der dazu geführt hat:** Ein Espresso mit 19 s bei 25 s
+Zielmitte und leerem Tasting bekam „keine klare Korrektur". Die Zeit allein
+enthielt die Antwort; die Engine hat auf einen Fehlertag gewartet, der nie
+kam. Regel: **Was die Uhr sagt, geht nie verloren.**
+
+### 3b.1 Zeitbänder
+
+Bezugsgröße ist die Zielmitte, Toleranz aus `methods.json`.
+
+| Band | Bedingung | Konfidenz der Korrektur |
+| ---- | --------- | ----------------------- |
+| `aborted` | `t < 0,35 × Ziel` | keine — Durchgang wiederholen |
+| `farFast` / `farSlow` | Abweichung > 20 % der Zielzeit | sicher |
+| `fast` / `slow` | Abweichung > Toleranz, ≤ 20 % | wahrscheinlich |
+| `onTarget` | Abweichung ≤ Toleranz | keine — das ist Wiederholgenauigkeit |
+
+Die Konfidenz kommt aus der **Schwere der Abweichung**, nicht aus der Regel:
+F-22 ist immer dieselbe Physik, aber vier Sekunden auf fünfundzwanzig sind ein
+schwächeres Signal als zehn.
+
+### 3b.2 Regeln
+
+| ID | Bedingung | Korrektur |
+| -- | --------- | --------- |
+| D-90 | Zeit unter Ziel, Perkolation | Mahlgrad feiner (F-22) |
+| D-91 | Zeit über Ziel, Perkolation | Mahlgrad gröber (F-22) |
+| D-92 | Zeit im Band | keine |
+| D-93 | Eindruck **bestätigt** die Zeit | Konfidenz eine Stufe höher |
+| D-94 | Eindruck **widerspricht** der Zeit | Zahl gewinnt, Konfidenz eine Stufe tiefer |
+| D-95 | Eindruck ohne messbare Abweichung | **ein** Schritt, Konfidenz „Versuch" |
+| D-96 | Immersion, Zeit ≠ geplant | `steepS` — **nie** Mahlgrad (kb/10b §6) |
+| D-97 | Immersion, Presswiderstand ≠ normal | Mahlgrad (einziges mechanisches Signal) |
+| D-98 | Bohne im Ruhefenster **und** zu langsam | keine — CO₂, nicht Mahlgrad |
+| D-99 | Bohne über dem Fenster **und** zu schnell | feiner, als Alterskorrektur (F-32) |
+| D-9A | Streuung der letzten 5 Zeiten > 4 s | Empfehlung bleibt, Konfidenz sinkt (→ D-08) |
+
+### 3b.3 Der eigene Eindruck als zweites Signal
+
+Erfasst wird `perceivedSpeed ∈ {tooFast, onPoint, tooSlow}` — bei Immersion als
+Presswiderstand formuliert, weil dort nichts durch ein Bett fließt.
+
+Der Wert ist nicht die Wiederholung der Zeit, sondern ihre **Kreuzprobe**:
+
+- Beide gleich → zwei unabhängige Signale in dieselbe Richtung (D-93)
+- Nur der Eindruck → zu wenig für eine Rechnung, genug für einen Schritt (D-95)
+- Widerspruch → die Zahl gewinnt, und der Widerspruch selbst ist der Befund (D-94)
+
+### 3b.4 Was hier gesperrt bleibt
+
+Dieselben Sperren wie Stufe 0, aber vor der Verkostung geprüft:
+
+| Sperre | Warum |
+| ------ | ----- |
+| Channeling (D-01) | Die Zeit ist physikalisch bedeutungslos |
+| Abbruch | Aus einem halben Durchgang folgt nichts |
+| Immersion (kb/10b §6) | Zeit ist gewählt, nicht Ergebnis |
+| Bohne zu frisch (D-03) | CO₂ baut Widerstand auf, den kein Mahlgrad erklärt |
+
+### 3b.5 Zusammenführung mit Stufe 2
+
+Beide Stufen können den Mahlgrad wollen. Die Kardinalregel bleibt: **eine**
+Korrektur.
+
+| Fall | Ergebnis |
+| ---- | -------- |
+| Gleiche Richtung | Zahl aus F-22, Begründung aus beiden, Konfidenz `sicher` |
+| Nur Laufkontrolle | Ihre Korrektur ist das Ergebnis |
+| Nur Sensorik | Die Methodenkaskade entscheidet (§6) |
+| **Gegenläufig** | Eigene Diagnose — siehe unten |
+
+Der gegenläufige Fall ist der wertvollste, weil er sonst zu einer geratenen
+Empfehlung führt:
+
+- **Lang gelaufen und trotzdem sauer** — bei so viel Kontakt fehlt keine
+  Extraktion, sie war *ungleichmäßig*. Gröber würde die untererschöpfte
+  Fraktion vergrößern, feiner die erschöpfte. Also **kein Mahlgrad**, sondern
+  Gleichmäßigkeit, dann die Eskalationsleiter (kb/15 §6).
+- **Kurz gelaufen und trotzdem bitter** — der Mahlgrad kann es nicht sein:
+  feiner wäre für die Zeit richtig und für den Geschmack falsch. Wirksam ist
+  die Temperatur, weil sie die Selektivität verschiebt (kb/10 §5.1). Steht sie
+  am unteren Ende der Methode, bleibt nur Verteilung, Dosis oder Röstung.
 
 ---
 
@@ -405,5 +502,8 @@ eintrifft, glaubt der Nutzer auch der Geschmacksvorhersage.
 | Eine feste V60-Zielzeit für alle Dosen | skaliert mit der Dosis (D-66) |
 | Positive Charaktertags als Fehler behandeln | `bright`, `fruity` sind keine Defekte |
 | Endlos in eine Richtung korrigieren | Schleifenerkennung §7 |
+| Eine Zeitabweichung ohne Fehlertag verschweigen | Die Zeit ist ein Befund für sich (§3b) |
+| Nach dem Eindruck korrigieren, wenn die Uhr widerspricht | Die Zahl ist reproduzierbar, der Eindruck nicht (D-94) |
+| Bei Immersion aus der Zeit auf den Mahlgrad schließen | Die Zeit ist dort gewählt (D-96, kb/10b §6) |
 | Bei `isDecaf` normale Defaults verwenden | kb/05 §6 |
 | Bei gemessener TDS die Sensorik überstimmen lassen | Messung hat Vorrang |

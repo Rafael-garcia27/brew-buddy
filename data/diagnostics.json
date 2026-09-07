@@ -10,6 +10,13 @@
         "blocksLater": true
       },
       {
+        "id": 0.5,
+        "name": "runCheck",
+        "description": "Laufkontrolle — Zeit, Fluss und Beobachtungen, noch ohne Geschmack",
+        "blocksLater": false,
+        "_note": "Läuft vor der Verkostung. Grundlage: kb/15 §3.1 trennt Phase C (Mahlgrad über die Zeit) von Phase D (Geschmack feinjustieren)."
+      },
+      {
         "id": 1,
         "name": "objective",
         "description": "Brew Control Chart, nur mit TDS-Messung"
@@ -1283,6 +1290,180 @@
           "waterTempC"
         ],
         "hint": "Zuerst Karbonathärte prüfen — sie puffert genau die Säure weg, für die du diese Bohne gekauft hast.",
+        "confidence": "medium"
+      }
+    ]
+  },
+  "runCheck": {
+    "_note": "Stufe 0,5 — die Laufkontrolle. Sie läuft VOR der Verkostung und arbeitet ausschließlich mit objektiven Größen: Zeit, Menge, Fluss, Beobachtungen, Frische, Historie. Eigene Stufe, weil eine Zeitabweichung ohne jeden Geschmackseindruck auswertbar ist — kb/15 §3.1 trennt genau so: Phase C sucht den Mahlgrad über die Zeit, Phase D justiert den Geschmack. Wer beides in einem Schritt abfragt, mischt zwei Signale und kann das Ergebnis hinterher keinem von beiden zuordnen.",
+    "_source": "kb/15 §3.1 · kb/14 §5.4 · kb/02 F-22 · kb/05 §5 · kb/10b §6",
+    "bands": {
+      "abortedBelowFactor": 0.35,
+      "farOffRelative": 0.2,
+      "espressoChokedAboveS": 45,
+      "espressoGusherBelowS": 15,
+      "spreadWarnS": 4,
+      "_note": "Innerhalb der Methodentoleranz (methods.json tolerances.timeS) wird NICHT korrigiert — das ist die Wiederholgenauigkeit des Handwerks, kein Fehler. Darüber bis 20 % Abweichung gilt als leicht daneben (Konfidenz wahrscheinlich), ab 20 % als deutlich daneben (Konfidenz sicher)."
+    },
+    "rules": [
+      {
+        "id": "D-90",
+        "priority": 2,
+        "scope": [
+          "espresso",
+          "v60"
+        ],
+        "when": "timeUsable && timeS < targetMid - tolerance",
+        "cause": "Zu wenig Widerstand im Bett — das Wasser war zu früh durch",
+        "action": {
+          "variable": "grindSetting",
+          "direction": "decrease",
+          "formulaRef": "F-22",
+          "fallbackDelta": 2
+        },
+        "explanation": "Bei Perkolation ist die Zeit ein Ergebnis, keine Einstellung. Lief der Durchgang zu kurz, war das Mahlgut zu grob: Feiner mahlen erhöht den Widerstand und verlängert den Kontakt. Die Größe der Korrektur kommt aus dem Durchflussgesetz (F-22), nicht aus dem Bauch.",
+        "confidence": "high"
+      },
+      {
+        "id": "D-91",
+        "priority": 2,
+        "scope": [
+          "espresso",
+          "v60"
+        ],
+        "when": "timeUsable && timeS > targetMid + tolerance",
+        "cause": "Zu viel Widerstand im Bett — der Kontakt war zu lang",
+        "action": {
+          "variable": "grindSetting",
+          "direction": "increase",
+          "formulaRef": "F-22",
+          "fallbackDelta": 2
+        },
+        "explanation": "Ein zu langer Durchlauf heißt bei Perkolation: das Bett ist zu dicht. Gröber mahlen senkt den Widerstand. Wie viel, sagt das Durchflussgesetz (F-22) — der Durchfluss skaliert mit dem Quadrat der Partikelgröße.",
+        "confidence": "high"
+      },
+      {
+        "id": "D-92",
+        "priority": 9,
+        "when": "abs(timeS - targetMid) <= tolerance",
+        "cause": "Kein Befund",
+        "action": {
+          "variable": "none",
+          "direction": "none"
+        },
+        "explanation": "Die Zeit sitzt im Zielband. Am Mahlgrad ist jetzt nichts zu holen — alles Weitere entscheidet der Geschmack.",
+        "confidence": "high"
+      },
+      {
+        "id": "D-93",
+        "priority": 1,
+        "when": "perceivedSpeed bestätigt das Zeitband",
+        "cause": "Zahl und Eindruck sagen dasselbe",
+        "action": {
+          "variable": "grindSetting",
+          "direction": "adjust",
+          "formulaRef": "F-22"
+        },
+        "explanation": "Dein Eindruck deckt sich mit der gemessenen Zeit. Zwei unabhängige Signale in dieselbe Richtung — die Korrektur ist so sicher, wie sie ohne Messung werden kann.",
+        "confidence": "high"
+      },
+      {
+        "id": "D-94",
+        "priority": 1,
+        "when": "perceivedSpeed widerspricht dem Zeitband",
+        "cause": "Eindruck und Uhr widersprechen sich",
+        "action": {
+          "variable": "grindSetting",
+          "direction": "adjust",
+          "formulaRef": "F-22"
+        },
+        "explanation": "Die Uhr sagt das Gegenteil deines Eindrucks. Die Zahl gewinnt — sie ist reproduzierbar, der Eindruck nicht. Häufigste Ursachen für den Widerspruch: die Zeit lief schon während der Präinfusion, oder gestoppt wurde erst beim Abstellen der Tasse.",
+        "confidence": "low"
+      },
+      {
+        "id": "D-95",
+        "priority": 3,
+        "when": "perceivedSpeed gesetzt && abs(timeS - targetMid) <= tolerance",
+        "cause": "Eindruck ohne messbare Abweichung",
+        "action": {
+          "variable": "grindSetting",
+          "direction": "adjust",
+          "fallbackDelta": 1
+        },
+        "explanation": "Die Zeit liegt im Ziel, dein Eindruck nicht. Das ist zu wenig für eine berechnete Korrektur, aber genug für einen einzelnen Schritt in die Richtung, die du gespürt hast. Wenn sich ein Durchlauf schneller anfühlt, als die Uhr sagt, lief oft ein Teil des Wassers am Kaffee vorbei — prüf zuerst die Verteilung.",
+        "confidence": "low"
+      },
+      {
+        "id": "D-96",
+        "priority": 2,
+        "scope": [
+          "aeropress",
+          "frenchpress"
+        ],
+        "when": "abs(timeS - plannedSteep) > tolerance",
+        "cause": "Andere Kontaktzeit als geplant — kein Mahlgradbefund",
+        "action": {
+          "variable": "steepS",
+          "direction": "adjust"
+        },
+        "explanation": "Bei Immersion ist die Zeit gewählt, nicht Ergebnis. Eine lange Gesamtzeit heißt nur, dass länger gewartet wurde — eine Mahlgradkorrektur daraus abzuleiten ist gesperrt (kb/10b §6). Was hilft: beim nächsten Mal die geplante Zeit fahren, damit überhaupt zwei vergleichbare Durchgänge existieren.",
+        "confidence": "high"
+      },
+      {
+        "id": "D-97",
+        "priority": 3,
+        "scope": [
+          "aeropress",
+          "frenchpress"
+        ],
+        "when": "pressResistance in {none, light, heavy}",
+        "cause": "Der Widerstand beim Pressen ist das einzige mechanische Mahlgradsignal der Immersion",
+        "action": {
+          "variable": "grindSetting",
+          "direction": "adjust",
+          "fallbackDelta": 1
+        },
+        "explanation": "Pressen extrahiert nicht, es trennt nur — aber der Widerstand verrät die Partikelgröße. Geht der Kolben ohne Gegendruck durch, ist das Mahlgut zu grob; muss man sich stemmen, ist es zu fein und Fines gehen durch das Sieb (kb/10b §2). Bei der French Press bleibt der Mahlgrad dabei der schwächste Hebel — Ratio und Kontaktzeit wirken deutlicher.",
+        "confidence": "medium"
+      },
+      {
+        "id": "D-98",
+        "priority": 0,
+        "when": "daysOffRoast < restWindow.min && band in {slow, farSlow}",
+        "cause": "CO₂ bremst, nicht der Mahlgrad",
+        "action": {
+          "variable": "none",
+          "direction": "none"
+        },
+        "explanation": "Die Bohne ist noch im Ruhefenster. Frisch geröstetes CO₂ verdrängt das Wasser und baut Widerstand auf, der mit dem Mahlgrad nichts zu tun hat. Wer jetzt gröber stellt, muss die Korrektur in einer Woche zurücknehmen.",
+        "confidence": "high"
+      },
+      {
+        "id": "D-99",
+        "priority": 5,
+        "when": "daysOffRoast > restWindow.max && band in {fast, farFast}",
+        "cause": "Entgasung — die Bohne bietet weniger Widerstand als am Referenztag",
+        "action": {
+          "variable": "grindSetting",
+          "direction": "decrease",
+          "formulaRef": "F-32"
+        },
+        "explanation": "Ein Teil der Zeitabweichung kommt vom Alter: entgast bietet dasselbe Mahlgut weniger Widerstand (F-32, rund ein Schritt je zwölf Tage). Feiner ist richtig — nur ist es eine Alterskorrektur, keine Rezeptänderung. Bei der nächsten frischen Bag geht sie zurück.",
+        "confidence": "medium"
+      },
+      {
+        "id": "D-9A",
+        "priority": 0,
+        "scope": [
+          "espresso"
+        ],
+        "when": "stdDev(last5BrewTimes) > spreadWarnS",
+        "cause": "Prozessstreuung, siehe D-08",
+        "action": {
+          "variable": "technique",
+          "direction": "technique"
+        },
+        "explanation": "Solange das so ist, jagt jede Mahlgradkorrektur das Rauschen deiner Vorbereitung. Die Empfehlung bleibt stehen, ihre Konfidenz sinkt — mach den Ablauf zuerst wiederholbar (D-08).",
         "confidence": "medium"
       }
     ]

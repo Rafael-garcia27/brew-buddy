@@ -33,6 +33,15 @@ export type FlowState =
 
 export type BloomBehavior = 'vigorous' | 'moderate' | 'flat' | 'uneven'
 
+/**
+ * Der eigene Eindruck vom Durchlauf, unabhängig von der Uhr.
+ *
+ * Zwei Signale statt einem: Die Zeit ist reproduzierbar, der Eindruck
+ * kennt den Kontext. Decken sie sich, steigt die Konfidenz der Korrektur;
+ * widersprechen sie sich, ist genau das der Befund (kb/14 D-93/D-94).
+ */
+export type SpeedFeel = 'tooFast' | 'onPoint' | 'tooSlow'
+
 export type DrawdownClass = 'fast' | 'normal' | 'slow' | 'stalled'
 
 export type Modifier =
@@ -285,6 +294,14 @@ export interface Observation {
   bedAppearance?: 'even' | 'crater' | 'uneven'
   cremaQuality?: 'good' | 'thin' | 'dark-spotted' | 'excessive' | 'absent'
   pressResistance?: 'none' | 'light' | 'normal' | 'heavy'
+  /**
+   * Wie schnell der Durchlauf sich angefühlt hat.
+   *
+   * Wird VOR der Verkostung erfasst und getrennt von ihr ausgewertet:
+   * „lief zu schnell" ist eine Aussage über den Fluss, nicht über den
+   * Geschmack, und trägt deshalb eine eigene Korrektur (kb/15 §3.1 Phase C).
+   */
+  perceivedSpeed?: SpeedFeel
   /**
    * French Press: Wurde nach dem Pressen sofort umgefüllt?
    *

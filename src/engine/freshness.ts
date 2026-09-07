@@ -9,6 +9,7 @@ import formulas from '@data/formulas.json'
 import { freshnessScore as gaussScore, ageGrindDrift } from '@domain'
 import type { BrewMethod, RoastLevel, Bag, Bean, Process } from '@domain'
 import { daysOffRoast, daysSince } from '@/domain'
+import { tage } from './text'
 
 type RestTable = Record<BrewMethod, Record<RoastLevel, [number, number]>>
 
@@ -162,21 +163,21 @@ export function assessFreshness(
 
   if (days >= STALE_AFTER) {
     state = 'stale'
-    label = `${days} Tage — überaltert`
+    label = `${tage(days)} — überaltert`
     hint = 'Aromaverlust lässt sich durch keine Einstellung reparieren. Neue Bag.'
   } else if (days < win.min) {
     state = 'too-fresh'
-    label = `${days} Tage — noch zu frisch`
+    label = `${tage(days)} — noch zu frisch`
     hint = `Das CO₂ stört noch. Ab Tag ${win.min} sind die Ergebnisse stabil.`
   } else if (days <= win.min + 2) {
     state = 'approaching'
-    label = `${days} Tage — wird gerade gut`
+    label = `${tage(days)} — wird gerade gut`
   } else if (days <= win.max) {
     state = 'peak'
-    label = `${days} Tage — im Fenster`
+    label = `${tage(days)} — im Fenster`
   } else {
     state = 'past-peak'
-    label = `${days} Tage — über dem Optimum`
+    label = `${tage(days)} — über dem Optimum`
     hint = 'Etwas feiner mahlen, das Bett bietet weniger Widerstand.'
   }
 

@@ -24,7 +24,9 @@ import { levelForMode } from '@/domain'
 // ── Layout ────────────────────────────────────────────────────────────
 
 export function Screen({ children }: { children: ReactNode }) {
-  return <div className="min-h-full pb-28">{children}</div>
+  // Vorher 7 rem, weil unten eine Navigationsleiste stand. Die ist weg —
+  // so viel Leerraum unter dem letzten Knopf sähe nach Abbruch aus.
+  return <div className="pb-safe min-h-full">{children}<div className="h-10" /></div>
 }
 
 export function Header({
@@ -32,17 +34,24 @@ export function Header({
   subtitle,
   right,
   onBack,
+  large,
 }: {
   title: string
   subtitle?: string
   right?: ReactNode
   onBack?: () => void
+  /**
+   * Für die Hauptoberfläche. Seit die Navigationsleiste weg ist, ist der
+   * Kopf das einzige Element, das sagt, wo man ist — auf dem Startbild­
+   * schirm darf er das deutlich sagen.
+   */
+  large?: boolean
 }) {
   return (
     <header className="pt-safe sticky top-0 z-20 border-b border-line bg-paper/90 backdrop-blur-xl">
       {/* Feste Höhe: Der Kopf darf nicht springen, wenn ein Untertitel
           fehlt oder eine Schaltfläche dazukommt. */}
-      <div className="flex h-[58px] items-center gap-3 px-4">
+      <div className={`flex items-center gap-3 px-4 ${large ? 'h-[70px]' : 'h-[58px]'}`}>
         {onBack && (
           <button
             onClick={onBack}
@@ -61,12 +70,49 @@ export function Header({
           </button>
         )}
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-[22px] leading-tight font-semibold tracking-tight">{title}</h1>
+          <h1
+            className={`truncate leading-tight font-semibold tracking-tight ${
+              large ? 'text-[30px]' : 'text-[22px]'
+            }`}
+          >
+            {title}
+          </h1>
           {subtitle && <p className="mt-0.5 truncate text-[13px] text-mute">{subtitle}</p>}
         </div>
         {right}
       </div>
     </header>
+  )
+}
+
+/**
+ * Setup-Zugang im Kopf.
+ *
+ * Bewusst nur ein Symbol und in gedeckter Farbe: Mühle, Wasser und
+ * Sicherung werden einmal eingerichtet und danach selten angefasst. Ein
+ * beschrifteter Knopf würde täglich um Aufmerksamkeit bitten, die er
+ * nicht braucht.
+ */
+export function GearButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label="Setup"
+      className="-mr-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-faint active:bg-raised"
+    >
+      {/* Sechs kurze Strahlen um einen Kreis lesen sich als Sonne. Ein
+          Zahnrad braucht die Kontur mit den Zähnen. */}
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden>
+        <circle cx="12" cy="12" r="3.2" strokeWidth="1.6" />
+        <path
+          d="M19.4 15a1.7 1.7 0 00.3 1.9l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.9-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1A1.7 1.7 0 008.9 19a1.7 1.7 0 00-1.9.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.9 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1A1.7 1.7 0 004.6 8.9a1.7 1.7 0 00-.3-1.9l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.9.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.9-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.9V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </button>
   )
 }
 
@@ -81,9 +127,19 @@ export function Section({
 }) {
   return (
     <section className="px-4 pt-6">
-      {title && (
-        <div className="mb-2 flex items-baseline justify-between gap-2">
-          <h2 className="text-[13px] font-semibold tracking-wide text-mute uppercase">{title}</h2>
+      {/* Auch ohne Überschrift: Ein `action` ohne `title` verschwand
+          vorher stillschweigend — in Beans war der Hinweis „nach Frische"
+          deshalb nie zu sehen. Ohne Titel steht die Zusatzangabe rechts,
+          wo sie auch neben einer Überschrift stünde. */}
+      {(title || action) && (
+        <div
+          className={`mb-2 flex items-baseline gap-2 ${
+            title ? 'justify-between' : 'justify-end'
+          }`}
+        >
+          {title && (
+            <h2 className="text-[13px] font-semibold tracking-wide text-mute uppercase">{title}</h2>
+          )}
           {action}
         </div>
       )}
@@ -633,6 +689,101 @@ export function Stat({
   )
 }
 
+export interface TriadItem {
+  label: string
+  value: string
+  unit?: string
+  term?: string
+  hint?: string
+  tone?: 'ok' | 'warn' | 'bad'
+}
+
+/**
+ * Die drei Zahlen, um die es geht — nebeneinander und groß.
+ *
+ * Vorher standen Dose, Yield, Ratio, Temp, Mahlgrad und Zielzeit als sechs
+ * gleich große Kacheln im Startpunkt. Sechs gleichrangige Zahlen sind keine
+ * Hierarchie, sondern eine Liste: Man liest sie der Reihe nach, statt die
+ * drei zu greifen, die an der Maschine gebraucht werden. In, Time und Out
+ * sind das Rezept; alles andere ist Beiwerk und gehört kleiner darunter.
+ */
+export function Triad({ items }: { items: TriadItem[] }) {
+  return (
+    <div className="grid grid-cols-3 divide-x divide-line">
+      {items.map((it) => {
+        const c =
+          it.tone === 'ok'
+            ? 'text-ok'
+            : it.tone === 'warn'
+              ? 'text-warn'
+              : it.tone === 'bad'
+                ? 'text-bad'
+                : 'text-ink'
+        // Ein Zielband wie „3:15–4:00" ist dreimal so lang wie „18,0" und
+        // würde in einem Drittel der Breite umbrechen. Die Zahl bestimmt
+        // ihre Größe deshalb selbst.
+        // Die Schwellen sind auf 375 px nachgemessen: In ein Drittel der
+        // Kartenbreite passen rund 98 px. „18,0" braucht bei 29 px schon
+        // 98, „2:30–3:00" bei 19 px genau 94 — deshalb für die langen
+        // Uhrzeitspannen eine Stufe kleiner, sonst bricht die Zeile.
+        const groesse =
+          it.value.length >= 9 ? 'text-[17px]' : it.value.length >= 5 ? 'text-[23px]' : 'text-[29px]'
+        return (
+          <div key={it.label} className="min-w-0 px-0.5 text-center first:pl-0 last:pr-0">
+            <div className="flex items-center justify-center gap-1">
+              <span className="text-[11px] font-medium tracking-wider text-mute uppercase">
+                {it.label}
+              </span>
+              {it.term && <InfoDot termId={it.term} />}
+            </div>
+            <div className={`tnum mt-1.5 leading-none font-semibold ${groesse} ${c}`}>
+              {it.value}
+              {it.unit && <span className="ml-0.5 text-[12px] font-normal text-mute">{it.unit}</span>}
+            </div>
+            {it.hint && <div className="mt-1 text-[11px] leading-tight text-faint">{it.hint}</div>}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+/**
+ * Die Werte, die stimmen müssen, aber nicht im Blick stehen müssen.
+ *
+ * Temperatur, Ratio und Mahlgrad sind eingestellt und ändern sich während
+ * eines Durchgangs nicht. Sie gehören in eine Zeile, nicht in Kacheln.
+ */
+export function MetaRow({
+  items,
+}: {
+  items: { label: string; value: string; term?: string; tone?: 'ok' | 'warn' | 'bad' }[]
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+      {items.map((it) => (
+        <span key={it.label} className="inline-flex items-baseline gap-1 text-[13px]">
+          <span className="text-faint">{it.label}</span>
+          <span
+            className={`tnum font-medium ${
+              it.tone === 'ok'
+                ? 'text-ok'
+                : it.tone === 'warn'
+                  ? 'text-warn'
+                  : it.tone === 'bad'
+                    ? 'text-bad'
+                    : 'text-mute'
+            }`}
+          >
+            {it.value}
+          </span>
+          {it.term && <InfoDot termId={it.term} />}
+        </span>
+      ))}
+    </div>
+  )
+}
+
 export function Empty({
   title,
   body,
@@ -690,12 +841,6 @@ export function FreshnessRing({
   )
 }
 
-export function fmtTime(s: number): string {
-  const m = Math.floor(s / 60)
-  const r = Math.round(s % 60)
-  return m > 0 ? `${m}:${String(r).padStart(2, '0')}` : `${r}s`
-}
-
 /**
  * Laufende Zeit als Uhr: immer m:ss, auch unter einer Minute.
  *
@@ -707,15 +852,4 @@ export function fmtTime(s: number): string {
 export function fmtClock(s: number): string {
   const ganz = Math.max(0, Math.round(s))
   return `${Math.floor(ganz / 60)}:${String(ganz % 60).padStart(2, '0')}`
-}
-
-/**
- * Zeitspanne, in der Einheit die zur Länge passt.
- *
- * „162–192s" muss man erst im Kopf umrechnen, um zu wissen, dass man
- * knapp drei Minuten am Filter steht. Ab einer Minute also mm:ss.
- */
-export function fmtRange([von, bis]: [number, number], alsUhr = false): string {
-  if (alsUhr) return `${fmtClock(von)}–${fmtClock(bis)}`
-  return bis >= 60 ? `${fmtTime(von)}–${fmtTime(bis)}` : `${von}–${bis}s`
 }

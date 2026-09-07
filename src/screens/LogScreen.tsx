@@ -9,7 +9,9 @@ import type { Route } from '@/router'
 import { useStore } from '@/store'
 import type { BrewMethod } from '@domain'
 import { METHODS, METHOD_LABEL, DEFECT_LABEL, CHARACTER_LABEL, FLOW_LABEL } from '@/labels'
-import { Screen, Header, Section, Card, Empty, Chip, Stat, Button, fmtTime, num } from '@/components/ui'
+import { Screen, Header, Section, Card, Empty, Chip, Stat, Button, num } from '@/components/ui'
+// Dieselbe Schreibweise wie in den Empfehlungen: „25 s“, nicht „25s“.
+import { fmtDauer } from '@/engine/text'
 import { formatSetting } from '@/engine/grinder'
 
 interface Props {
@@ -22,10 +24,21 @@ export default function LogScreen({ route, navigate, back }: Props) {
   const brews = useStore((s) => s.brews)
   const beans = useStore((s) => s.beans)
   const [filterMethod, setFilterMethod] = useState<BrewMethod | 'all'>('all')
-  const [filterBean, setFilterBean] = useState<string | 'all'>('all')
+  /**
+   * Kommt der Log von einer Bohne, ist er auf sie vorgefiltert.
+   *
+   * Der Filter bleibt trotzdem bedienbar: „Alle Bohnen" ist ein Tipp
+   * entfernt. Ein Log, der nur eine Bohne zeigen KANN, wäre eine
+   * Sackgasse — Vergleiche zwischen Bohnen sind der halbe Nutzen.
+   */
+  const [filterBean, setFilterBean] = useState<string | 'all'>(route.id ?? 'all')
 
-  const detail = route.detail === 'brew' ? brews.find((b) => b.id === route.id) : undefined
+  // `detail` trägt die Brew-Kennung, `id` die vorgefilterte Bohne. Der
+  // Log kennt nur eine Art Detail, deshalb braucht es keine Marke davor.
+  const detail = route.detail ? brews.find((b) => b.id === route.detail) : undefined
   if (detail) return <BrewDetail brewId={detail.id} onBack={back} />
+
+  const gefilterteBohne = filterBean === 'all' ? undefined : beans.find((b) => b.id === filterBean)
 
   const filtered = brews.filter(
     (b) =>
@@ -37,13 +50,19 @@ export default function LogScreen({ route, navigate, back }: Props) {
 
   return (
     <Screen>
-      <Header title="Log" />
+      <Header title="Log" subtitle={gefilterteBohne?.name} onBack={back} />
 
       {brews.length === 0 ? (
         <Empty
           title="Noch keine Brews"
           body="Jeder Brew macht die Empfehlungen präziser. Nach drei gut bewerteten Tassen pro Bohne kennt die App deinen Geschmack."
-          action={<Button onClick={() => navigate({ tab: 'brew' })}>Ersten Kaffee brühen</Button>}
+          action={
+            gefilterteBohne ? (
+              <Button onClick={() => navigate({ tab: 'brew', id: gefilterteBohne.id })}>
+                Ersten Kaffee brühen
+              </Button>
+            ) : undefined
+          }
         />
       ) : (
         <>
@@ -75,19 +94,35 @@ export default function LogScreen({ route, navigate, back }: Props) {
           </Section>
 
           <Section title="Brews">
+            {filtered.length === 0 && (
+              <Card>
+                <p className="text-[14px] text-mute">
+                  Für diesen Filter gibt es noch keinen Brew.
+                </p>
+              </Card>
+            )}
             <div className="space-y-2">
               {filtered.map((b) => (
-                <Card key={b.id} onClick={() => navigate({ tab: 'log', detail: 'brew', id: b.id })}>
+                <Card
+                  key={b.id}
+                  onClick={() => navigate({ tab: 'log', detail: b.id, id: route.id })}
+                >
                   <div className="flex items-start gap-3">
                     <div className="min-w-0 flex-1">
+                      {/* Auf eine Bohne gefiltert steht ihr Name schon im
+                          Kopf — in jeder Zeile noch einmal verdrängt er
+                          nur das Rezept, das den Eintrag unterscheidet. */}
                       <div className="flex items-center gap-2">
-                        <p className="truncate font-medium">{beanName(b.beanId)}</p>
+                        <p className="truncate font-medium">
+                          {gefilterteBohne ? METHOD_LABEL[b.method] : beanName(b.beanId)}
+                        </p>
                         {b.isBest && <span className="shrink-0 text-[11px] text-crema">REFERENZ</span>}
                       </div>
                       <p className="mt-0.5 text-[13px] text-mute">
-                        {METHOD_LABEL[b.method]} · {num(b.actual.doseG)} g →{' '}
+                        {!gefilterteBohne && `${METHOD_LABEL[b.method]} · `}
+                        {num(b.actual.doseG)} g →{' '}
                         {b.actual.yieldG ? `${num(b.actual.yieldG)} g` : `${b.actual.waterG} g`} ·{' '}
-                        {fmtTime(b.actual.timeS)}
+                        {fmtDauer(b.actual.timeS)}
                       </p>
                       <p className="mt-1 text-[12px] text-faint">
                         {new Date(b.createdAt).toLocaleDateString('de-DE', {
@@ -135,7 +170,7 @@ function BrewDetail({ brewId, onBack }: { brewId: string; onBack: () => void }) 
             <Stat label="Dose" value={num(a.doseG)} unit="g" />
             {a.yieldG !== undefined && <Stat label="Yield" value={num(a.yieldG)} unit="g" />}
             {a.waterG !== undefined && <Stat label="Wasser" value={a.waterG} unit="g" />}
-            <Stat label="Zeit" value={fmtTime(a.timeS)} />
+            <Stat label="Zeit" value={fmtDauer(a.timeS)} />
             <Stat
               label="Ratio"
               value={`1:${num((a.yieldG ?? a.waterG ?? 0) / a.doseG)}`}

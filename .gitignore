@@ -7,3 +7,7 @@ dist-ssr
 coverage
 tsconfig.tsbuildinfo
 *.tsbuildinfo
+
+# Vom Design-Canvas erzeugte Seite: 2,4 MB Editor-Payload, jederzeit aus
+# den .dc.html-Quellen neu erzeugbar.
+cafe-app-screens.html

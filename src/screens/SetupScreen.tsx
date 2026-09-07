@@ -61,7 +61,9 @@ export default function SetupScreen({ route, back }: Props) {
 
   return (
     <Screen>
-      <Header title="Setup" onBack={route.detail ? back : undefined} />
+      {/* Immer ein Weg zurück: Ohne Navigationsleiste ist der Pfeil im
+          Kopf der einzige. */}
+      <Header title="Setup" onBack={back} />
 
       {/* ── Modus: der eine Schalter, ganz oben ── */}
       <Section title="Modus">
@@ -263,7 +265,8 @@ export default function SetupScreen({ route, back }: Props) {
                 <Card key={m}>
                   <p className="text-[13px] text-mute">{METHOD_LABEL[m]}</p>
                   <p className="mt-1 text-[15px]">
-                    {p.statement ?? `${p.sampleSize} gute Tassen — noch zu wenig für ein Muster.`}
+                    {p.statement ??
+                      `${p.sampleSize} gute ${p.sampleSize === 1 ? 'Tasse' : 'Tassen'} — noch zu wenig für ein Muster.`}
                   </p>
                 </Card>
               ),

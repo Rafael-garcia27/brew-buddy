@@ -15,6 +15,7 @@ import type {
   FlowState,
   PuckState,
   BloomBehavior,
+  SpeedFeel,
 } from '@domain'
 
 /**
@@ -175,3 +176,40 @@ export const BLOOM_LABEL: Record<BloomBehavior, string> = {
 }
 
 export const BLOOM_CHOICES: BloomBehavior[] = ['moderate', 'vigorous', 'flat', 'uneven']
+
+/**
+ * Der eigene Eindruck vom Durchlauf.
+ *
+ * Bei Perkolation geht es um die Geschwindigkeit, bei Immersion um den
+ * Widerstand am Kolben — dieselbe Frage, aber nicht dieselben Worte.
+ * „Zu schnell" wäre bei der French Press sinnlos: dort fließt nichts
+ * durch ein Bett, dort presst man (kb/10b §1).
+ */
+/*
+ * Kurz gehalten, damit die drei Antworten auf 375 px in eine Zeile passen.
+ * Drei Chips über zwei Reihen lesen sich nicht mehr als eine Auswahl,
+ * sondern als Liste.
+ */
+export const SPEED_LABEL: Record<SpeedFeel, string> = {
+  tooFast: 'Zu schnell',
+  onPoint: 'Passt',
+  tooSlow: 'Zu langsam',
+}
+
+export const PRESS_LABEL: Record<SpeedFeel, string> = {
+  tooFast: 'Zu leicht',
+  onPoint: 'Passt',
+  tooSlow: 'Zu schwer',
+}
+
+/** Reihenfolge im Brüh-Screen: die Mitte steht in der Mitte. */
+export const SPEED_CHOICES: SpeedFeel[] = ['tooFast', 'onPoint', 'tooSlow']
+
+export function speedLabel(feel: SpeedFeel, immersion: boolean): string {
+  return immersion ? PRESS_LABEL[feel] : SPEED_LABEL[feel]
+}
+
+/** Die Frage über den Chips — sie ändert sich mit der Physik der Methode. */
+export function speedQuestion(immersion: boolean): string {
+  return immersion ? 'Widerstand beim Pressen' : 'Wie lief der Durchlauf?'
+}

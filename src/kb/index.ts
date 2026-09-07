@@ -391,6 +391,53 @@ export function getRule(id: string): DiagnosticRuleDef | undefined {
   return RULES.find((r) => r.id === id)
 }
 
+// ── Laufkontrolle (Stufe 0,5) ─────────────────────────────────────────
+
+/**
+ * Schwellen der Laufkontrolle.
+ *
+ * Sie stehen bewusst hier und nicht im Code: Ob „deutlich daneben" bei
+ * 20 % oder bei 25 % beginnt, ist eine fachliche Setzung und keine
+ * Programmentscheidung.
+ */
+export interface RunBands {
+  abortedBelowFactor: number
+  farOffRelative: number
+  espressoChokedAboveS: number
+  espressoGusherBelowS: number
+  spreadWarnS: number
+}
+
+export interface RunCheckRuleDef {
+  id: string
+  priority: number
+  scope?: string[]
+  when: string
+  cause?: string
+  action: RuleAction
+  explanation?: string
+  techniqueSteps?: string[]
+  confidence: 'high' | 'medium' | 'low'
+}
+
+const runCheckRaw = (diagnosticsRaw as unknown as {
+  runCheck?: { bands: RunBands; rules: RunCheckRuleDef[] }
+}).runCheck
+
+export const RUN_BANDS: RunBands = runCheckRaw?.bands ?? {
+  abortedBelowFactor: 0.35,
+  farOffRelative: 0.2,
+  espressoChokedAboveS: 45,
+  espressoGusherBelowS: 15,
+  spreadWarnS: 4,
+}
+
+export const RUN_RULES: RunCheckRuleDef[] = runCheckRaw?.rules ?? []
+
+export function getRunRule(id: string): RunCheckRuleDef | undefined {
+  return RUN_RULES.find((r) => r.id === id)
+}
+
 // ── Herkunft, Aufbereitung, Varietät ──────────────────────────────────
 
 export interface OriginProfile {

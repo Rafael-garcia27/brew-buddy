@@ -1,8 +1,15 @@
 /**
- * Regal — die Bohnenbibliothek.
+ * Beans — die Hauptoberfläche der App.
  *
  * Briefing A6: Herkunft, Farm, Röstdatum und Röster-Empfehlung sind keine
  * Deko, sondern Eingaben für die Startpunkt-Berechnung.
+ *
+ * Warum das der Startbildschirm ist und keine Registerkarte: Jeder
+ * Durchgang beginnt mit der Frage „welche Bohne?" — vorher stand sie
+ * zweimal in der App, einmal hier als Bibliothek und einmal im Brüh-Screen
+ * als Auswahlliste. Jetzt gibt es sie einmal, und Brühen, Profil und Log
+ * sind Aktionen an der gewählten Bohne. Eine Navigationsleiste braucht es
+ * dafür nicht: Es gibt nur einen Ort, an den man zurückkehrt.
  */
 import { useMemo, useState } from 'react'
 import type { Route } from '@/router'
@@ -17,12 +24,13 @@ const BLEND = 'Blend'
 import { METHODS, ROAST_LABEL, PROCESS_LABEL, METHOD_LABEL } from '@/labels'
 import {
   Screen, Header, Section, Card, Button, Field, TextInput, Select, Sheet,
-  Empty, Stat, FreshnessRing, Stepper, Toggle, Chip,
+  Empty, Stat, FreshnessRing, Stepper, Toggle, Chip, GearButton, num,
 } from '@/components/ui'
+import { BackupBanner, SetupNudge } from '@/components/system'
 
 interface Props {
   route: Route
-  navigate: (r: Route) => void
+  navigate: (r: Route, replace?: boolean) => void
   back: () => void
 }
 
@@ -33,17 +41,30 @@ function typicalAltitude(country: string): number | null {
   return Math.round((o.altitudeMasl[0] + o.altitudeMasl[1]) / 2 / 50) * 50
 }
 
-export default function ShelfScreen({ route, navigate, back }: Props) {
+export default function BeansScreen({ route, navigate }: Props) {
   const beans = useStore((s) => s.beans)
   const bags = useStore((s) => s.bags)
   const brews = useStore((s) => s.brews)
+  const lastBeanId = useStore((s) => s.settings.lastBeanId)
   const [showNew, setShowNew] = useState(route.detail === 'new')
+  /**
+   * Die Vorauswahl. Erst sie schaltet die Aktionen frei — ein Tippen auf
+   * eine Bohne soll nicht sofort irgendwo hinspringen, sondern zeigen,
+   * was mit dieser Bohne möglich ist.
+   *
+   * Sie steht zusätzlich in der Route, damit sie den Weg nach Brühen und
+   * zurück übersteht: Ohne das sprang die Auswahl beim Zurückkommen auf
+   * die zuletzt gebrühte Bohne, nicht auf die gerade gewählte.
+   */
+  const [selected, setSelected] = useState<string | undefined>(route.id ?? lastBeanId)
+  const waehle = (id: string | undefined) => {
+    setSelected(id)
+    // Ersetzen, nicht anhängen: Ein Auswahlwechsel ist kein Schritt, den
+    // man mit der Zurück-Geste rückgängig machen will.
+    navigate({ tab: 'beans', id }, true)
+  }
 
-  const detailBean = route.detail === 'bean' ? beans.find((b) => b.id === route.id) : undefined
-
-  if (detailBean) return <BeanDetail bean={detailBean} onBack={back} />
-
-  // „Welche Bohne heute?“ — nach Frischefenster sortiert (Briefing Teil D)
+  // „Welche Bohne heute?" — nach Frischefenster sortiert (Briefing Teil D)
   const ranked = beans
     .map((b) => {
       const best = bestMethodFor(b)
@@ -62,57 +83,135 @@ export default function ShelfScreen({ route, navigate, back }: Props) {
   return (
     <Screen>
       <Header
-        title="Regal"
+        title="Beans"
+        large
         right={
-          <Button size="sm" onClick={() => setShowNew(true)}>
-            + Bohne
-          </Button>
+          <div className="flex items-center gap-1">
+            {beans.length > 0 && (
+              <Button size="sm" variant="secondary" onClick={() => setShowNew(true)}>
+                + Bohne
+              </Button>
+            )}
+            {/* Setup gehört nicht in den Weg: Es wird einmal eingerichtet
+                und danach selten angefasst. Ein Zahnrad reicht. */}
+            <GearButton onClick={() => navigate({ tab: 'setup' })} />
+          </div>
         }
       />
 
       {beans.length === 0 ? (
         <Empty
-          title="Regal ist leer"
+          title="Noch keine Bohne"
           body="Trag deine erste Bohne ein. Je mehr du angibst — Röstdatum, Höhe, Aufbereitung — desto präziser wird der Startpunkt."
           action={<Button onClick={() => setShowNew(true)}>Erste Bohne anlegen</Button>}
         />
       ) : (
-        <Section title="Bohnen" action={<span className="text-[12px] text-faint">nach Frische</span>}>
-          <div className="space-y-2">
-            {ranked.map(({ bean, fresh, count, best }) => (
-              <Card key={bean.id} onClick={() => navigate({ tab: 'shelf', detail: 'bean', id: bean.id })}>
-                <div className="flex items-center gap-3">
-                  <FreshnessRing score={fresh.score} label={fresh.days !== null ? String(fresh.days) : '?'} />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium">{bean.name}</p>
-                    <p className="truncate text-[13px] text-mute">
-                      {bean.roaster ? `${bean.roaster} · ` : ''}
-                      {ROAST_LABEL[bean.roastLevel]} · {PROCESS_LABEL[bean.process]}
-                    </p>
-                    <p className="mt-0.5 truncate text-[12px] text-faint">
-                      {fresh.label}
-                      {count > 0 && ` · ${count}× gebrüht`}
-                    </p>
-                    <p className="mt-0.5 truncate text-[12px] text-crema">
-                      Am besten als {METHOD_LABEL[best.method]}
-                    </p>
+        <>
+          <BackupBanner />
+          <SetupNudge onGrinder={() => navigate({ tab: 'setup', detail: 'grinder' })} />
+
+          <Section action={<span className="text-[12px] text-faint">nach Frische</span>}>
+            <div className="space-y-2">
+              {ranked.map(({ bean, fresh, count, best, bag }) => {
+                const aktiv = bean.id === selected
+                return (
+                  <div key={bean.id}>
+                    <Card
+                      tone={aktiv ? 'accent' : 'default'}
+                      onClick={() => waehle(aktiv ? undefined : bean.id)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <FreshnessRing
+                          score={fresh.score}
+                          label={fresh.days !== null ? String(fresh.days) : '?'}
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-[17px] leading-tight font-semibold">{bean.name}</p>
+                          <p className="mt-0.5 truncate text-[13px] text-mute">
+                            {bean.roaster ? `${bean.roaster} · ` : ''}
+                            {ROAST_LABEL[bean.roastLevel]} · {PROCESS_LABEL[bean.process]}
+                          </p>
+                          {/* Eine Aussage je Bohne, und zwar die dringendere:
+                              „überaltert" neben „am besten als V60" würde
+                              sich für den Leser widersprechen. */}
+                          {fresh.state === 'stale' ? (
+                            <p className="mt-1 truncate text-[12px] text-bad">
+                              {fresh.label} — die Bag gibt nichts mehr her
+                            </p>
+                          ) : bag?.remainingGrams !== undefined && bag.remainingGrams < 20 ? (
+                            <p className="mt-1 truncate text-[12px] text-warn">
+                              Nur noch {num(bag.remainingGrams, 0)} g in der Bag
+                            </p>
+                          ) : (
+                            <>
+                              <p className="mt-1 truncate text-[12px] text-faint">
+                                {fresh.label}
+                                {count > 0 && ` · ${count}× gebrüht`}
+                              </p>
+                              <p className="mt-0.5 truncate text-[12px] text-crema">
+                                Am besten als {METHOD_LABEL[best.method]}
+                              </p>
+                            </>
+                          )}
+                        </div>
+                        <span className={aktiv ? 'text-crema' : 'text-faint'}>{aktiv ? '✓' : '›'}</span>
+                      </div>
+                    </Card>
+
+                    {/* Die Aktionen erscheinen erst nach der Vorauswahl —
+                        sonst stünden sie dreifach je Bohne in der Liste und
+                        keine davon wüsste, worauf sie sich bezieht. */}
+                    {aktiv && (
+                      <div className="mt-2 grid grid-cols-3 gap-2">
+                        <Button className="w-full" onClick={() => navigate({ tab: 'brew', id: bean.id })}>
+                          Brühen
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          className="w-full"
+                          onClick={() => navigate({ tab: 'profile', id: bean.id })}
+                        >
+                          Profil
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          className="w-full"
+                          onClick={() => navigate({ tab: 'log', id: bean.id })}
+                        >
+                          Log
+                        </Button>
+                      </div>
+                    )}
                   </div>
-                  <span className="text-faint">›</span>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </Section>
+                )
+              })}
+            </div>
+          </Section>
+
+          {!selected && (
+            <p className="px-4 pt-4 text-[13px] leading-snug text-faint">
+              Bohne antippen — dann kannst du sie brühen, ihr Profil ansehen
+              oder ihre Protokolle durchgehen.
+            </p>
+          )}
+        </>
       )}
 
-      {showNew && <BeanSheet onClose={() => setShowNew(false)} />}
+      {/* Die gerade angelegte Bohne ist die, mit der man weitermachen
+          will — sie kommt vorausgewählt aus dem Formular zurück. */}
+      {showNew && (
+        <BeanSheet
+          onClose={() => setShowNew(false)}
+          onCreated={(id) => { setShowNew(false); waehle(id) }}
+        />
+      )}
     </Screen>
   )
 }
 
 // ── Detailansicht ─────────────────────────────────────────────────────
 
-function BeanDetail({ bean, onBack }: { bean: Bean; onBack: () => void }) {
+export function BeanDetail({ bean, onBack }: { bean: Bean; onBack: () => void }) {
   const allBags = useStore((s) => s.bags)
   const allBrews = useStore((s) => s.brews)
   const bags = useMemo(() => allBags.filter((b) => b.beanId === bean.id), [allBags, bean.id])
@@ -199,7 +298,18 @@ function BeanDetail({ bean, onBack }: { bean: Bean; onBack: () => void }) {
         ) : (
           <div className="space-y-2">
             {bags.map((bag) => {
-              const f = assessFreshness(bag, bean.preferredMethod ?? 'espresso', bean.roastLevel, !!bean.isDecaf, new Date(), bean.process)
+              // Dieselbe Methode wie in der Übersicht: Das Ruhefenster ist
+              // methodenabhängig — mit 'espresso' als Notnagel nannte die
+              // Detailansicht eine andere Tageszahl als die Karte, von der
+              // man gerade kam.
+              const f = assessFreshness(
+                bag,
+                bean.preferredMethod ?? bestMethodFor(bean).method,
+                bean.roastLevel,
+                !!bean.isDecaf,
+                new Date(),
+                bean.process,
+              )
               return (
                 <Card key={bag.id}>
                   <div className="flex items-center gap-3">
@@ -278,7 +388,13 @@ function BeanDetail({ bean, onBack }: { bean: Bean; onBack: () => void }) {
 
 // ── Formulare ─────────────────────────────────────────────────────────
 
-function BeanSheet({ onClose }: { onClose: () => void }) {
+function BeanSheet({
+  onClose,
+  onCreated,
+}: {
+  onClose: () => void
+  onCreated?: (id: string) => void
+}) {
   const addBean = useStore((s) => s.addBean)
   const addBag = useStore((s) => s.addBag)
 
@@ -309,7 +425,8 @@ function BeanSheet({ onClose }: { onClose: () => void }) {
       isDecaf: decaf || undefined,
     })
     addBag({ beanId: id, roastDate, purchasedGrams: grams, remainingGrams: grams, storage: 'ambient' })
-    onClose()
+    if (onCreated) onCreated(id)
+    else onClose()
   }
 
   return (
@@ -318,7 +435,7 @@ function BeanSheet({ onClose }: { onClose: () => void }) {
       onClose={onClose}
       footer={
         <Button className="w-full" size="lg" disabled={!name.trim()} onClick={save}>
-          Ins Regal stellen
+          Bohne anlegen
         </Button>
       }
     >

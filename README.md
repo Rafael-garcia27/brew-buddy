@@ -81,7 +81,7 @@ Barista/
 ├── types/       Domänenmodell + Rechenkern (reine Funktionen)
 ├── src/
 │   ├── engine/  Startpunkt · Diagnose · Frische · Mühle · Lernen · Eignung
-│   ├── screens/ Brühen · Regal · Logbuch · Setup
+│   ├── screens/ Beans (Start) · Brühen · Logbuch · Setup
 │   └── store/   Zustand + IndexedDB
 └── docs/        Briefing · Solution Design · Vergleich mit dem Vorgänger
 ```

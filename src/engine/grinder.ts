@@ -142,7 +142,11 @@ export function describeCorrection(c: GrindCorrection, grinder?: Grinder): strin
   const richtung = c.steps > 0 || c.percent > 0 ? 'gröber' : 'feiner'
   if (c.hasSteps) {
     const n = Math.abs(c.steps)
-    const um = c.micronDelta ? ` (≈ ${c.micronDelta > 0 ? '+' : ''}${Math.round(c.micronDelta)} µm)` : ''
+    // Typografisches Minus: In „−37 µm" neben einer Klickzahl ist der
+    // Bindestrich zu kurz, um als Vorzeichen gelesen zu werden.
+    const um = c.micronDelta
+      ? ` (≈ ${c.micronDelta > 0 ? '+' : '−'}${Math.abs(Math.round(c.micronDelta))} µm)`
+      : ''
     // Eine stufenlose Skala kennt keine Klicks. „2 Klicks" wäre dort nicht
     // nur falsch benannt, sondern auch nicht ablesbar — der Nutzer sucht
     // eine Zahl auf dem Regler, keine Rastungen.
