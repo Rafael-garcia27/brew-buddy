@@ -131,6 +131,21 @@ export const EMPTY_LEARNED: LearnedModels = {
 
 // ── Gesamtzustand ─────────────────────────────────────────────────────
 
+/**
+ * Was beim Löschen einer Bohne wegfällt.
+ *
+ * Nicht nur der Eintrag: Mit der Bohne gehen ihre Tüten und ihre
+ * Protokolle. Wer das versehentlich auslöst — etwa mit einer
+ * Wischgeste —, verliert die Datenbasis, aus der die App gelernt hat.
+ * Deshalb reicht das Löschen dieses Bündel heraus, damit es
+ * zurückgelegt werden kann.
+ */
+export interface BeanTrash {
+  bean: Bean
+  bags: Bag[]
+  brews: Brew[]
+}
+
 export interface AppState {
   schemaVersion: number
   beans: Bean[]

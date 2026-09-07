@@ -6,7 +6,7 @@
  * testbar (Solution Design §4).
  */
 import { create } from 'zustand'
-import type { AppState, Settings, AppMode } from '@/domain'
+import type { AppState, Settings, AppMode, BeanTrash } from '@/domain'
 import type { Bean, Bag, Brew, Grinder, Water, BrewMethod } from '@domain'
 import { emptyState } from '@/domain'
 import { SCHEMA_VERSION, INTEGRATED_GRINDER_ID } from '@/config'
@@ -34,7 +34,9 @@ interface StoreActions {
 
   addBean: (b: Omit<Bean, 'id' | 'createdAt'>) => string
   updateBean: (id: string, patch: Partial<Bean>) => void
-  deleteBean: (id: string) => void
+  /** Löscht und gibt zurück, was dafür entfernt wurde — siehe BeanTrash. */
+  deleteBean: (id: string) => BeanTrash | null
+  restoreBean: (papierkorb: BeanTrash) => void
 
   addBag: (b: Omit<Bag, 'id' | 'createdAt' | 'depleted'>) => string
   updateBag: (id: string, patch: Partial<Bag>) => void
@@ -83,7 +85,7 @@ function commit(set: (fn: (s: Store) => Partial<Store>) => void, relearn = true)
   })
 }
 
-export const useStore = create<Store>((set) => ({
+export const useStore = create<Store>((set, get) => ({
   ...emptyState(SCHEMA_VERSION),
   ready: false,
 
@@ -124,10 +126,33 @@ export const useStore = create<Store>((set) => ({
     commit(set)
   },
   deleteBean: (id) => {
+    // Was hier verschwindet, ist mehr als ein Eintrag: Mit der Bohne
+    // gehen ihre Tüten UND ihre Protokolle. Bei einer Bohne, die seit
+    // Monaten läuft, sind das die Daten, aus denen die App gelernt hat.
+    // Deshalb gibt das Löschen zurück, was es entfernt hat.
+    const s = get()
+    const bean = s.beans.find((x) => x.id === id)
+    if (!bean) return null
+    const papierkorb: BeanTrash = {
+      bean,
+      bags: s.bags.filter((x) => x.beanId === id),
+      brews: s.brews.filter((x) => x.beanId === id),
+    }
+    set((st) => ({
+      beans: st.beans.filter((x) => x.id !== id),
+      bags: st.bags.filter((x) => x.beanId !== id),
+      brews: st.brews.filter((x) => x.beanId !== id),
+    }))
+    commit(set)
+    return papierkorb
+  },
+  restoreBean: ({ bean, bags, brews }) => {
     set((s) => ({
-      beans: s.beans.filter((x) => x.id !== id),
-      bags: s.bags.filter((x) => x.beanId !== id),
-      brews: s.brews.filter((x) => x.beanId !== id),
+      // Nur einfügen, was fehlt: Ein zweiter Klick auf „Rückgängig"
+      // darf keine Dubletten anlegen.
+      beans: s.beans.some((x) => x.id === bean.id) ? s.beans : [...s.beans, bean],
+      bags: [...s.bags, ...bags.filter((b) => !s.bags.some((x) => x.id === b.id))],
+      brews: [...s.brews, ...brews.filter((b) => !s.brews.some((x) => x.id === b.id))],
     }))
     commit(set)
   },

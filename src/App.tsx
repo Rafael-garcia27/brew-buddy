@@ -11,9 +11,11 @@
  * Setup fällt aus dieser Logik heraus: Es gehört keiner Bohne und wird
  * einmal eingerichtet. Es sitzt hinter dem Zahnrad im Kopf von Beans.
  */
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from './router'
 import { useStore } from './store'
+import type { BeanTrash } from './domain'
+import { UndoBar } from './components/system'
 import BrewScreen from './screens/BrewScreen'
 import BeansScreen, { BeanDetail } from './screens/BeansScreen'
 import LogScreen from './screens/LogScreen'
@@ -24,6 +26,23 @@ export default function App() {
   const ready = useStore((s) => s.ready)
   const hydrate = useStore((s) => s.hydrate)
   const beans = useStore((s) => s.beans)
+  const restoreBean = useStore((s) => s.restoreBean)
+
+  /**
+   * Was gerade gelöscht wurde, für „Rückgängig“.
+   *
+   * Liegt hier und nicht im Profil: Der Bildschirm, auf dem gelöscht
+   * wird, verschwindet im selben Moment. Eine Wischgeste ohne Rückfrage
+   * braucht aber einen Weg zurück — mit der Bohne gehen ihre Tüten und
+   * ihre Protokolle, also die Datenbasis, aus der die App gelernt hat.
+   */
+  const [papierkorb, setPapierkorb] = useState<BeanTrash | null>(null)
+  const uhr = useRef<number | undefined>(undefined)
+  const merken = (t: BeanTrash) => {
+    window.clearTimeout(uhr.current)
+    setPapierkorb(t)
+    uhr.current = window.setTimeout(() => setPapierkorb(null), 8000)
+  }
 
   useEffect(() => {
     void hydrate()
@@ -55,7 +74,7 @@ export default function App() {
   return (
     <div className="flex h-[100dvh] flex-col">
       <main className="scroll-area flex-1 overflow-y-auto">
-        {route.tab === 'beans' && <BeansScreen route={route} navigate={navigate} back={heim} />}
+        {route.tab === 'beans' && <BeansScreen route={route} navigate={navigate} back={heim} onDeleted={merken} />}
 
         {/* Eine gelöschte Bohne macht ihre Aktionen gegenstandslos. Statt
             einen halb gefüllten Bildschirm zu zeigen, geht es zurück. */}
@@ -63,19 +82,39 @@ export default function App() {
           (bean ? (
             <BrewScreen route={route} navigate={navigate} back={heim} />
           ) : (
-            <BeansScreen route={{ tab: 'beans' }} navigate={navigate} back={heim} />
+            <BeansScreen route={{ tab: 'beans' }} navigate={navigate} back={heim} onDeleted={merken} />
           ))}
 
         {route.tab === 'profile' &&
           (bean ? (
-            <BeanDetail bean={bean} onBack={heim} />
+            <BeanDetail bean={bean} onBack={heim} onDeleted={merken} />
           ) : (
-            <BeansScreen route={{ tab: 'beans' }} navigate={navigate} back={heim} />
+            <BeansScreen route={{ tab: 'beans' }} navigate={navigate} back={heim} onDeleted={merken} />
           ))}
 
         {route.tab === 'log' && <LogScreen route={route} navigate={navigate} back={heim} />}
         {route.tab === 'setup' && <SetupScreen route={route} navigate={navigate} back={heim} />}
       </main>
+
+      {papierkorb && (
+        <UndoBar
+          text={`„${papierkorb.bean.name}“ gelöscht`}
+          detail={zaehlText(papierkorb)}
+          onUndo={() => {
+            window.clearTimeout(uhr.current)
+            restoreBean(papierkorb)
+            setPapierkorb(null)
+          }}
+        />
+      )}
     </div>
   )
+}
+
+/** Was mit der Bohne wegfiel — die Zahl macht den Verlust greifbar. */
+function zaehlText({ bags, brews }: BeanTrash): string | undefined {
+  const teile: string[] = []
+  if (bags.length) teile.push(`${bags.length} ${bags.length === 1 ? 'Bag' : 'Bags'}`)
+  if (brews.length) teile.push(`${brews.length} ${brews.length === 1 ? 'Brew' : 'Brews'}`)
+  return teile.length ? `mit ${teile.join(' und ')}` : undefined
 }

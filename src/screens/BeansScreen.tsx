@@ -15,6 +15,7 @@ import { lazy, Suspense, useMemo, useState } from 'react'
 import type { Route } from '@/router'
 import { useStore } from '@/store'
 import type { Bean, RoastLevel, Process, BrewMethod } from '@domain'
+import type { BeanTrash } from '@/domain'
 import { assessFreshness } from '@/engine/freshness'
 import { suitability, bestMethodFor, SUITABILITY_LABEL } from '@/engine/suitability'
 import { getOrigin, BLEND, findCountry, originOptions } from '@/kb'
@@ -32,11 +33,19 @@ import { BackupBanner, SetupNudge } from '@/components/system'
  * verschiebt.
  */
 const OriginMap = lazy(() => import('@/components/OriginMap'))
+import SwipeReveal from '@/components/SwipeReveal'
 
 interface Props {
   route: Route
   navigate: (r: Route, replace?: boolean) => void
   back: () => void
+  /**
+   * Eine Bohne wurde gelöscht — mit dem, was dabei wegfiel.
+   *
+   * Der Hinweis mit „Rückgängig“ gehört eine Ebene höher: Er soll auch
+   * dann noch stehen, wenn dieser Bildschirm neu aufgebaut wird.
+   */
+  onDeleted?: (papierkorb: BeanTrash) => void
 }
 
 /** Typische Anbauhöhe eines Ursprungslands, Mitte der bekannten Spanne. */
@@ -46,12 +55,15 @@ function typicalAltitude(country: string): number | null {
   return Math.round((o.altitudeMasl[0] + o.altitudeMasl[1]) / 2 / 50) * 50
 }
 
-export default function BeansScreen({ route, navigate }: Props) {
+export default function BeansScreen({ route, navigate, onDeleted }: Props) {
   const beans = useStore((s) => s.beans)
   const bags = useStore((s) => s.bags)
   const brews = useStore((s) => s.brews)
   const lastBeanId = useStore((s) => s.settings.lastBeanId)
   const [showNew, setShowNew] = useState(route.detail === 'new')
+  /** Gesetzt: Bearbeiten-Blatt für genau diese Bohne. */
+  const [editBean, setEditBean] = useState<Bean | undefined>()
+  const deleteBean = useStore((st) => st.deleteBean)
   /**
    * Die Vorauswahl. Erst sie schaltet die Aktionen frei — ein Tippen auf
    * eine Bohne soll nicht sofort irgendwo hinspringen, sondern zeigen,
@@ -67,6 +79,14 @@ export default function BeansScreen({ route, navigate }: Props) {
     // Ersetzen, nicht anhängen: Ein Auswahlwechsel ist kein Schritt, den
     // man mit der Zurück-Geste rückgängig machen will.
     navigate({ tab: 'beans', id }, true)
+  }
+
+  const loeschen = (bean: Bean) => {
+    const papierkorb = deleteBean(bean.id)
+    // Die gelöschte Bohne darf nicht ausgewählt bleiben — sonst zeigen
+    // die Aktionen darunter auf etwas, das es nicht mehr gibt.
+    if (bean.id === selected) waehle(undefined)
+    if (papierkorb && onDeleted) onDeleted(papierkorb)
   }
 
   // „Welche Bohne heute?" — nach Frischefenster sortiert (Briefing Teil D)
@@ -121,6 +141,19 @@ export default function BeansScreen({ route, navigate }: Props) {
                 const aktiv = bean.id === selected
                 return (
                   <div key={bean.id}>
+                    {/* Wischen legt Bearbeiten frei, weiter ziehen deutet
+                        Löschen an, ganz hinausschieben löscht. Die
+                        Aktionsflächen sind so hoch wie die Zeile —
+                        deshalb sitzt die Geste hier und nicht im Profil,
+                        wo sie über eine ganze Karte gehen müsste. */}
+                    <SwipeReveal
+                      actions={[
+                        { label: 'Edit', onClick: () => setEditBean(bean) },
+                        { label: 'Löschen', tone: 'bad', onClick: () => loeschen(bean) },
+                      ]}
+                      onSwipeAway={() => loeschen(bean)}
+                      swipeAwayLabel="Loslassen zum Löschen"
+                    >
                     <Card
                       tone={aktiv ? 'accent' : 'default'}
                       onClick={() => waehle(aktiv ? undefined : bean.id)}
@@ -162,6 +195,7 @@ export default function BeansScreen({ route, navigate }: Props) {
                         <span className={aktiv ? 'text-crema' : 'text-faint'}>{aktiv ? '✓' : '›'}</span>
                       </div>
                     </Card>
+                    </SwipeReveal>
 
                     {/* Die Aktionen erscheinen erst nach der Vorauswahl —
                         sonst stünden sie dreifach je Bohne in der Liste und
@@ -202,6 +236,8 @@ export default function BeansScreen({ route, navigate }: Props) {
         </>
       )}
 
+      {editBean && <BeanSheet bean={editBean} onClose={() => setEditBean(undefined)} />}
+
       {/* Die gerade angelegte Bohne ist die, mit der man weitermachen
           will — sie kommt vorausgewählt aus dem Formular zurück. */}
       {showNew && (
@@ -216,14 +252,34 @@ export default function BeansScreen({ route, navigate }: Props) {
 
 // ── Detailansicht ─────────────────────────────────────────────────────
 
-export function BeanDetail({ bean, onBack }: { bean: Bean; onBack: () => void }) {
+export function BeanDetail({
+  bean,
+  onBack,
+  onDeleted,
+}: {
+  bean: Bean
+  onBack: () => void
+  /**
+   * Gelöscht — mit dem, was dabei wegfiel.
+   *
+   * Der Hinweis mit „Rückgängig“ kann nicht hier stehen: Dieser
+   * Bildschirm ist im selben Moment weg. Er gehört eine Ebene höher.
+   */
+  onDeleted?: (papierkorb: BeanTrash) => void
+}) {
   const istBlend = bean.origins.some((o) => o.country === BLEND)
   const blendLaender = bean.origins.filter((o) => o.country !== BLEND)
+  const [showEdit, setShowEdit] = useState(false)
   const allBags = useStore((s) => s.bags)
   const allBrews = useStore((s) => s.brews)
   const bags = useMemo(() => allBags.filter((b) => b.beanId === bean.id), [allBags, bean.id])
   const brews = useMemo(() => allBrews.filter((b) => b.beanId === bean.id), [allBrews, bean.id])
   const deleteBean = useStore((s) => s.deleteBean)
+  const loeschen = () => {
+    const papierkorb = deleteBean(bean.id)
+    if (papierkorb && onDeleted) onDeleted(papierkorb)
+    onBack()
+  }
   const addBag = useStore((s) => s.addBag)
   const updateBag = useStore((s) => s.updateBag)
   const [showBag, setShowBag] = useState(false)
@@ -240,7 +296,14 @@ export function BeanDetail({ bean, onBack }: { bean: Bean; onBack: () => void })
     <Screen>
       <Header title={bean.name} subtitle={bean.roaster} onBack={onBack} />
 
-      <Section title="Profil">
+      <Section
+        title="Profil"
+        action={
+          <Button size="sm" variant="ghost" className="-mr-3" onClick={() => setShowEdit(true)}>
+            Bearbeiten
+          </Button>
+        }
+      >
         <Card>
           {/* Wo sie wächst, bevor was sie ist: Die Karte ist der einzige
               Teil dieses Bildschirms, den man ohne Lesen erfasst. */}
@@ -394,19 +457,20 @@ export function BeanDetail({ bean, onBack }: { bean: Bean; onBack: () => void })
       )}
 
       <Section>
+        {/* Bleibt neben der Wischgeste: Sie ist der schnelle Weg, dieser
+            hier der auffindbare — und der einzige ohne Zeigergerät. */}
         <Button
           variant="danger"
           className="w-full"
           onClick={() => {
-            if (confirm(`„${bean.name}“ mit allen Bags und Protokollen löschen?`)) {
-              deleteBean(bean.id)
-              onBack()
-            }
+            if (confirm(`„${bean.name}“ mit allen Bags und Protokollen löschen?`)) loeschen()
           }}
         >
           Bohne löschen
         </Button>
       </Section>
+
+      {showEdit && <BeanSheet bean={bean} onClose={() => setShowEdit(false)} />}
 
       {showBag && (
         <BagSheet
@@ -423,15 +487,28 @@ export function BeanDetail({ bean, onBack }: { bean: Bean; onBack: () => void })
 
 // ── Formulare ─────────────────────────────────────────────────────────
 
+/**
+ * Dasselbe Formular fürs Anlegen und fürs Ändern.
+ *
+ * Zwei Formulare für dieselben Felder wären zwei Orte, an denen eine neue
+ * Angabe nachgetragen werden muss — und einer davon wird vergessen. Nur
+ * die erste Tüte fehlt beim Bearbeiten: Röstdatum und Menge gehören zur
+ * Tüte, nicht zur Bohne, und werden unten im Profil eigens verwaltet.
+ */
 function BeanSheet({
+  bean,
   onClose,
   onCreated,
 }: {
+  /** Gesetzt: bearbeiten. Fehlt: anlegen. */
+  bean?: Bean
   onClose: () => void
   onCreated?: (id: string) => void
 }) {
   const addBean = useStore((s) => s.addBean)
   const addBag = useStore((s) => s.addBag)
+  const updateBean = useStore((s) => s.updateBean)
+  const bearbeiten = !!bean
 
   // Rohwert abonnieren, Vorgabe DANACH setzen: `?? []` im Selektor gibt
   // bei jedem Rendern eine neue Referenz zurück, und der Store vergleicht
@@ -441,19 +518,29 @@ function BeanSheet({
   /** Reihenfolge: Exporteure nach Menge, dann eigene Profile, dann Nachgetragenes. */
   const laenderliste = useMemo(() => originOptions(extraOrigins ?? []), [extraOrigins])
 
-  const [name, setName] = useState('')
-  const [roaster, setRoaster] = useState('')
-  const [country, setCountry] = useState(laenderliste[0] ?? BLEND)
+  const [name, setName] = useState(bean?.name ?? '')
+  const [roaster, setRoaster] = useState(bean?.roaster ?? '')
+  const [country, setCountry] = useState(() => {
+    if (!bean) return laenderliste[0] ?? BLEND
+    if (bean.origins.some((o) => o.country === BLEND)) return BLEND
+    return bean.origins[0]?.country ?? (laenderliste[0] ?? BLEND)
+  })
   /** Beim Blend: die genannten Bestandteile. Leer heißt „irgendwo im Gürtel". */
-  const [blendLaender, setBlendLaender] = useState<string[]>([])
-  const [roast, setRoast] = useState<RoastLevel>('medium')
-  const [process, setProcess] = useState<Process>('washed')
+  const [blendLaender, setBlendLaender] = useState<string[]>(
+    () => bean?.origins.filter((o) => o.country !== BLEND).map((o) => o.country) ?? [],
+  )
+  const [roast, setRoast] = useState<RoastLevel>(bean?.roastLevel ?? 'medium')
+  const [process, setProcess] = useState<Process>(bean?.process ?? 'washed')
   // Kein fester Vorgabewert: 1500 m wäre eine erfundene Angabe, die jede
   // Bohne bekäme — und die Herkunftsableitung der Engine käme nie zum Zug.
-  const [altitude, setAltitude] = useState<number | null>(null)
+  // Beim Bearbeiten die Mitte der gespeicherten Spanne, denn genau die
+  // hat das Formular beim Anlegen daraus gemacht.
+  const [altitude, setAltitude] = useState<number | null>(
+    bean?.altitudeMasl ? Math.round((bean.altitudeMasl[0] + bean.altitudeMasl[1]) / 2) : null,
+  )
   const [altitudeTouched, setAltitudeTouched] = useState(false)
-  const [notes, setNotes] = useState('')
-  const [decaf, setDecaf] = useState(false)
+  const [notes, setNotes] = useState(bean?.flavorNotes?.join(', ') ?? '')
+  const [decaf, setDecaf] = useState(!!bean?.isDecaf)
   const [roastDate, setRoastDate] = useState(new Date().toISOString().slice(0, 10))
   const [grams, setGrams] = useState(250)
 
@@ -467,16 +554,26 @@ function BeanSheet({
         ? [{ country: BLEND }, ...blendLaender.map((c) => ({ country: c }))]
         : [{ country }]
 
-    const id = addBean({
+    const felder = {
       name: name.trim(),
       roaster: roaster.trim() || undefined,
       origins,
       process,
       roastLevel: roast,
-      altitudeMasl: altitude !== null ? [altitude - 100, altitude + 100] : undefined,
+      altitudeMasl: (altitude !== null ? [altitude - 100, altitude + 100] : undefined) as
+        | [number, number]
+        | undefined,
       flavorNotes: notes ? notes.split(',').map((s) => s.trim()).filter(Boolean) : undefined,
       isDecaf: decaf || undefined,
-    })
+    }
+
+    if (bean) {
+      updateBean(bean.id, felder)
+      onClose()
+      return
+    }
+
+    const id = addBean(felder)
     addBag({ beanId: id, roastDate, purchasedGrams: grams, remainingGrams: grams, storage: 'ambient' })
     if (onCreated) onCreated(id)
     else onClose()
@@ -484,11 +581,11 @@ function BeanSheet({
 
   return (
     <Sheet
-      title="Neue Bohne"
+      title={bearbeiten ? 'Bohne bearbeiten' : 'Neue Bohne'}
       onClose={onClose}
       footer={
         <Button className="w-full" size="lg" disabled={!name.trim()} onClick={save}>
-          Bohne anlegen
+          {bearbeiten ? 'Änderungen speichern' : 'Bohne anlegen'}
         </Button>
       }
     >
@@ -584,17 +681,22 @@ function BeanSheet({
         </Field>
         <Toggle checked={decaf} onChange={setDecaf} label="Decaf" />
 
-        <div className="border-t border-line pt-4">
-          <p className="mb-3 text-[13px] font-semibold tracking-wide text-mute uppercase">Erste Bag</p>
-          <Field label="Roast Date" hint="Ohne dieses Datum kann ich die Frische nicht mitführen">
-            <TextInput value={roastDate} onChange={setRoastDate} type="date" />
-          </Field>
-          <div className="mt-4">
-            <Field label="Menge">
-              <Stepper value={grams} onChange={setGrams} step={50} min={50} max={2000} unit="g" />
+        {/* Nur beim Anlegen: Röstdatum und Menge gehören zur Tüte, nicht
+            zur Bohne. Beim Bearbeiten stünde hier ein Feld, das eine
+            bestehende Tüte still überschreiben würde. */}
+        {!bearbeiten && (
+          <div className="border-t border-line pt-4">
+            <p className="mb-3 text-[13px] font-semibold tracking-wide text-mute uppercase">Erste Bag</p>
+            <Field label="Roast Date" hint="Ohne dieses Datum kann ich die Frische nicht mitführen">
+              <TextInput value={roastDate} onChange={setRoastDate} type="date" />
             </Field>
+            <div className="mt-4">
+              <Field label="Menge">
+                <Stepper value={grams} onChange={setGrams} step={50} min={50} max={2000} unit="g" />
+              </Field>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </Sheet>
   )

@@ -154,6 +154,41 @@ export function SetupNudge({ onGrinder }: { onGrinder: () => void }) {
   )
 }
 
+/**
+ * Rückgängig-Leiste nach einer Löschung.
+ *
+ * Statt einer Rückfrage VOR dem Löschen: Die Wischgeste soll sich
+ * flüssig anfühlen, und ein Dialog mitten in der Bewegung nimmt ihr
+ * genau das. Der Weg zurück kommt deshalb danach — acht Sekunden lang,
+ * dann ist es endgültig.
+ */
+export function UndoBar({
+  text,
+  detail,
+  onUndo,
+}: {
+  text: string
+  detail?: string
+  onUndo: () => void
+}) {
+  return (
+    <div className="pb-safe fixed inset-x-0 bottom-0 z-40 px-4 pb-3">
+      {/* Kein Schließkreuz: Auf 375 px kostet es die 44 px, die der Text
+          zum Lesen braucht — „Hausmischung gelöscht" wurde damit zu
+          „Hausmischung gelös…". Die Leiste geht von selbst. */}
+      <div className="flex items-center gap-3 rounded-2xl border border-line bg-raised px-4 py-3 shadow-lg">
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[14px]">{text}</p>
+          {detail && <p className="truncate text-[13px] text-mute">{detail}</p>}
+        </div>
+        <Button size="sm" onClick={onUndo}>
+          Rückgängig
+        </Button>
+      </div>
+    </div>
+  )
+}
+
 /** Aktualisierung des Service Workers sichtbar machen */
 export function UpdateToast() {
   const [ready, setReady] = useState(false)
