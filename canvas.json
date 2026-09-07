@@ -1,0 +1,19 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "title": "Beans (Start)", "x": 0, "y": 0, "w": 375, "h": 812 },
+    { "file": "Startpunkt.dc.html", "title": "Brühen · Startpunkt", "x": 465, "y": 0, "w": 375, "h": 1020 },
+    { "file": "Erfassen.dc.html", "title": "Brühen · Erfassen", "x": 930, "y": 0, "w": 375, "h": 980 },
+    { "file": "Laufkontrolle.dc.html", "title": "Auswerten · Stufe 1", "x": 1395, "y": 0, "w": 375, "h": 1080 },
+    { "file": "Ergebnis.dc.html", "title": "Auswerten · Ergebnis", "x": 1860, "y": 0, "w": 375, "h": 800 }
+  ],
+  "annotations": [
+    {
+      "id": "flow",
+      "x": 0,
+      "y": -270,
+      "w": 700,
+      "text": "Der Kernloop von links nach rechts, 375 px breit — die Referenzbreite, gegen die die Schwellen der App gemessen sind.\n\nTokens, Abstände und Komponentenmaße sind 1:1 aus src/index.css und src/components/ui.tsx übernommen. Der Umschalter über jedem Artboard fährt die zweite Palette (Espresso)."
+    }
+  ],
+  "launch": { "view": "canvas" }
+}

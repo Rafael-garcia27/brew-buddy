@@ -1,0 +1,110 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    .app {
+      --paper:#faf4ea; --card:#fffdf9; --raised:#f3e8d6; --line:#e2d2ba;
+      --ink:#4e3629; --mute:#8a6f58; --faint:#807263; --crema:#8c5a2b;
+      --on-crema:#fdf7ed; --ok:#5f7a4a; --warn:#9c6825; --bad:#a6402f;
+    }
+    .app.espresso {
+      --paper:#1c1512; --card:#261d18; --raised:#33261f; --line:#453529;
+      --ink:#f7efe3; --mute:#b8a291; --faint:#806a58; --crema:#d9a566;
+      --on-crema:#2a1c12; --ok:#8fb36b; --warn:#d9a566; --bad:#d96a56;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    html, body { height: 100%; }
+    .app {
+      /* 100vh, nicht 100%: Sonst endet der Hintergrund am Inhalt und der
+         Rest des Artboard-Rahmens bleibt weiß. */
+      min-height: 100vh;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .tnum { font-variant-numeric: tabular-nums; }
+    a { color: var(--crema); }
+    a:hover { color: var(--ink); }
+    .sect { padding: 24px 16px 0; }
+    .sect-h { margin-bottom: 8px; font-size: 13px; font-weight: 600; letter-spacing: 0.03em; color: var(--mute); text-transform: uppercase; }
+  </style>
+</helmet>
+
+<div class="{{cls}}">
+
+  <div style="display: flex; align-items: center; gap: 12px; height: 58px; padding: 0 16px; border-bottom: 1px solid var(--line)">
+    <div style="display: flex; height: 44px; width: 44px; margin-left: -8px; flex-shrink: 0; align-items: center; justify-content: center; border-radius: 999px; color: var(--crema)">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <path d="M15 19l-7-7 7-7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    </div>
+    <div style="min-width: 0; flex: 1">
+      <div style="font-size: 22px; line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Finca Testera</div>
+      <div style="margin-top: 2px; font-size: 13px; color: var(--mute); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Espresso · 14 Tage — im Fenster</div>
+    </div>
+  </div>
+
+  <!-- Stufe eins bleibt sichtbar: sonst stünde hier eine Empfehlung ohne
+       die Zahl, aus der sie entstanden ist. -->
+  <div class="sect">
+    <div class="sect-h">Laufkontrolle</div>
+    <div style="border-radius: 16px; border: 1px solid color-mix(in srgb, var(--crema) 40%, transparent); background: var(--card); padding: 16px">
+      <p style="margin: 0; font-size: 16px; line-height: 1.2; font-weight: 600">Zu langsam durchgelaufen</p>
+      <ul style="margin: 12px 0 0; padding: 12px 0 0; list-style: none; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 6px">
+        <li style="font-size: 13px; line-height: 1.35; color: var(--warn)">
+          ! Deine letzten Zeiten streuen um ±5 s — stärker als die Abweichung, die hier korrigiert
+          werden soll. Solange das so ist, jagt jede Mahlgradkorrektur das Rauschen deiner
+          Vorbereitung.
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Stufe zwei ergänzt den Geschmack. Genau EINE Korrektur kommt heraus. -->
+  <div class="sect">
+    <div class="sect-h">Empfehlung</div>
+    <div style="border-radius: 16px; border: 1px solid color-mix(in srgb, var(--crema) 40%, transparent); background: var(--card); padding: 16px">
+      <p style="margin: 0 0 4px; font-size: 13px; font-weight: 500; letter-spacing: 0.03em; color: var(--mute); text-transform: uppercase">Zu viel extrahiert</p>
+      <p style="margin: 0; font-size: 22px; line-height: 1.15; font-weight: 600; color: var(--crema)">3 Klicks gröber (≈ +38 µm)</p>
+      <p style="margin: 8px 0 0; font-size: 15px; line-height: 1.5">
+        Der Shot lief 31 s statt 22–28 s. Das sind +6 s auf die Zielmitte. Der Geschmack bestätigt
+        es: zu viel extrahiert.
+      </p>
+
+      <div style="margin-top: 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--raised); padding: 12px">
+        <p style="margin: 0; font-size: 12px; font-weight: 500; letter-spacing: 0.03em; color: var(--mute); text-transform: uppercase">Erwartung</p>
+        <p style="margin: 4px 0 0; font-size: 14px; line-height: 1.35">Erwartete Zeit danach: 24 s.</p>
+      </div>
+
+      <p style="margin: 8px 0 0; font-size: 12px; color: var(--faint)">Konfidenz: wahrscheinlich</p>
+      <p style="margin: 8px 0 0; font-size: 13px; color: var(--mute)">Falls das nicht hilft: Temperatur auf 92 °C.</p>
+
+      <div style="margin-top: 16px; display: flex; height: 48px; width: 100%; align-items: center; justify-content: center; border-radius: 16px; background: var(--crema); color: var(--on-crema); font-size: 16px; font-weight: 600">Übernehmen und nochmal</div>
+    </div>
+  </div>
+
+  <div class="sect">
+    <div style="display: flex; height: 56px; width: 100%; align-items: center; justify-content: center; border-radius: 16px; border: 1px solid var(--line); background: var(--raised); color: var(--ink); font-size: 17px">Fertig</div>
+  </div>
+
+  <div style="height: 40px"></div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"theme":{"editor":"enum","options":["Milchkaffee","Espresso"],"default":"Milchkaffee","section":"Darstellung"},"$preview":{"width":375,"height":800}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const dunkel = (this.props.theme ?? 'Milchkaffee') === 'Espresso';
+    return { cls: dunkel ? 'app espresso' : 'app' };
+  }
+}
+</script>
+</body>
+</html>

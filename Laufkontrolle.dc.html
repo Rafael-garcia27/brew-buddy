@@ -1,0 +1,159 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    .app {
+      --paper:#faf4ea; --card:#fffdf9; --raised:#f3e8d6; --line:#e2d2ba;
+      --ink:#4e3629; --mute:#8a6f58; --faint:#807263; --crema:#8c5a2b;
+      --on-crema:#fdf7ed; --ok:#5f7a4a; --warn:#9c6825; --bad:#a6402f;
+    }
+    .app.espresso {
+      --paper:#1c1512; --card:#261d18; --raised:#33261f; --line:#453529;
+      --ink:#f7efe3; --mute:#b8a291; --faint:#806a58; --crema:#d9a566;
+      --on-crema:#2a1c12; --ok:#8fb36b; --warn:#d9a566; --bad:#d96a56;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    html, body { height: 100%; }
+    .app {
+      /* 100vh, nicht 100%: Sonst endet der Hintergrund am Inhalt und der
+         Rest des Artboard-Rahmens bleibt weiß. */
+      min-height: 100vh;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .tnum { font-variant-numeric: tabular-nums; }
+    a { color: var(--crema); }
+    a:hover { color: var(--ink); }
+    .sect { padding: 24px 16px 0; }
+    .sect-row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+    .sect-h { font-size: 13px; font-weight: 600; letter-spacing: 0.03em; color: var(--mute); text-transform: uppercase; }
+    .dot { display: flex; height: 20px; width: 20px; align-items: center; justify-content: center; border-radius: 999px; border: 1px solid var(--line); font-size: 11px; font-weight: 600; color: var(--mute); flex-shrink: 0; }
+    .tri-l { font-size: 11px; font-weight: 500; letter-spacing: 0.06em; color: var(--mute); text-transform: uppercase; }
+    .tri-v { margin-top: 6px; font-size: 29px; line-height: 1; font-weight: 600; }
+    .tri-u { margin-left: 2px; font-size: 12px; font-weight: 400; color: var(--mute); }
+    .tri-h { margin-top: 4px; font-size: 11px; line-height: 1.2; color: var(--faint); }
+    .meta { display: inline-flex; align-items: baseline; gap: 4px; font-size: 13px; }
+    .chip { min-height: 44px; display: inline-flex; align-items: center; border-radius: 999px; padding: 0 14px; font-size: 15px; border: 1px solid var(--line); background: var(--raised); color: var(--mute); }
+    .chip-on-bad { border-color: color-mix(in srgb, var(--bad) 50%, transparent); background: color-mix(in srgb, var(--bad) 20%, transparent); color: var(--bad); font-weight: 500; }
+  </style>
+</helmet>
+
+<div class="{{cls}}">
+
+  <div style="display: flex; align-items: center; gap: 12px; height: 58px; padding: 0 16px; border-bottom: 1px solid var(--line)">
+    <div style="display: flex; height: 44px; width: 44px; margin-left: -8px; flex-shrink: 0; align-items: center; justify-content: center; border-radius: 999px; color: var(--crema)">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <path d="M15 19l-7-7 7-7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    </div>
+    <div style="min-width: 0; flex: 1">
+      <div style="font-size: 22px; line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Finca Testera</div>
+      <div style="margin-top: 2px; font-size: 13px; color: var(--mute); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Espresso · 14 Tage — im Fenster</div>
+    </div>
+  </div>
+
+  <!-- Stufe eins: nur Zahlen. Für diese Frage muss niemand probieren. -->
+  <div class="sect">
+    <div class="sect-row"><div class="sect-h">Der Durchlauf</div></div>
+    <div style="border-radius: 16px; border: 1px solid var(--line); background: var(--card); padding: 16px">
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr))">
+        <div style="min-width: 0; padding: 0 2px; text-align: center">
+          <div class="tri-l">Zeit</div>
+          <div class="tnum tri-v" style="color: var(--bad)">19<span class="tri-u">s</span></div>
+        </div>
+        <div style="min-width: 0; padding: 0 2px; text-align: center; border-left: 1px solid var(--line); border-right: 1px solid var(--line)">
+          <div class="tri-l">Ziel</div>
+          <div class="tnum tri-v">25<span class="tri-u">s</span></div>
+          <div class="tri-h">22–28 s</div>
+        </div>
+        <div style="min-width: 0; padding: 0 2px; text-align: center">
+          <div class="tri-l">Delta</div>
+          <div class="tnum tri-v" style="color: var(--warn)">−6<span class="tri-u">s</span></div>
+        </div>
+      </div>
+
+      <!-- Beim Espresso ist der Fluss die aussagekräftigere Größe -->
+      <div style="margin-top: 16px; border-top: 1px solid var(--line); padding-top: 12px">
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px">
+          <span class="meta"><span style="color: var(--faint)">Fluss</span><span class="tnum" style="font-weight: 500; color: var(--mute)">1,89 g/s</span><span class="dot">?</span></span>
+          <span class="meta"><span style="color: var(--faint)">Ziel</span><span class="tnum" style="font-weight: 500; color: var(--mute)">1,44 g/s</span></span>
+          <span class="meta"><span style="color: var(--faint)">Ratio</span><span class="tnum" style="font-weight: 500; color: var(--ok)">1:2,0</span><span class="dot">?</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Der eigene Eindruck als zweites, unabhängiges Signal -->
+  <div class="sect">
+    <div class="sect-row">
+      <div class="sect-h">Wie lief der Durchlauf?</div>
+      <span style="font-size: 12px; color: var(--faint)">optional</span>
+    </div>
+    <div style="display: flex; flex-wrap: wrap; gap: 8px">
+      <div class="chip chip-on-bad">Zu schnell</div>
+      <div class="chip">Passt</div>
+      <div class="chip">Zu langsam</div>
+    </div>
+    <p style="margin: 8px 0 0; font-size: 13px; line-height: 1.35; color: var(--faint)">
+      Deckt sich dein Eindruck mit der Uhr, steigt die Konfidenz der Empfehlung. Widerspricht er
+      ihr, ist genau das der Befund.
+    </p>
+  </div>
+
+  <!-- Befund und Maßnahme in einer Karte: getrennt stünde darüber eine
+       Karte, die nur eine Überschrift enthält. -->
+  <div class="sect">
+    <div class="sect-row"><div class="sect-h">Einschätzung</div></div>
+    <div style="border-radius: 16px; border: 1px solid color-mix(in srgb, var(--crema) 40%, transparent); background: var(--card); padding: 16px">
+      <p style="margin: 0 0 4px; font-size: 13px; font-weight: 500; letter-spacing: 0.03em; color: var(--mute); text-transform: uppercase">Zu schnell durchgelaufen</p>
+      <p style="margin: 0; font-size: 22px; line-height: 1.15; font-weight: 600; color: var(--crema)">3 Klicks feiner (≈ −37 µm)</p>
+      <p style="margin: 8px 0 0; font-size: 15px; line-height: 1.5">Der Shot lief 19 s statt 22–28 s. Das sind −6 s auf die Zielmitte.</p>
+
+      <!-- Die überprüfbare Vorhersage. Trifft sie ein, glaubt der Nutzer
+           auch der Geschmacksvorhersage. -->
+      <div style="margin-top: 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--raised); padding: 12px">
+        <p style="margin: 0; font-size: 12px; font-weight: 500; letter-spacing: 0.03em; color: var(--mute); text-transform: uppercase">Erwartung</p>
+        <p style="margin: 4px 0 0; font-size: 14px; line-height: 1.35">Erwartete Zeit danach: 25 s.</p>
+      </div>
+
+      <p style="margin: 8px 0 0; font-size: 12px; color: var(--faint)">Konfidenz: sicher</p>
+      <p style="margin: 8px 0 0; font-size: 13px; color: var(--mute)">Falls das nicht reicht: Temperatur auf 96 °C.</p>
+
+      <ul style="margin: 12px 0 0; padding: 12px 0 0; list-style: none; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 6px">
+        <li style="font-size: 13px; line-height: 1.35; color: var(--ok)">
+          ✓ Dein Eindruck deckt sich mit der gemessenen Zeit. Zwei unabhängige Signale in dieselbe
+          Richtung — die Korrektur ist so sicher, wie sie ohne Messung werden kann.
+        </li>
+      </ul>
+
+      <div style="margin-top: 16px; display: flex; height: 48px; width: 100%; align-items: center; justify-content: center; border-radius: 16px; background: var(--crema); color: var(--on-crema); font-size: 16px; font-weight: 600">Übernehmen und nochmal</div>
+    </div>
+  </div>
+
+  <div class="sect">
+    <div style="display: flex; height: 56px; width: 100%; align-items: center; justify-content: center; border-radius: 16px; background: var(--crema); color: var(--on-crema); font-size: 17px; font-weight: 600">Weiter zum Tasting</div>
+    <div style="margin-top: 8px; display: flex; height: 48px; width: 100%; align-items: center; justify-content: center; border-radius: 16px; border: 1px solid var(--line); background: var(--raised); color: var(--ink); font-size: 16px">Ohne Tasting abschließen</div>
+  </div>
+
+  <div style="height: 40px"></div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"theme":{"editor":"enum","options":["Milchkaffee","Espresso"],"default":"Milchkaffee","section":"Darstellung"},"$preview":{"width":375,"height":1080}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const dunkel = (this.props.theme ?? 'Milchkaffee') === 'Espresso';
+    return { cls: dunkel ? 'app espresso' : 'app' };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,128 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    /* Tokens 1:1 aus src/index.css — Pantone 476 C / 7401 C abgeleitet. */
+    .app {
+      --paper:#faf4ea; --card:#fffdf9; --raised:#f3e8d6; --line:#e2d2ba;
+      --ink:#4e3629; --mute:#8a6f58; --faint:#807263; --crema:#8c5a2b;
+      --on-crema:#fdf7ed; --ok:#5f7a4a; --warn:#9c6825; --bad:#a6402f;
+    }
+    .app.espresso {
+      --paper:#1c1512; --card:#261d18; --raised:#33261f; --line:#453529;
+      --ink:#f7efe3; --mute:#b8a291; --faint:#806a58; --crema:#d9a566;
+      --on-crema:#2a1c12; --ok:#8fb36b; --warn:#d9a566; --bad:#d96a56;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    html, body { height: 100%; }
+    .app {
+      /* 100vh, nicht 100%: Sonst endet der Hintergrund am Inhalt und der
+         Rest des Artboard-Rahmens bleibt weiß. */
+      min-height: 100vh;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .tnum { font-variant-numeric: tabular-nums; }
+    a { color: var(--crema); }
+    a:hover { color: var(--ink); }
+  </style>
+</helmet>
+
+<div class="{{cls}}">
+
+  <!-- Kopf: 70 px, weil Beans die Hauptoberfläche ist -->
+  <div style="display: flex; align-items: center; gap: 12px; height: 70px; padding: 0 16px; border-bottom: 1px solid var(--line)">
+    <div style="flex: 1; min-width: 0">
+      <div style="font-size: 30px; line-height: 1.15; font-weight: 600; letter-spacing: -0.02em">Beans</div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 4px">
+      <div style="display: inline-flex; align-items: center; justify-content: center; height: 44px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--raised); font-size: 14px; color: var(--ink)">+ Bohne</div>
+      <div style="display: flex; align-items: center; justify-content: center; height: 44px; width: 44px; margin-right: -8px; color: var(--faint)">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <circle cx="12" cy="12" r="3.2" stroke-width="1.6" />
+          <path d="M19.4 15a1.7 1.7 0 00.3 1.9l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.9-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1A1.7 1.7 0 008.9 19a1.7 1.7 0 00-1.9.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.9 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1A1.7 1.7 0 004.6 8.9a1.7 1.7 0 00-.3-1.9l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.9.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.9-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.9V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <div style="padding: 24px 16px 0">
+    <div style="display: flex; align-items: baseline; justify-content: flex-end; margin-bottom: 8px">
+      <span style="font-size: 12px; color: var(--faint)">nach Frische</span>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 8px">
+
+      <!-- Vorausgewählte Bohne: Rahmen in Crema, Häkchen rechts -->
+      <div>
+        <div style="border-radius: 16px; border: 1px solid color-mix(in srgb, var(--crema) 40%, transparent); background: var(--card); padding: 16px">
+          <div style="display: flex; align-items: center; gap: 12px">
+            <div style="position: relative; width: 36px; height: 36px; flex-shrink: 0">
+              <svg width="36" height="36" viewBox="0 0 36 36" style="transform: rotate(-90deg)">
+                <circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--line)" stroke-width="3" />
+                <circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--ok)" stroke-width="3" stroke-linecap="round" stroke-dasharray="87 97" />
+              </svg>
+              <span class="tnum" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600">14</span>
+            </div>
+            <div style="min-width: 0; flex: 1">
+              <div style="font-size: 17px; line-height: 1.2; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Finca Testera</div>
+              <div style="margin-top: 2px; font-size: 13px; color: var(--mute); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Medium · Washed</div>
+              <div style="margin-top: 4px; font-size: 12px; color: var(--faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">14 Tage — im Fenster · 6× gebrüht</div>
+              <div style="margin-top: 2px; font-size: 12px; color: var(--crema); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Am besten als V60</div>
+            </div>
+            <span style="color: var(--crema); font-size: 15px">✓</span>
+          </div>
+        </div>
+
+        <!-- Aktionen: erst nach der Vorauswahl, und nur für diese Bohne -->
+        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 8px">
+          <div style="display: inline-flex; align-items: center; justify-content: center; height: 48px; border-radius: 16px; background: var(--crema); color: var(--on-crema); font-size: 16px; font-weight: 600">Brühen</div>
+          <div style="display: inline-flex; align-items: center; justify-content: center; height: 48px; border-radius: 16px; border: 1px solid var(--line); background: var(--raised); color: var(--ink); font-size: 16px">Profil</div>
+          <div style="display: inline-flex; align-items: center; justify-content: center; height: 48px; border-radius: 16px; border: 1px solid var(--line); background: var(--raised); color: var(--ink); font-size: 16px">Log</div>
+        </div>
+      </div>
+
+      <!-- Nicht gewählt: neutraler Rahmen, Chevron statt Häkchen -->
+      <div style="border-radius: 16px; border: 1px solid var(--line); background: var(--card); padding: 16px">
+        <div style="display: flex; align-items: center; gap: 12px">
+          <div style="position: relative; width: 36px; height: 36px; flex-shrink: 0">
+            <svg width="36" height="36" viewBox="0 0 36 36" style="transform: rotate(-90deg)">
+              <circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--line)" stroke-width="3" />
+              <circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--warn)" stroke-width="3" stroke-linecap="round" stroke-dasharray="39 97" />
+            </svg>
+            <span class="tnum" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600">40</span>
+          </div>
+          <div style="min-width: 0; flex: 1">
+            <div style="font-size: 17px; line-height: 1.2; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Kenia Kirinyaga</div>
+            <div style="margin-top: 2px; font-size: 13px; color: var(--mute); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Light · Washed</div>
+            <div style="margin-top: 4px; font-size: 12px; color: var(--faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">40 Tage — über dem Optimum</div>
+            <div style="margin-top: 2px; font-size: 12px; color: var(--crema); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Am besten als V60</div>
+          </div>
+          <span style="color: var(--faint); font-size: 15px">›</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  <div style="height: 40px"></div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"theme":{"editor":"enum","options":["Milchkaffee","Espresso"],"default":"Milchkaffee","section":"Darstellung"},"$preview":{"width":375,"height":812}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const dunkel = (this.props.theme ?? 'Milchkaffee') === 'Espresso';
+    return { cls: dunkel ? 'app espresso' : 'app' };
+  }
+}
+</script>
+</body>
+</html>
