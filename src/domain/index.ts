@@ -59,6 +59,16 @@ export interface Settings {
   lastBackupAt?: string
   lastBeanId?: string
   lastMethod?: BrewMethod
+  /**
+   * Selbst nachgetragene Herkünfte.
+   *
+   * Die Auswahl führt die fünfzehn größten Exporteure und die Länder, für
+   * die die App ein Herkunftsprofil hat. Wer eine Bohne aus Laos oder
+   * Bolivien einträgt, soll sie beim nächsten Mal in der Liste finden
+   * statt sie wieder zu tippen. Geprüft wird gegen die Länderliste aus
+   * Natural Earth — es landet nur hier, was ein Land ist.
+   */
+  extraOrigins?: string[]
   onboardingDone: boolean
 }
 

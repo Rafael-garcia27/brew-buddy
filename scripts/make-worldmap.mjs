@@ -1,5 +1,16 @@
 /**
- * Erzeugt `data/worldmap.json` aus Natural Earth.
+ * Erzeugt `data/countries.json` und `data/worldmap.json` aus Natural Earth.
+ *
+ * Zwei Dateien, weil sie zu verschiedenen Zeiten gebraucht werden:
+ * Die Namensliste (klein) prüft im Bohnenformular, ob ein eingetippter
+ * Ländername gültig ist, und liegt deshalb im Hauptbündel. Die
+ * Ländergeometrie (groß) braucht nur das Profil und wird nachgeladen.
+ *
+ * Wichtig: Die Namensliste führt ALLE Länder, die Geometrie nur die im
+ * Ausschnitt. Sonst hätte die Eingabeprüfung Norwegen abgelehnt — es
+ * liegt nördlich der Kappung —, mit der Begründung, es sei kein Land.
+ * Der Ausschnitt ist eine Darstellungsentscheidung, keine Aussage
+ * darüber, welche Länder es gibt.
  *
  * Warum generiert und nicht von Hand gezeichnet: Ländergrenzen aus dem
  * Gedächtnis zu zeichnen ergibt eine Karte, die auf den ersten Blick
@@ -149,18 +160,23 @@ for (const f of geo.features) {
     if (yB > by1) by1 = yB
   }
 
-  if (!pfade.length) {
-    uebersprungen++
-    continue
-  }
+  // Ohne Pfade liegt das Land außerhalb des Ausschnitts. Es bleibt
+  // trotzdem ein Land und gehört in die Namensliste.
+  const imAusschnitt = pfade.length > 0
+  if (!imAusschnitt) uebersprungen++
 
-  const schwerpunktLat = latSum / latAnzahl
+  const schwerpunktLat = imAusschnitt ? latSum / latAnzahl : 90
   laender.push({
     iso,
     name,
-    d: pfade.join(''),
-    /** Umschließendes Rechteck in Kartenkoordinaten: x0 y0 x1 y1 */
-    b: [bx0, by0, bx1, by1],
+    en: p.NAME_EN || p.NAME,
+    ...(imAusschnitt
+      ? {
+          d: pfade.join(''),
+          /** Umschließendes Rechteck in Kartenkoordinaten: x0 y0 x1 y1 */
+          b: [bx0, by0, bx1, by1],
+        }
+      : {}),
     // Der Gürtel: Erzeugerland und Schwerpunkt in den Tropen.
     ...(istErzeuger && Math.abs(schwerpunktLat) <= GUERTEL_LAT ? { belt: true } : {}),
   })
@@ -168,22 +184,47 @@ for (const f of geo.features) {
 
 laender.sort((a, b) => a.iso.localeCompare(b.iso))
 
-const ausgabe = {
-  _generiert: 'scripts/make-worldmap.mjs — nicht von Hand bearbeiten',
-  _quelle: 'Natural Earth 110m Admin 0 Countries (gemeinfrei)',
+const HINWEIS = 'scripts/make-worldmap.mjs — nicht von Hand bearbeiten'
+const QUELLENHINWEIS = 'Natural Earth 110m Admin 0 Countries (gemeinfrei)'
+
+/**
+ * Namensliste: prüft Eingaben und füllt die Auswahl. Deutscher und
+ * englischer Name, damit „Ivory Coast" genauso durchgeht wie
+ * „Elfenbeinküste" — getippt wird, was auf der Tüte steht.
+ */
+const namen = {
+  _generiert: HINWEIS,
+  _quelle: QUELLENHINWEIS,
+  countries: laender.map((l) => ({
+    iso: l.iso,
+    de: l.name,
+    ...(l.en && l.en !== l.name ? { en: l.en } : {}),
+    ...(l.belt ? { belt: true } : {}),
+  })),
+}
+
+/**
+ * Geometrie: nur Pfade und Rechtecke, Namen stehen in countries.json.
+ * Länder außerhalb des Ausschnitts kommen hier gar nicht vor.
+ */
+const karte = {
+  _generiert: HINWEIS,
+  _quelle: QUELLENHINWEIS,
   _projektion: `Plate carrée, Ausschnitt ${LAT_OBEN}°N bis ${Math.abs(LAT_UNTEN)}°S`,
   viewBox: `0 0 ${BREITE} ${HOEHE}`,
   tropics: { cancer: rd(LAT_OBEN - KREBS), capricorn: rd(LAT_OBEN - STEINBOCK) },
   equator: rd(LAT_OBEN),
-  countries: laender,
+  paths: laender.filter((l) => l.d).map((l) => ({ iso: l.iso, d: l.d, b: l.b })),
 }
 
-const ziel = join(hier, '..', 'data', 'worldmap.json')
-await writeFile(ziel, JSON.stringify(ausgabe) + '\n')
+const kbVon = (o) => (JSON.stringify(o).length / 1024).toFixed(0)
+await writeFile(join(hier, '..', 'data', 'countries.json'), JSON.stringify(namen) + '\n')
+await writeFile(join(hier, '..', 'data', 'worldmap.json'), JSON.stringify(karte) + '\n')
 
-const kb = (JSON.stringify(ausgabe).length / 1024).toFixed(0)
 const guertel = laender.filter((l) => l.belt).length
 console.log(
-  `data/worldmap.json — ${laender.length} Länder, davon ${guertel} im Gürtel, ` +
-    `${uebersprungen} außerhalb des Ausschnitts, ${kb} KB`,
+  `${laender.length} Länder, davon ${guertel} im Gürtel\n` +
+    `  data/countries.json — ${namen.countries.length} Namen, ${kbVon(namen)} KB (Hauptbündel)\n` +
+    `  data/worldmap.json  — ${karte.paths.length} Pfade, ${kbVon(karte)} KB (nachgeladen), ` +
+    `${uebersprungen} Länder außerhalb des Ausschnitts`,
 )

@@ -953,5 +953,27 @@
       "preferMethod": "v60"
     }
   ],
-  "_frenchpressNote": "frenchpress ist aus bodyLevel und acidityLevel abgeleitet, nicht einzeln recherchiert: Körper spricht dafür, dominante Säure dagegen (kb/10b §7)."
+  "_frenchpressNote": "frenchpress ist aus bodyLevel und acidityLevel abgeleitet, nicht einzeln recherchiert: Körper spricht dafür, dominante Säure dagegen (kb/10b §7).",
+  "exportRanking": {
+    "_note": "Reihenfolge für die Herkunftsauswahl: Wer viel exportiert, steht in einem Regal auch am häufigsten. Ausfuhr grüner Bohnen in Sack à 60 kg, nicht Produktion — Vietnam und Brasilien verschieben sich dadurch gegenüber reinen Anbaustatistiken.",
+    "_quelle": "ICO Trade Statistics, Mittel der Erntejahre 2021/22 bis 2023/24. Unterhalb der ersten fünf wechseln die Plätze von Jahr zu Jahr; für eine Auswahlliste reicht die Größenordnung.",
+    "_grenze": "Bewusst nur 15. Kenia, Ruanda, Panama und Jemen liegen darunter, sind aber als Spezialitätenherkünfte in `origins` geführt und stehen in der Auswahl direkt hinter den Exporteuren.",
+    "iso": [
+      "BRA",
+      "VNM",
+      "COL",
+      "IDN",
+      "UGA",
+      "HND",
+      "IND",
+      "ETH",
+      "PER",
+      "GTM",
+      "MEX",
+      "NIC",
+      "CIV",
+      "TZA",
+      "CRI"
+    ]
+  }
 }

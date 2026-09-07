@@ -12,17 +12,13 @@
  */
 import worldmapRaw from '@data/worldmap.json'
 
-export interface MapCountry {
-  /** ISO-3166-1 alpha-3 */
+export interface MapPath {
+  /** ISO-3166-1 alpha-3 — Name und Gürtelzugehörigkeit stehen in COUNTRIES */
   iso: string
-  /** Deutscher Ländername — dieselbe Schreibweise wie in origins.json */
-  name: string
   /** SVG-Pfad, mehrere Teilflächen aneinandergehängt */
   d: string
   /** Umschließendes Rechteck in Kartenkoordinaten: [x0, y0, x1, y1] */
   b: [number, number, number, number]
-  /** Kaffeeerzeuger mit Schwerpunkt in den Tropen */
-  belt?: boolean
 }
 
 export interface WorldMap {
@@ -30,13 +26,12 @@ export interface WorldMap {
   /** y-Werte der Wendekreise im Koordinatensystem der Karte */
   tropics: { cancer: number; capricorn: number }
   equator: number
-  countries: MapCountry[]
+  paths: MapPath[]
 }
 
 export const WORLD_MAP = worldmapRaw as unknown as WorldMap
 
-/** Land über den deutschen Namen, wie ihn die Bohne führt. */
-export function mapCountry(name: string): MapCountry | undefined {
-  const gesucht = name.trim().toLowerCase()
-  return WORLD_MAP.countries.find((c) => c.name.toLowerCase() === gesucht)
+/** Geometrie eines Landes über seine ISO-Kennung. */
+export function mapPath(iso: string): MapPath | undefined {
+  return WORLD_MAP.paths.find((p) => p.iso === iso)
 }

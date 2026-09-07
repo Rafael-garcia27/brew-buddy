@@ -1,10 +1,15 @@
 /**
  * Herkunftskarte — wo diese Bohne wächst.
  *
- * Drei Zustände, wie sie die Bohne hergibt:
- *   unbekannt → nur Umriss, nichts eingefärbt
- *   Blend     → der ganze Kaffeegürtel
- *   bekannt   → genau das Land
+ * Vier Zustände, wie sie die Bohne hergibt:
+ *   unbekannt      → nur Umriss, nichts eingefärbt
+ *   Blend, offen   → der ganze Kaffeegürtel
+ *   Blend, benannt → die genannten Bestandteile
+ *   ein Land       → genau dieses Land
+ *
+ * Der dritte Zustand ist der Grund, warum ein Blend seine Länder nennen
+ * darf: „irgendwo im Gürtel" ist die ehrliche Antwort, wenn man es nicht
+ * weiß — aber wer es weiß, soll es sehen.
  *
  * Die Geometrie kommt aus Natural Earth (data/worldmap.json), nicht aus
  * dem Gedächtnis: Eine selbst gezeichnete Karte sieht auf den ersten
@@ -17,27 +22,35 @@
  */
 import { useMemo } from 'react'
 import type { OriginRef } from '@domain'
-import { WORLD_MAP, mapCountry } from '@/kb/worldmap'
-
-/** Sammelwert aus dem Bohnenformular — dieselbe Zeichenkette wie dort. */
-const BLEND = 'Blend'
+import { BLEND, COUNTRIES, findCountry } from '@/kb'
+import { WORLD_MAP } from '@/kb/worldmap'
 
 /**
  * Bis zu dieser Kantenlänge (in Kartenschritten, 1 Schritt = 1 Grad)
- * bekommt ein Land einen Suchring. Brasilien misst 39, Indien 29,
+ * bekommt die Auswahl einen Suchring. Brasilien misst 39, Indien 29,
  * Kenia 10 — der Ring erscheint also dort, wo das Auge ihn braucht.
  */
 const RING_BIS = 35
 
-export type MapState = 'unknown' | 'blend' | 'country'
+export type MapState = 'unknown' | 'belt' | 'countries'
+
+/** Die genannten Länder einer Bohne als ISO-Kennungen, ohne Dubletten. */
+export function originCountries(origins: OriginRef[] | undefined): string[] {
+  const iso: string[] = []
+  for (const o of origins ?? []) {
+    const name = o.country?.trim()
+    if (!name || name === BLEND) continue
+    const c = findCountry(name)
+    if (c && !iso.includes(c.iso)) iso.push(c.iso)
+  }
+  return iso
+}
 
 export function originMapState(origins: OriginRef[] | undefined): MapState {
-  const laender = (origins ?? []).map((o) => o.country?.trim()).filter(Boolean) as string[]
-  if (!laender.length) return 'unknown'
-  if (laender.some((l) => l === BLEND)) return 'blend'
-  // Mehrere echte Länder sind fachlich auch ein Blend — dann zeigt die
-  // Karte sie einzeln, siehe `hervorgehoben`.
-  return laender.some((l) => mapCountry(l)) ? 'country' : 'unknown'
+  if (originCountries(origins).length) return 'countries'
+  // Blend ohne benannte Bestandteile: der Gürtel ist die ehrliche Antwort.
+  const angaben = (origins ?? []).map((o) => o.country?.trim()).filter(Boolean) as string[]
+  return angaben.includes(BLEND) ? 'belt' : 'unknown'
 }
 
 export default function OriginMap({
@@ -49,45 +62,39 @@ export default function OriginMap({
 }) {
   const state = originMapState(origins)
 
-  const { rest, hervorgehoben, ring } = useMemo(() => {
-    const namen = (origins ?? []).map((o) => o.country?.trim()).filter(Boolean) as string[]
-    const treffer = new Set<string>()
-
-    if (state === 'blend') {
-      for (const c of WORLD_MAP.countries) if (c.belt) treffer.add(c.iso)
-    } else if (state === 'country') {
-      for (const n of namen) {
-        const c = mapCountry(n)
-        if (c) treffer.add(c.iso)
-      }
-    }
+  const { rest, hervorgehoben, ring, namen, ohneGeometrie } = useMemo(() => {
+    const gewaehlteIso = originCountries(origins)
+    const treffer = new Set<string>(
+      state === 'belt' ? COUNTRIES.filter((c) => c.belt).map((c) => c.iso) : gewaehlteIso,
+    )
 
     // Alles Nicht-Hervorgehobene zu EINEM Pfad zusammenfassen: Jeder Ring
     // bleibt eine eigene Teilfläche, die Kontur zeichnet also weiter jede
     // Ländergrenze — nur eben in einem Element statt in 170.
-    const rest = WORLD_MAP.countries
-      .filter((c) => !treffer.has(c.iso))
-      .map((c) => c.d)
+    const rest = WORLD_MAP.paths
+      .filter((p) => !treffer.has(p.iso))
+      .map((p) => p.d)
       .join('')
-    const gewaehlt = WORLD_MAP.countries.filter((c) => treffer.has(c.iso))
-    const hervorgehoben = gewaehlt.map((c) => c.d).join('')
+    const gewaehlt = WORLD_MAP.paths.filter((p) => treffer.has(p.iso))
+    const hervorgehoben = gewaehlt.map((p) => p.d).join('')
 
     /**
-     * Suchring um kleine Länder.
+     * Suchring um kleine Auswahlen.
      *
      * Kenia ist auf einer Weltkarte 8 × 10 Kartenschritte groß — bei
      * 307 px Breite ein Fleck von 7 × 9 px. Eingefärbt ist es damit
      * korrekt und trotzdem nicht zu finden. Der Ring färbt nichts, er
-     * zeigt hin; ab Brasiliens Größe braucht es ihn nicht mehr.
+     * zeigt hin; über zwei Kontinente verteilt bringt er nichts und
+     * bleibt weg.
      */
     let ring: { cx: number; cy: number; r: number } | null = null
-    if (state === 'country' && gewaehlt.length) {
+    if (state === 'countries' && gewaehlt.length) {
       let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity
-      for (const c of gewaehlt) {
-        x0 = Math.min(x0, c.b[0])
-        y0 = Math.min(y0, c.b[1])
-        x1 = Math.max(x1, c.b[2])
-        y1 = Math.max(y1, c.b[3])
+      for (const p of gewaehlt) {
+        x0 = Math.min(x0, p.b[0])
+        y0 = Math.min(y0, p.b[1])
+        x1 = Math.max(x1, p.b[2])
+        y1 = Math.max(y1, p.b[3])
       }
       const breit = x1 - x0
       const hoch = y1 - y0
@@ -100,31 +107,43 @@ export default function OriginMap({
       }
     }
 
-    return { rest, hervorgehoben, ring }
+    const namen = gewaehlteIso
+      .map((iso) => COUNTRIES.find((c) => c.iso === iso)?.de)
+      .filter(Boolean) as string[]
+
+    // Ein genanntes Land ohne Pfad liegt außerhalb des Ausschnitts —
+    // gültig als Eingabe, nur nicht zeichenbar. Das gehört gesagt, sonst
+    // sieht die Karte aus wie „Herkunft unbekannt".
+    const ohneGeometrie = gewaehlteIso
+      .filter((iso) => !WORLD_MAP.paths.some((p) => p.iso === iso))
+      .map((iso) => COUNTRIES.find((c) => c.iso === iso)?.de)
+      .filter(Boolean) as string[]
+
+    return { rest, hervorgehoben, ring, namen, ohneGeometrie }
   }, [origins, state])
 
   const beschriftung =
-    state === 'blend'
-      ? 'Blend — Herkunft über den Kaffeegürtel verteilt.'
-      : state === 'country'
-        ? 'Zwischen den Wendekreisen — dem Kaffeegürtel.'
+    state === 'belt'
+      ? 'Blend ohne benannte Herkunft — irgendwo im Kaffeegürtel.'
+      : state === 'countries'
+        ? ohneGeometrie.length === namen.length
+          ? `${namen.join(', ')} — liegt außerhalb des gezeigten Ausschnitts.`
+          : namen.length > 1
+            ? `Blend aus ${namen.length} Herkünften: ${namen.join(', ')}.`
+            : 'Zwischen den Wendekreisen — dem Kaffeegürtel.'
         : 'Keine Herkunft angegeben.'
+
+  const kurz =
+    state === 'belt'
+      ? 'Weltkarte, der Kaffeegürtel hervorgehoben'
+      : state === 'countries'
+        ? `Weltkarte, hervorgehoben: ${namen.join(', ')}`
+        : 'Weltkarte ohne Hervorhebung'
 
   return (
     <div className={className}>
       <div className="overflow-hidden rounded-xl border border-line bg-paper">
-        <svg
-          viewBox={WORLD_MAP.viewBox}
-          className="block w-full"
-          role="img"
-          aria-label={
-            state === 'blend'
-              ? 'Weltkarte, der Kaffeegürtel hervorgehoben'
-              : state === 'country'
-                ? `Weltkarte, hervorgehoben: ${(origins ?? []).map((o) => o.country).join(', ')}`
-                : 'Weltkarte ohne Hervorhebung'
-          }
-        >
+        <svg viewBox={WORLD_MAP.viewBox} className="block w-full" role="img" aria-label={kurz}>
           {/* Landmasse mit sichtbaren Grenzen. non-scaling-stroke, damit
               die Linie 0,6 px bleibt, egal wie breit die Karte gerade
               gerechnet wird — sonst wäre sie auf dem Telefon ein Klecks. */}

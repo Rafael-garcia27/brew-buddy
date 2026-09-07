@@ -17,10 +17,8 @@ import { useStore } from '@/store'
 import type { Bean, RoastLevel, Process, BrewMethod } from '@domain'
 import { assessFreshness } from '@/engine/freshness'
 import { suitability, bestMethodFor, SUITABILITY_LABEL } from '@/engine/suitability'
-import { ORIGIN_NAMES, getOrigin } from '@/kb'
+import { getOrigin, BLEND, findCountry, originOptions } from '@/kb'
 
-/** Sammelwert für Mischungen — dann greifen keine Herkunfts-Modifikatoren. */
-const BLEND = 'Blend'
 import { METHODS, ROAST_LABEL, PROCESS_LABEL, METHOD_LABEL } from '@/labels'
 import {
   Screen, Header, Section, Card, Button, Field, TextInput, Select, Sheet,
@@ -219,6 +217,8 @@ export default function BeansScreen({ route, navigate }: Props) {
 // ── Detailansicht ─────────────────────────────────────────────────────
 
 export function BeanDetail({ bean, onBack }: { bean: Bean; onBack: () => void }) {
+  const istBlend = bean.origins.some((o) => o.country === BLEND)
+  const blendLaender = bean.origins.filter((o) => o.country !== BLEND)
   const allBags = useStore((s) => s.bags)
   const allBrews = useStore((s) => s.brews)
   const bags = useMemo(() => allBags.filter((b) => b.beanId === bean.id), [allBags, bean.id])
@@ -258,7 +258,22 @@ export function BeanDetail({ bean, onBack }: { bean: Bean; onBack: () => void })
           <div className="grid grid-cols-2 gap-4">
             <Stat label="Roast" value={ROAST_LABEL[bean.roastLevel]} />
             <Stat label="Process" value={PROCESS_LABEL[bean.process]} />
-            <Stat label="Origin" value={bean.origins.map((o) => o.country).join(', ') || '—'} />
+            {/* Beim Blend nur der Sammelwert: Die Bestandteile stehen
+                unter der Karte, und vier Ländernamen brechen in einer
+                Zweispalte auf vier Zeilen um. */}
+            <Stat
+              label="Origin"
+              value={
+                istBlend
+                  ? 'Blend'
+                  : bean.origins.map((o) => o.country).join(', ') || '—'
+              }
+              hint={
+                istBlend && blendLaender.length
+                  ? `${blendLaender.length} ${blendLaender.length === 1 ? 'Herkunft' : 'Herkünfte'}`
+                  : undefined
+              }
+            />
             {bean.origins[0]?.farm && <Stat label="Farm" value={bean.origins[0].farm} />}
             {bean.altitudeMasl && (
               <Stat label="Altitude" value={`${bean.altitudeMasl[0]}–${bean.altitudeMasl[1]}`} unit="m" />
@@ -418,9 +433,19 @@ function BeanSheet({
   const addBean = useStore((s) => s.addBean)
   const addBag = useStore((s) => s.addBag)
 
+  // Rohwert abonnieren, Vorgabe DANACH setzen: `?? []` im Selektor gibt
+  // bei jedem Rendern eine neue Referenz zurück, und der Store vergleicht
+  // per Referenz — das ist eine Endlosschleife, keine leere Liste.
+  const extraOrigins = useStore((st) => st.settings.extraOrigins)
+  const setSettings = useStore((st) => st.setSettings)
+  /** Reihenfolge: Exporteure nach Menge, dann eigene Profile, dann Nachgetragenes. */
+  const laenderliste = useMemo(() => originOptions(extraOrigins ?? []), [extraOrigins])
+
   const [name, setName] = useState('')
   const [roaster, setRoaster] = useState('')
-  const [country, setCountry] = useState('Kolumbien')
+  const [country, setCountry] = useState(laenderliste[0] ?? BLEND)
+  /** Beim Blend: die genannten Bestandteile. Leer heißt „irgendwo im Gürtel". */
+  const [blendLaender, setBlendLaender] = useState<string[]>([])
   const [roast, setRoast] = useState<RoastLevel>('medium')
   const [process, setProcess] = useState<Process>('washed')
   // Kein fester Vorgabewert: 1500 m wäre eine erfundene Angabe, die jede
@@ -434,10 +459,18 @@ function BeanSheet({
 
   const save = () => {
     if (!name.trim()) return
+    // Ein Blend führt seine Bestandteile als weitere Herkünfte. Der
+    // Sammelwert bleibt an erster Stelle stehen: Er unterscheidet „Blend
+    // aus Brasilien und Äthiopien" von „Bohne aus Brasilien".
+    const origins =
+      country === BLEND
+        ? [{ country: BLEND }, ...blendLaender.map((c) => ({ country: c }))]
+        : [{ country }]
+
     const id = addBean({
       name: name.trim(),
       roaster: roaster.trim() || undefined,
-      origins: [{ country }],
+      origins,
       process,
       roastLevel: roast,
       altitudeMasl: altitude !== null ? [altitude - 100, altitude + 100] : undefined,
@@ -467,15 +500,41 @@ function BeanSheet({
           <TextInput value={roaster} onChange={setRoaster} placeholder="optional" />
         </Field>
         <Field label="Origin" hint="Beeinflusst Mahlgrad und Temperatur">
-          <Select
+          <OriginPicker
             value={country}
             onChange={setCountry}
-            options={[
-              { value: BLEND, label: 'Blend (mehrere Herkünfte)' },
-              ...ORIGIN_NAMES.map((n) => ({ value: n, label: n })),
-            ]}
+            options={laenderliste}
+            withBlend
+            onAdd={(c) => {
+              setSettings({ extraOrigins: [...(extraOrigins ?? []), c] })
+              setCountry(c)
+            }}
           />
         </Field>
+
+        {/* Erst beim Blend, weil die Frage erst dann eine ist. Leer lassen
+            ist erlaubt: Bei vielen Supermarktmischungen steht die Herkunft
+            nicht auf der Tüte. */}
+        {country === BLEND && (
+          <Field
+            label="Bestandteile"
+            hint={
+              blendLaender.length
+                ? 'Die Karte zeigt genau diese Länder.'
+                : 'Optional. Ohne Angabe zeigt die Karte den ganzen Kaffeegürtel.'
+            }
+          >
+            <OriginMulti
+              value={blendLaender}
+              onChange={setBlendLaender}
+              options={laenderliste}
+              onAdd={(c) => {
+                setSettings({ extraOrigins: [...(extraOrigins ?? []), c] })
+                setBlendLaender((x) => [...x, c])
+              }}
+            />
+          </Field>
+        )}
         <Field label="Roast" hint="Die wichtigste Angabe für den Startpunkt">
           <Select
             value={roast}
@@ -538,6 +597,134 @@ function BeanSheet({
         </div>
       </div>
     </Sheet>
+  )
+}
+
+/**
+ * Nachtragen eines Landes, das nicht in der Liste steht.
+ *
+ * Geprüft wird gegen die Länderliste aus Natural Earth — dieselbe Quelle
+ * wie die Karte. Damit kann es keine gespeicherte Herkunft geben, die
+ * sich nicht einzeichnen lässt, und „Kolumbioen" landet nicht in den
+ * Daten. Deutsch oder englisch ist beides recht; gespeichert wird die
+ * deutsche Schreibweise.
+ */
+function CountryAdd({ onAdd }: { onAdd: (name: string) => void }) {
+  const [offen, setOffen] = useState(false)
+  const [eingabe, setEingabe] = useState('')
+  const treffer = findCountry(eingabe)
+  const leer = !eingabe.trim()
+
+  if (!offen) {
+    return (
+      <Button variant="ghost" size="sm" className="-ml-3" onClick={() => setOffen(true)}>
+        Anderes Land nachtragen →
+      </Button>
+    )
+  }
+
+  return (
+    <div className="mt-2 rounded-xl border border-line bg-raised p-3">
+      <TextInput value={eingabe} onChange={setEingabe} placeholder="z. B. Bolivien" />
+      {!leer && !treffer && (
+        <p className="mt-2 text-[13px] leading-snug text-bad">
+          „{eingabe.trim()}" ist kein Land, das ich kenne. Schreib es aus — deutsch oder
+          englisch, etwa „Elfenbeinküste" oder „Ivory Coast".
+        </p>
+      )}
+      {treffer && treffer.de.toLowerCase() !== eingabe.trim().toLowerCase() && (
+        <p className="mt-2 text-[13px] text-mute">Wird gespeichert als „{treffer.de}".</p>
+      )}
+      {treffer && !treffer.belt && (
+        <p className="mt-2 text-[13px] leading-snug text-warn">
+          {treffer.de} liegt außerhalb des Kaffeegürtels. Kann sein, dass es stimmt — häufig
+          ist es aber das Land des Rösters und nicht das der Bohne.
+        </p>
+      )}
+      <div className="mt-3 flex gap-2">
+        <Button
+          size="sm"
+          disabled={!treffer}
+          onClick={() => {
+            if (!treffer) return
+            onAdd(treffer.de)
+            setEingabe('')
+            setOffen(false)
+          }}
+        >
+          Übernehmen
+        </Button>
+        <Button size="sm" variant="ghost" onClick={() => { setEingabe(''); setOffen(false) }}>
+          Abbrechen
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+/** Einzelauswahl der Herkunft, mit Blend an erster Stelle. */
+function OriginPicker({
+  value,
+  onChange,
+  options,
+  withBlend,
+  onAdd,
+}: {
+  value: string
+  onChange: (v: string) => void
+  options: string[]
+  withBlend?: boolean
+  onAdd: (name: string) => void
+}) {
+  return (
+    <>
+      <Select
+        value={value}
+        onChange={onChange}
+        options={[
+          ...(withBlend ? [{ value: BLEND, label: 'Blend (mehrere Herkünfte)' }] : []),
+          ...options.map((n) => ({ value: n, label: n })),
+        ]}
+      />
+      <div className="mt-1">
+        <CountryAdd onAdd={onAdd} />
+      </div>
+    </>
+  )
+}
+
+/**
+ * Mehrfachauswahl für die Bestandteile eines Blends.
+ *
+ * Chips und nicht eine Liste mit Häkchen, weil die App Mehrfachauswahl
+ * überall so löst (Fehltöne, Charakter) — und weil man die getroffene
+ * Auswahl hier auf einen Blick sehen will.
+ */
+function OriginMulti({
+  value,
+  onChange,
+  options,
+  onAdd,
+}: {
+  value: string[]
+  onChange: (v: string[]) => void
+  options: string[]
+  onAdd: (name: string) => void
+}) {
+  const umschalten = (n: string) =>
+    onChange(value.includes(n) ? value.filter((x) => x !== n) : [...value, n])
+
+  return (
+    <>
+      <div className="flex flex-wrap gap-2">
+        {options.map((n) => (
+          <Chip key={n} label={n} active={value.includes(n)} onClick={() => umschalten(n)} />
+        ))}
+      </div>
+      <div className="mt-1">
+        <CountryAdd onAdd={onAdd} />
+      </div>
+    </>
   )
 }
 

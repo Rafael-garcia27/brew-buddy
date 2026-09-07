@@ -14,6 +14,7 @@ import originsRaw from '@data/origins.json'
 import grindersRaw from '@data/grinders.json'
 import glossaryRaw from '@data/glossary.json'
 import formulasRaw from '@data/formulas.json'
+import countriesRaw from '@data/countries.json'
 import type { BrewMethod, RoastLevel, Process } from '@domain'
 
 // ── Methoden ──────────────────────────────────────────────────────────
@@ -583,6 +584,80 @@ export function referenceMicron(method: BrewMethod): number {
     throw new Error(`Kein Mahlgrad-Zielbereich für Methode "${method}" hinterlegt`)
   }
   return (range[0] + range[1]) / 2
+}
+
+// ── Länder ────────────────────────────────────────────────────────────
+
+/**
+ * Sammelwert für Mischungen. Steht in der Auswahl an erster Stelle und
+ * ist KEIN Land — die Karte färbt dafür den ganzen Gürtel, solange keine
+ * Bestandteile genannt sind.
+ */
+export const BLEND = 'Blend'
+
+export interface Country {
+  /** ISO-3166-1 alpha-3 */
+  iso: string
+  /** Deutscher Name — die Schreibweise, in der die App speichert */
+  de: string
+  /** Englischer Name, falls abweichend. Nur zum Erkennen von Eingaben. */
+  en?: string
+  /** Kaffeeerzeuger mit Schwerpunkt in den Tropen */
+  belt?: boolean
+}
+
+/**
+ * Alle Länder, die die App als Herkunft akzeptiert.
+ *
+ * Erzeugt aus Natural Earth (`npm run worldmap`), dieselbe Quelle wie die
+ * Karte. Damit gilt: Was sich eintragen lässt, lässt sich auch einzeichnen
+ * — es kann keine Herkunft geben, die die Karte nicht kennt.
+ */
+export const COUNTRIES = (countriesRaw as unknown as { countries: Country[] }).countries
+
+/**
+ * Eingabe zu einem Land — die Prüfung für manuell nachgetragene Herkünfte.
+ *
+ * Nimmt deutschen wie englischen Namen, ignoriert Groß- und Kleinschreibung
+ * und Leerraum. Ohne Treffer `undefined`: Dann ist die Eingabe kein Land
+ * und wird nicht gespeichert.
+ */
+export function findCountry(eingabe: string): Country | undefined {
+  const g = eingabe.trim().toLowerCase()
+  if (!g) return undefined
+  return COUNTRIES.find((c) => c.de.toLowerCase() === g || c.en?.toLowerCase() === g)
+}
+
+/** Reihenfolge der Exporteure, oben in jeder Herkunftsauswahl. */
+export const EXPORT_RANKING = (
+  originsRaw as unknown as { exportRanking?: { iso: string[] } }
+).exportRanking?.iso ?? []
+
+/**
+ * Die Herkunftsauswahl, in der Reihenfolge, in der man sie braucht.
+ *
+ *   1. die 15 größten Exporteure nach Ausfuhrmenge
+ *   2. die übrigen Länder, für die die App ein Herkunftsprofil führt
+ *      (Kenia, Panama, Jemen … — klein im Export, groß im Regal)
+ *   3. was der Nutzer selbst nachgetragen hat
+ *
+ * Innerhalb von 2 und 3 alphabetisch: Dort gibt es keine sinnvolle
+ * Rangfolge, und Suchen ist dann leichter als Raten.
+ */
+export function originOptions(extra: string[] = []): string[] {
+  const liste: string[] = []
+  const gesehen = new Set<string>()
+  const dazu = (name: string | undefined) => {
+    if (!name || gesehen.has(name)) return
+    gesehen.add(name)
+    liste.push(name)
+  }
+
+  for (const iso of EXPORT_RANKING) dazu(COUNTRIES.find((c) => c.iso === iso)?.de)
+  for (const n of ORIGINS.map((o) => o.name).sort((a, b) => a.localeCompare(b, 'de'))) dazu(n)
+  for (const n of [...extra].sort((a, b) => a.localeCompare(b, 'de'))) dazu(findCountry(n)?.de)
+
+  return liste
 }
 
 // ── Glossar ───────────────────────────────────────────────────────────
