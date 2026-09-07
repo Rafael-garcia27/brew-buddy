@@ -13,7 +13,8 @@
     "typecheck": "tsc -b --noEmit",
     "deploy:direct": "bash scripts/deploy-direct.sh",
     "deploy:restore": "bash scripts/deploy-restore.sh",
-    "icons": "node scripts/make-icons.mjs"
+    "icons": "node scripts/make-icons.mjs",
+    "worldmap": "node scripts/make-worldmap.mjs"
   },
   "dependencies": {
     "idb": "^8.0.3",

@@ -11,7 +11,7 @@
  * sind Aktionen an der gewählten Bohne. Eine Navigationsleiste braucht es
  * dafür nicht: Es gibt nur einen Ort, an den man zurückkehrt.
  */
-import { useMemo, useState } from 'react'
+import { lazy, Suspense, useMemo, useState } from 'react'
 import type { Route } from '@/router'
 import { useStore } from '@/store'
 import type { Bean, RoastLevel, Process, BrewMethod } from '@domain'
@@ -27,6 +27,13 @@ import {
   Empty, Stat, FreshnessRing, Stepper, Toggle, Chip, GearButton, num,
 } from '@/components/ui'
 import { BackupBanner, SetupNudge } from '@/components/system'
+/**
+ * Nachgeladen, nicht mitgeliefert: Die Kartendaten sind das größte
+ * Einzelstück der App und werden nur hier gebraucht. Der Platzhalter hat
+ * dasselbe Seitenverhältnis, damit die Karte beim Eintreffen nichts
+ * verschiebt.
+ */
+const OriginMap = lazy(() => import('@/components/OriginMap'))
 
 interface Props {
   route: Route
@@ -235,6 +242,19 @@ export function BeanDetail({ bean, onBack }: { bean: Bean; onBack: () => void })
 
       <Section title="Profil">
         <Card>
+          {/* Wo sie wächst, bevor was sie ist: Die Karte ist der einzige
+              Teil dieses Bildschirms, den man ohne Lesen erfasst. */}
+          <Suspense
+            fallback={
+              <div className="mb-4">
+                <div className="aspect-[360/116] w-full rounded-xl border border-line bg-paper" />
+                <div className="mt-1.5 h-[15px]" />
+              </div>
+            }
+          >
+            <OriginMap origins={bean.origins} className="mb-4" />
+          </Suspense>
+
           <div className="grid grid-cols-2 gap-4">
             <Stat label="Roast" value={ROAST_LABEL[bean.roastLevel]} />
             <Stat label="Process" value={PROCESS_LABEL[bean.process]} />
