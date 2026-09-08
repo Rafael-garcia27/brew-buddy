@@ -128,6 +128,15 @@ export interface Freshness {
   score: number
   window: RestWindow
   label: string
+  /**
+   * Dasselbe Urteil ohne die Tageszahl.
+   *
+   * Für Stellen, an denen die Zahl schon danebensteht — seit die Bohne im
+   * Regal ihre Tage im Ring trägt, stand dort „15" und daneben „15 Tage —
+   * im Fenster". Zweimal dieselbe Zahl in einer Zeile liest sich wie zwei
+   * verschiedene Angaben, bis man genau hinsieht.
+   */
+  short: string
   hint?: string
 }
 
@@ -149,6 +158,8 @@ export function assessFreshness(
       score: 50,
       window: win,
       label: 'Röstdatum unbekannt',
+      // Ohne Datum gibt es keine Zahl, die man weglassen könnte.
+      short: 'Röstdatum unbekannt',
       hint: 'Trag das Röstdatum ein — dann kann ich den Mahlgrad mit dem Alter mitführen.',
     }
   }
@@ -158,40 +169,45 @@ export function assessFreshness(
   const score = Math.round(gaussScore(days, p.tPeak, p.sigma, openedDays))
 
   let state: FreshnessState
-  let label: string
+  let short: string
   let hint: string | undefined
 
   if (days >= STALE_AFTER) {
     state = 'stale'
-    label = `${tage(days)} — überaltert`
+    short = 'überaltert'
     hint = 'Aromaverlust lässt sich durch keine Einstellung reparieren. Neue Bag.'
   } else if (days < win.min) {
     state = 'too-fresh'
-    label = `${tage(days)} — noch zu frisch`
+    short = 'noch zu frisch'
     hint = `Das CO₂ stört noch. Ab Tag ${win.min} sind die Ergebnisse stabil.`
   } else if (days <= win.min + 2) {
     state = 'approaching'
-    label = `${tage(days)} — wird gerade gut`
+    short = 'wird gerade gut'
   } else if (days <= win.max) {
     state = 'peak'
-    label = `${tage(days)} — im Fenster`
+    short = 'im Fenster'
   } else {
     state = 'past-peak'
-    label = `${tage(days)} — über dem Optimum`
+    short = 'über dem Optimum'
     hint = 'Etwas feiner mahlen, das Bett bietet weniger Widerstand.'
   }
+
+  // Die lange Form ist die kurze mit der Zahl davor — eine Quelle, damit
+  // beide nicht auseinanderlaufen können.
+  let label = `${tage(days)} — ${short}`
 
   // Gefroren: Die Zahl ist das Alter beim Einfrieren, nicht das heutige.
   // Ohne diesen Hinweis liest sich „119 Tage" so, als altere die Bohne
   // im Gefrierfach weiter.
   if (bag?.storage === 'frozen') {
     label = `${label} · eingefroren`
+    short = `${short} · eingefroren`
     hint = hint
       ? `${hint} Solange sie gefroren bleibt, ändert sich daran nichts.`
       : 'Im Gefrierfach steht die Uhr — der Wert gilt ab dem Tag des Einfrierens.'
   }
 
-  return { state, days, score, window: win, label, hint }
+  return { state, days, score, window: win, label, short, hint }
 }
 
 /**

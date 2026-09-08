@@ -164,6 +164,8 @@ export default function BeansScreen({ route, navigate, onDeleted }: Props) {
     [beans, filterFamilie, filterMethode],
   )
   const gefiltert = !!filterFamilie || !!filterMethode
+  /** Gibt es überhaupt etwas zu filtern? Sonst erscheint kein Knopf. */
+  const filterOptionen = filterbar && (familien.length > 1 || methoden.length > 1)
 
   // „Welche Bohne heute?" — nach Frischefenster sortiert (Briefing Teil D)
   const ranked = sichtbar
@@ -229,7 +231,7 @@ export default function BeansScreen({ route, navigate, onDeleted }: Props) {
 
               Kein Mehrfachfilter je Achse: „Washed oder Natural" ist im
               Regal von acht Bohnen dasselbe wie „alle". */}
-          {filterbar && (familien.length > 1 || methoden.length > 1) && (
+          {filterOptionen && (filterOffen || gefiltert) && (
             <Section>
               {filterOffen ? (
                 <div className="space-y-2">
@@ -269,36 +271,52 @@ export default function BeansScreen({ route, navigate, onDeleted }: Props) {
                   </Button>
                 </div>
               ) : (
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <Button size="sm" variant="secondary" onClick={() => setFilterOffen(true)}>
-                    Filtern
-                  </Button>
-                  {filterFamilie && (
-                    <Chip
-                      label={`${familienName(filterFamilie)} ✕`}
-                      active
-                      onClick={() => setFilterFamilie(undefined)}
-                    />
-                  )}
-                  {filterMethode && (
-                    <Chip
-                      label={`${METHOD_SHORT[filterMethode]} ✕`}
-                      active
-                      onClick={() => setFilterMethode(undefined)}
-                    />
-                  )}
-                </div>
+                // Zugeklappt ohne aktiven Filter braucht es hier gar
+                // nichts: Der Knopf sitzt dann in der Kopfzeile der Liste.
+                gefiltert && (
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {filterFamilie && (
+                      <Chip
+                        label={`${familienName(filterFamilie)} ✕`}
+                        active
+                        onClick={() => setFilterFamilie(undefined)}
+                      />
+                    )}
+                    {filterMethode && (
+                      <Chip
+                        label={`${METHOD_SHORT[filterMethode]} ✕`}
+                        active
+                        onClick={() => setFilterMethode(undefined)}
+                      />
+                    )}
+                  </div>
+                )
               )}
             </Section>
           )}
 
+          {/* Der Filterknopf sitzt in der Kopfzeile der Liste, nicht in
+              einem eigenen Abschnitt darüber: Dort stand er allein in
+              einer Zeile, die sonst nichts trug, und schob die erste
+              Bohne 70 px nach unten. Neben der Sortierangabe kostet er
+              keine einzige Zeile. */}
           <Section
             action={
-              <span className="text-[12px] text-faint">
-                {gefiltert
-                  ? `${sichtbar.length} von ${beans.length}`
-                  : 'nach Frische'}
-              </span>
+              <div className="flex items-baseline gap-3">
+                <span className="text-[12px] text-faint">
+                  {gefiltert ? `${sichtbar.length} von ${beans.length}` : 'nach Frische'}
+                </span>
+                {filterOptionen && !filterOffen && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="-mr-3"
+                    onClick={() => setFilterOffen(true)}
+                  >
+                    Filtern
+                  </Button>
+                )}
+              </div>
             }
           >
             <div className="space-y-2">
@@ -345,7 +363,7 @@ export default function BeansScreen({ route, navigate, onDeleted }: Props) {
                               sich für den Leser widersprechen. */}
                           {fresh.state === 'stale' ? (
                             <p className="mt-1 truncate text-[12px] text-bad">
-                              {fresh.label} — die Bag gibt nichts mehr her
+                              {fresh.short} — die Bag gibt nichts mehr her
                             </p>
                           ) : bag?.remainingGrams !== undefined && bag.remainingGrams < 20 ? (
                             <p className="mt-1 truncate text-[12px] text-warn">
@@ -353,8 +371,12 @@ export default function BeansScreen({ route, navigate, onDeleted }: Props) {
                             </p>
                           ) : (
                             <>
+                              {/* `short` statt `label`: Die Tageszahl steht
+                                  einen Zentimeter weiter links im Ring, und
+                                  zweimal dieselbe Zahl in einer Zeile liest
+                                  sich wie zwei verschiedene Angaben. */}
                               <p className="mt-1 truncate text-[12px] text-faint">
-                                {fresh.label}
+                                {fresh.short}
                                 {count > 0 && ` · ${count}× gebrüht`}
                               </p>
                               <p className="mt-0.5 truncate text-[12px] text-crema">

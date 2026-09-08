@@ -280,3 +280,54 @@ describe('Ein abgebrochener Brew wird nicht ausgewertet', () => {
     expect(JSON.stringify(d)).not.toMatch(/Shot/)
   })
 })
+
+describe('Die Frische in zwei Längen', () => {
+  // Seit die Bohne im Regal ihre Tage im Ring trägt, stand daneben
+  // „15 Tage — im Fenster". Zweimal dieselbe Zahl in einer Zeile liest
+  // sich wie zwei verschiedene Angaben.
+  const proben = [3, 8, 14, 25, 40, 120]
+
+  it('ist die lange Form die kurze mit der Zahl davor', () => {
+    for (const d of proben) {
+      const f = assessFreshness(
+        { id: 'b', beanId: 'x', roastDate: daysAgo(d), depleted: false, createdAt: daysAgo(d) },
+        'v60',
+        'medium',
+        false,
+        TODAY,
+      )
+      expect(f.label.endsWith(f.short)).toBe(true)
+      expect(f.short).not.toMatch(/\d/)
+    }
+  })
+
+  it('nennt das Gefrierfach in beiden Formen', () => {
+    const f = assessFreshness(
+      {
+        id: 'b',
+        beanId: 'x',
+        roastDate: daysAgo(30),
+        storage: 'frozen',
+        depleted: false,
+        createdAt: daysAgo(30),
+      },
+      'v60',
+      'medium',
+      false,
+      TODAY,
+    )
+    expect(f.short).toMatch(/eingefroren/)
+    expect(f.label).toMatch(/eingefroren/)
+  })
+
+  it('hat auch ohne Röstdatum eine kurze Form', () => {
+    const f = assessFreshness(
+      { id: 'b', beanId: 'x', depleted: false, createdAt: daysAgo(1) },
+      'v60',
+      'medium',
+      false,
+      TODAY,
+    )
+    expect(f.short.length).toBeGreaterThan(0)
+  })
+})

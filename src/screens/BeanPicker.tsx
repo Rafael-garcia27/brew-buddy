@@ -12,7 +12,7 @@
 import type { BrewMethod } from '@domain'
 import type { Route } from '@/router'
 import { useStore } from '@/store'
-import { bestBeansFor, RANK_SCHWELLE, SUITABILITY_LABEL, type BeanRanking } from '@/engine/suitability'
+import { bestBeansFor, RANK_SCHWELLE, type BeanRanking } from '@/engine/suitability'
 import { METHOD_LABEL, ROAST_LABEL, PROCESS_LABEL } from '@/labels'
 import { Screen, Header, Section, Card, Button, Empty, num } from '@/components/ui'
 import { BeanRing } from '@/components/beanviz'
@@ -136,9 +136,11 @@ function BohnenZeile({
             <p className="truncate text-[17px] leading-tight font-semibold">{bean.name}</p>
             {erste && <span className="shrink-0 text-[11px] text-crema">beste Wahl</span>}
           </div>
+          {/* Nur die Identität der Bohne. Das Urteil steht eine Zeile
+              tiefer und begründet sich dort auch — hier machte es die
+              Zeile so lang, dass „gut geei…" übrig blieb. */}
           <p className="mt-0.5 truncate text-[13px] text-mute">
             {ROAST_LABEL[bean.roastLevel]} · {PROCESS_LABEL[bean.process]}
-            {!unavailable && ` · ${SUITABILITY_LABEL[s.level]}`}
           </p>
           {/* Der Satz, der die Platzierung erklärt. Bei „nicht im Haus"
               in Warnfarbe, weil es dann kein Geschmacksurteil ist. */}

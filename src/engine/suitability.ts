@@ -416,13 +416,26 @@ function notiz(
   if (unavailable === 'depleted') return 'Alle Tüten leer.'
   if (unavailable === 'too-little') return 'Zu wenig übrig für eine ganze Dosis.'
 
+  // Frische schlägt Eignung: Bei diesen beiden Zuständen ist die Stufe
+  // nicht die Nachricht, und sie voranzustellen würde von ihr ablenken.
   if (fresh.state === 'stale') return `${fresh.label} — die Eignung spielt hier keine Rolle mehr.`
   if (fresh.state === 'too-fresh') return `${fresh.label}. Fachlich passend, aber noch nicht stabil.`
 
-  if (suit.score < 2.5) return suit.reason
-  if (fresh.state === 'past-peak') return `${SUITABILITY_LABEL[suit.level]}, aber ${fresh.label}.`
-  if (!hatHerkunftsprofil) return `${SUITABILITY_LABEL[suit.level]} — Herkunft offen, geschätzt aus Röstgrad und Aufbereitung.`
-  return suit.reason
+  /**
+   * Sonst führt die Stufe die Notiz an — immer, nicht nur manchmal.
+   *
+   * Vorher stand sie in zwei von vier Zweigen hier und zusätzlich in der
+   * Kopfzeile der Zeile: „Medium-Light · Red Honey · gut geeignet" über
+   * „gut geeignet, aber 27 Tage — über dem Optimum". Zweimal dasselbe
+   * Wort, und die Kopfzeile war dadurch so lang, dass sie abgeschnitten
+   * wurde. Jetzt trägt die Kopfzeile die Identität der Bohne und diese
+   * Zeile das Urteil.
+   */
+  const stufe = SUITABILITY_LABEL[suit.level]
+  if (fresh.state === 'past-peak') return `${stufe}, aber ${fresh.label}.`
+  if (!hatHerkunftsprofil)
+    return `${stufe} — Herkunft offen, geschätzt aus Röstgrad und Aufbereitung.`
+  return `${stufe} — ${suit.reason}`
 }
 
 export const SUITABILITY_LABEL: Record<SuitabilityLevel, string> = {
