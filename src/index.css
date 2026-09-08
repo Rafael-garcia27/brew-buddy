@@ -52,6 +52,27 @@
   --c-warn: #9c6825;       /* Honig, dunkel genug für 4,5:1 */
   --c-bad: #a6402f;        /* Kaffeekirsche */
 
+  /* Röstskala — die sieben Agtron-Bänder aus kb/05 §2.1, von hell nach
+     dunkel. Keine erfundene Farbrampe: Jeder Ton entspricht einem Band,
+     damit die Skala dasselbe sagt wie die Zahl darunter. */
+  --c-roast-1: #cdab7d;    /* 85–95  Extremely Light */
+  --c-roast-2: #bd9260;    /* 75–85  Light / Nordic */
+  --c-roast-3: #a97846;    /* 65–75  Medium-Light */
+  --c-roast-4: #935f32;    /* 55–65  Medium */
+  --c-roast-5: #7a4a26;    /* 45–55  Medium-Dark */
+  --c-roast-6: #5c351b;    /* 35–45  Dark */
+  --c-roast-7: #3a2011;    /* 25–35  Very Dark */
+
+  /* Herkunftsfarben der Karte. Vier Töne aus der Kaffeepflanze selbst —
+     Bohne, Blatt, Kirsche, Pergament —, damit ein Blend seine Länder
+     einzeln zeigen kann, ohne die Signalfarben der App zu verbrauchen.
+     ok/warn/bad wären hier gelesen worden als „gut/schlecht". */
+  --c-origin-1: #8c5a2b;   /* Röstbohne */
+  --c-origin-2: #4f7440;   /* Kaffeeblatt */
+  --c-origin-3: #a6402f;   /* Kaffeekirsche */
+  --c-origin-4: #2f6b7a;   /* Waschkanal */
+  --c-origin-5: #7a5c96;   /* Fermentation */
+
   color-scheme: light;
 }
 
@@ -70,6 +91,23 @@ html.dark {
   --c-ok: #8fb36b;
   --c-warn: #d9a566;
   --c-bad: #d96a56;
+
+  /* Dieselben Bänder, angehoben: Auf #261d18 wäre #3a2011 kein Ton mehr,
+     sondern ein Loch. Die Reihenfolge hell → dunkel bleibt erhalten,
+     nur der Kontrastbereich verschiebt sich mit dem Untergrund. */
+  --c-roast-1: #e8cda6;
+  --c-roast-2: #d9b689;
+  --c-roast-3: #c69c6c;
+  --c-roast-4: #b0814f;
+  --c-roast-5: #96683b;
+  --c-roast-6: #7a512c;
+  --c-roast-7: #5d3b20;
+
+  --c-origin-1: #d9a566;
+  --c-origin-2: #8fb36b;
+  --c-origin-3: #d96a56;
+  --c-origin-4: #6fa9ba;
+  --c-origin-5: #ab8fc7;
 
   color-scheme: dark;
 }

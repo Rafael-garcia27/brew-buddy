@@ -975,5 +975,35 @@
       "TZA",
       "CRI"
     ]
+  },
+  "flavorLabels": {
+    "applePear": "Apfel/Birne",
+    "bergamot": "Bergamotte",
+    "berry": "Beere",
+    "brownSugar": "brauner Zucker",
+    "caramel": "Karamell",
+    "chocolate": "Schokolade",
+    "citrus": "Zitrus",
+    "clean": "klar",
+    "complex": "komplex",
+    "creamy": "cremig",
+    "driedFruit": "Trockenfrucht",
+    "earthy": "erdig",
+    "floral": "blumig",
+    "herbal": "Kräuter",
+    "honey": "Honig",
+    "jasmine": "Jasmin",
+    "juicy": "saftig",
+    "malt": "Malz",
+    "nutty": "Nuss",
+    "panela": "Panela",
+    "spice": "Gewürz",
+    "stoneFruit": "Steinobst",
+    "tea": "Tee",
+    "tobacco": "Tabak",
+    "tomato": "Tomate",
+    "tropical": "tropisch",
+    "winey": "weinig",
+    "woody": "holzig"
   }
 }

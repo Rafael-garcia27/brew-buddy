@@ -9,7 +9,7 @@
  */
 import { describe, it, expect } from 'vitest'
 import type { Bag, Bean } from '@domain'
-import { bestBeansFor, bestMethodFor, suitability, RANK_SCHWELLE } from './suitability'
+import { bestBeansFor, bestMethodFor, rankMethodsFor, suitability, RANK_SCHWELLE } from './suitability'
 import { METHODS, METHOD_LABEL } from '@/labels'
 
 const TODAY = new Date('2026-09-08T08:00:00Z')
@@ -232,6 +232,72 @@ describe('Jede Methode begründet mit ihren eigenen Worten', () => {
     for (const b of proben) {
       const texte = METHODS.map((m) => suitability(b, m).reason)
       expect(new Set(texte).size).toBe(METHODS.length)
+    }
+  })
+})
+
+describe('Eine Rangfolge für alle Bildschirme', () => {
+  // Der Fit im Profil, die Methodenliste unter Brew und die Empfehlung
+  // beantworten dieselbe Frage. Bis Paket 2 rechnete jeder seine eigene
+  // Antwort: Der Fit stand in Anzeigereihenfolge, die Methodenliste hatte
+  // die Formel aus bestMethodFor kopiert. Zwei Kopien einer Formel sind
+  // eine Kopie zu viel — sie laufen auseinander, sobald eine sich ändert.
+  const PROBEN: Bean[] = [
+    bean('hell-washed-aeth', { origins: [{ country: 'Äthiopien' }], roastLevel: 'light' }),
+    bean('dunkel-natural-bra', {
+      origins: [{ country: 'Brasilien' }],
+      roastLevel: 'dark',
+      process: 'natural',
+    }),
+    bean('mittel-kol'),
+    bean('blend', { origins: [{ country: 'Blend' }] }),
+    bean('ohne-herkunft', { origins: [] }),
+    bean('hell-kenia', { origins: [{ country: 'Kenia' }], roastLevel: 'light' }),
+    bean('honey-gua', { origins: [{ country: 'Guatemala' }], process: 'honey-red' }),
+    bean('wethulled-idn', { origins: [{ country: 'Indonesien' }], process: 'wet-hulled' }),
+  ]
+
+  it('nennt oben dieselbe Methode wie die Empfehlung', () => {
+    for (const b of PROBEN) {
+      expect(rankMethodsFor(b)[0]!.method).toBe(bestMethodFor(b).method)
+    }
+  })
+
+  it('listet jede Methode genau einmal', () => {
+    for (const b of PROBEN) {
+      const r = rankMethodsFor(b)
+      expect(r).toHaveLength(METHODS.length)
+      expect(new Set(r.map((x) => x.method)).size).toBe(METHODS.length)
+    }
+  })
+
+  it('setzt keine gesperrte Methode über eine brauchbare', () => {
+    // Was die App selbst „schwierig" nennt, gehört nach unten — auch wenn
+    // das Herkunftsprofil dafür spricht.
+    for (const b of PROBEN) {
+      const r = rankMethodsFor(b)
+      const ersteGesperrt = r.findIndex((x) => !x.viable)
+      if (ersteGesperrt === -1) continue
+      expect(r.slice(ersteGesperrt).every((x) => !x.viable)).toBe(true)
+    }
+  })
+
+  it('liefert für dieselbe Bohne immer dieselbe Reihenfolge', () => {
+    // Ohne stabilen Gleichstands-Entscheid springt die Liste bei jedem
+    // Aufruf, und der Nutzer tippt auf die falsche Zeile.
+    for (const b of PROBEN) {
+      const a = rankMethodsFor(b).map((x) => x.method)
+      expect(rankMethodsFor(b).map((x) => x.method)).toEqual(a)
+    }
+  })
+
+  it('begründet die oberste Zeile mit deren eigener Methode', () => {
+    // Der Fit zeigt unter der Liste einen Satz. Er muss zur Methode
+    // gehören, die obendrüber steht — vorher stand dort der Satz zu
+    // bestMethodFor, während die Liste alphabetisch begann.
+    for (const b of PROBEN) {
+      const kopf = rankMethodsFor(b)[0]!
+      expect(kopf.suitability.reason).toBe(suitability(b, kopf.method).reason)
     }
   })
 })

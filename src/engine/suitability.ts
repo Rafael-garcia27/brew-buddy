@@ -136,45 +136,89 @@ function reasonFor(
   return `${o}${roastWord}: ${GRUND[method][ton]}`
 }
 
-/** Beste Methode für eine Bohne */
+// ── Methoden für eine Bohne, beste zuerst ─────────────────────────────
+
+export interface MethodRanking {
+  method: BrewMethod
+  suitability: Suitability
+  /** Herkunftsprofil minus Abschlag für Schwierigkeit. */
+  rank: number
+  /**
+   * Über der Schwierigkeitssperre — nur solche Methoden empfiehlt die App.
+   * Darunter ist nicht ausgeschlossen, aber es wird nicht empfohlen.
+   */
+  viable: boolean
+}
+
 /**
- * Welche Methode diese Bohne am besten zeigt.
+ * Unterhalb dieser Eignung empfiehlt die App eine Methode nicht mehr.
  *
- * Bewusst NICHT `suitability`: Die misst, wie leicht etwas schiefgeht, und
- * die AeroPress ist nun einmal die fehlerverzeihendste Methode. Sie gewann
- * dadurch fast immer — auch bei einer brasilianischen Natural, die jeder
- * Röster als Espressobohne verkauft.
- *
- * Empfohlen wird deshalb nach dem Herkunftsprofil (origins.json), das die
- * Frage „wo spielt diese Bohne ihre Stärken aus?" beantwortet. Die
- * Schwierigkeit kommt nur noch als Sperre dazu: Was für die Bohne
- * ausgesprochen schwierig ist, wird nicht empfohlen, egal wie gut es
- * theoretisch passt. Ohne Herkunftsangabe (Blend) bleibt die Eignung.
+ * Eine hell geröstete Brasilianerin ist im Espresso schwierig, egal wie
+ * sehr Brasilien für Espresso steht — das Herkunftsprofil darf die
+ * Schwierigkeit nicht überstimmen.
  */
-export function bestMethodFor(bean: Bean): { method: BrewMethod; suitability: Suitability } {
-  const methods = METHODS
+const METHODEN_SPERRE = 2.5
+
+/**
+ * Alle Methoden für diese Bohne, in einer Reihenfolge.
+ *
+ * Eine Reihenfolge, drei Verwender: die Empfehlung (`bestMethodFor`), die
+ * Methodenliste unter Brew und der Fit im Profil. Vorher rechnete jeder
+ * seine eigene — der Fit stand sogar in Anzeigereihenfolge, also immer
+ * gleich, egal welche Bohne. Sortiert man ihn nach `suitability`, kann
+ * seine oberste Zeile eine andere Methode nennen als die Empfehlung
+ * zwei Bildschirme weiter. Zwei Bildschirme, die sich widersprechen,
+ * sind schlimmer als eine unsortierte Liste.
+ *
+ * Bewusst NICHT nach `suitability` allein: Die misst, wie leicht etwas
+ * schiefgeht, und die AeroPress ist die fehlerverzeihendste Methode. Sie
+ * gewann dadurch fast immer — auch bei einer brasilianischen Natural,
+ * die jeder Röster als Espressobohne verkauft. Empfohlen wird nach dem
+ * Herkunftsprofil (origins.json): „wo spielt diese Bohne ihre Stärken
+ * aus?" Ohne Herkunftsangabe (Blend) bleibt die Eignung.
+ */
+export function rankMethodsFor(bean: Bean): MethodRanking[] {
   const origin = bean.origins[0] ? getOrigin(bean.origins[0].country) : undefined
 
-  const scored = methods.map((m) => {
+  const bewertet: MethodRanking[] = METHODS.map((m) => {
     const suit = suitability(bean, m)
     const fit = origin?.methodSuitability?.[m]
     // Ohne Herkunftsprofil trägt die Eignung die Entscheidung allein.
     const basis = fit ?? suit.score
     // Anspruchsvoll heißt nicht ausgeschlossen, aber es kostet.
-    return { method: m, suitability: suit, rang: basis - (suit.score < 3.5 ? 0.75 : 0) }
+    return {
+      method: m,
+      suitability: suit,
+      rank: basis - (suit.score < 3.5 ? 0.75 : 0),
+      viable: suit.score >= METHODEN_SPERRE,
+    }
   })
 
-  // Was die App selbst „schwierig" nennt, empfiehlt sie nicht — auch wenn
-  // die Herkunft dafür spricht. Eine hell geröstete Brasilianerin ist im
-  // Espresso schwierig, egal wie sehr Brasilien für Espresso steht.
-  // Nur wenn keine einzige Methode über der Schwelle liegt, gewinnt die
-  // am wenigsten schwierige.
-  const brauchbar = scored.filter((x) => x.suitability.score >= 2.5)
-  const feld = brauchbar.length ? brauchbar : scored
-  if (!brauchbar.length) feld.sort((a, b) => b.suitability.score - a.suitability.score)
-  else feld.sort((a, b) => b.rang - a.rang)
+  const idx = (r: MethodRanking) => METHODS.indexOf(r.method)
 
-  return { method: feld[0]!.method, suitability: feld[0]!.suitability }
+  // Liegt keine einzige Methode über der Sperre, gewinnt die am wenigsten
+  // schwierige — dann ist die Schwierigkeit die ganze Auskunft.
+  if (!bewertet.some((r) => r.viable)) {
+    return [...bewertet].sort(
+      (a, b) => b.suitability.score - a.suitability.score || idx(a) - idx(b),
+    )
+  }
+
+  return [...bewertet].sort(
+    (a, b) =>
+      Number(b.viable) - Number(a.viable) || b.rank - a.rank || idx(a) - idx(b),
+  )
+}
+
+/**
+ * Welche Methode diese Bohne am besten zeigt.
+ *
+ * Der Kopf von `rankMethodsFor` — nicht eine zweite Rechnung mit
+ * demselben Ziel.
+ */
+export function bestMethodFor(bean: Bean): { method: BrewMethod; suitability: Suitability } {
+  const kopf = rankMethodsFor(bean)[0]!
+  return { method: kopf.method, suitability: kopf.suitability }
 }
 
 // ── Die Gegenrichtung: Methode gewählt, welche Bohne? ─────────────────

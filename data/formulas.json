@@ -947,5 +947,64 @@
   "grindStepReference": {
     "micronPerStep": 12.5,
     "_note": "Alle grindSteps in dieser Datei sind in Schritten EINER Bezugsskala von 12,5 µm angegeben. Eine Mühle mit gröberer Auflösung braucht für dieselbe Partikeländerung entsprechend weniger Schritte: Schritte_Mühle = Schritte_Bezug × 12,5 / µm_je_Schritt_der_Mühle. Ohne diese Umrechnung würden −6 Bezugsschritte auf der Sage-Skala (40 µm je Nummer) 240 µm bedeuten statt 75 µm — die Mühle stünde auf 0,5 statt auf 4,5."
+  },
+  "agtronBands": {
+    "_source": "kb/05 §2.1 — Agtron/SCA-Farbskala, gemessen als Infrarot-Reflexion des Mahlguts. Höherer Wert = heller.",
+    "_note": "Die Bänder sind der Grund, warum diese App eine Röstskala zeichnen darf: Der Röstgrad ist eine Messgröße, keine Meinung. Rösteretiketten streuen um bis zu zwei Stufen — deshalb hat agtron laut kb/05 Vorrang vor roastLevel. Angezeigt wird beides, gerechnet wird vorerst weiter mit roastLevel (siehe docs/05 §6.5).",
+    "range": [
+      25,
+      95
+    ],
+    "bands": [
+      {
+        "min": 85,
+        "max": 95,
+        "level": "light",
+        "label": "Extremely Light",
+        "context": "Knapp nach dem First Crack."
+      },
+      {
+        "min": 75,
+        "max": 85,
+        "level": "light",
+        "label": "Light / Nordic",
+        "context": "Kurz nach dem First Crack."
+      },
+      {
+        "min": 65,
+        "max": 75,
+        "level": "medium-light",
+        "label": "Medium-Light",
+        "context": "Der Standard für Filterkaffee."
+      },
+      {
+        "min": 55,
+        "max": 65,
+        "level": "medium",
+        "label": "Medium",
+        "context": "Der moderne Espresso-Standard."
+      },
+      {
+        "min": 45,
+        "max": 55,
+        "level": "medium-dark",
+        "label": "Medium-Dark",
+        "context": "Kurz vor dem Second Crack."
+      },
+      {
+        "min": 35,
+        "max": 45,
+        "level": "dark",
+        "label": "Dark",
+        "context": "Im oder nach dem Second Crack."
+      },
+      {
+        "min": 25,
+        "max": 35,
+        "level": "dark",
+        "label": "Very Dark / French",
+        "context": "Deutlich nach dem Second Crack, die Bohne wird ölig."
+      }
+    ]
   }
 }

@@ -19,13 +19,13 @@ import { useStore } from '@/store'
 import type { Bean, RoastLevel, Process, BrewMethod } from '@domain'
 import type { BeanTrash } from '@/domain'
 import { assessFreshness } from '@/engine/freshness'
-import { suitability, bestMethodFor, SUITABILITY_LABEL } from '@/engine/suitability'
+import { bestMethodFor, rankMethodsFor, SUITABILITY_LABEL } from '@/engine/suitability'
 import { getOrigin, BLEND, findCountry, originOptions } from '@/kb'
 
 import { METHODS, ROAST_LABEL, PROCESS_LABEL, METHOD_LABEL } from '@/labels'
 import {
   Screen, Header, Section, Card, Button, Field, TextInput, Select, Sheet,
-  Empty, Stat, FreshnessRing, Stepper, Toggle, Chip, GearButton, LogButton, num,
+  Empty, FreshnessRing, Stepper, Toggle, Chip, GearButton, LogButton, num,
 } from '@/components/ui'
 import { BackupBanner, SetupNudge } from '@/components/system'
 /**
@@ -36,6 +36,7 @@ import { BackupBanner, SetupNudge } from '@/components/system'
  */
 const OriginMap = lazy(() => import('@/components/OriginMap'))
 import SwipeReveal from '@/components/SwipeReveal'
+import { RoastScale, ProcessMark, FactTable, type Fact } from '@/components/beanviz'
 
 interface Props {
   route: Route
@@ -266,6 +267,25 @@ export default function BeansScreen({ route, navigate, onDeleted }: Props) {
 
 // ── Detailansicht ─────────────────────────────────────────────────────
 
+/**
+ * Das Profil einer Bohne — von der Grafik zur Tabelle.
+ *
+ * Die Reihenfolge ist die Aussage: Was man ohne Lesen erfasst, steht
+ * oben, was man nachschlägt, unten.
+ *
+ *   1  Karte      wo sie wächst
+ *   2  Legende    welche Herkunft welche Farbe hat
+ *   3  Röstung    auf der Agtron-Skala, gemessen oder geschätzt
+ *   4  Aufbereitung  mit dem Fruchtkontakt als Achse
+ *   5  Fit        welche Methode passt, nach Eignung sortiert
+ *   6  Fakten     Name, Röster, Höhe, Varietät — schmucklos
+ *
+ * Vorher lagen Röstgrad, Aufbereitung, Herkunft, Farm, Höhe, Varietät und
+ * Koffein als sieben gleich große Kacheln in einem Raster. Sieben
+ * gleichrangige Angaben sind keine Hierarchie, sondern eine Liste — und
+ * die drei, die tatsächlich die Empfehlung bestimmen, verschwanden darin.
+ * Jetzt bekommen die drei den Platz und die vier die Tabelle.
+ */
 export function BeanDetail({
   bean,
   onBack,
@@ -281,8 +301,6 @@ export function BeanDetail({
    */
   onDeleted?: (papierkorb: BeanTrash) => void
 }) {
-  const istBlend = bean.origins.some((o) => o.country === BLEND)
-  const blendLaender = bean.origins.filter((o) => o.country !== BLEND)
   const [showEdit, setShowEdit] = useState(false)
   const allBags = useStore((s) => s.bags)
   const allBrews = useStore((s) => s.brews)
@@ -298,6 +316,50 @@ export function BeanDetail({
   const updateBag = useStore((s) => s.updateBag)
   const [showBag, setShowBag] = useState(false)
 
+  /**
+   * Der Fit, nach Eignung sortiert.
+   *
+   * Vorher stand er in Anzeigereihenfolge — Espresso, V60, AeroPress,
+   * French Press —, also immer gleich, egal welche Bohne. Eine Liste, die
+   * sich nicht ändert, beantwortet keine Frage.
+   *
+   * Sortiert wird mit derselben Funktion, aus der die Empfehlung unter
+   * Brew kommt. Eine eigene Sortierung nach `suitability` wäre einfacher
+   * gewesen und hätte hier eine andere Methode obenauf gesetzt als dort —
+   * bei derselben Bohne, zwei Bildschirme voneinander entfernt.
+   */
+  const fit = useMemo(() => rankMethodsFor(bean), [bean])
+
+  /** Was noch da ist — über alle offenen Tüten. */
+  const vorrat = bags
+    .filter((b) => !b.depleted && typeof b.remainingGrams === 'number')
+    .reduce((sum, b) => sum + (b.remainingGrams ?? 0), 0)
+
+  const fakten: Fact[] = [
+    { label: 'Name', value: bean.name },
+    { label: 'Röster', value: bean.roaster ?? '' },
+    {
+      label: 'Röstung',
+      value: bean.agtron
+        ? `${ROAST_LABEL[bean.roastLevel]} · Agtron ${bean.agtron}`
+        : ROAST_LABEL[bean.roastLevel],
+    },
+    { label: 'Aufbereitung', value: PROCESS_LABEL[bean.process] },
+    {
+      label: 'Höhe',
+      value: bean.altitudeMasl ? `${bean.altitudeMasl[0]}–${bean.altitudeMasl[1]} m` : '',
+    },
+    { label: 'Varietät', value: bean.varieties?.join(', ') ?? '' },
+    { label: 'Ernte', value: bean.harvestYear ? String(bean.harvestYear) : '' },
+    { label: 'Dichte', value: bean.densityGL ? `${bean.densityGL} g/l` : '' },
+    { label: 'Koffein', value: bean.isDecaf ? 'entkoffeiniert' : '' },
+    { label: 'Preis', value: bean.pricePerKg ? `${num(bean.pricePerKg, 2)} €/kg` : '' },
+    // Vorrat aus den Tüten, nicht aus der Bohne: Die Bohne ist die Sorte,
+    // die Tüte ist das, was im Schrank steht.
+    { label: 'Vorrat', value: vorrat > 0 ? `${num(vorrat, 0)} g` : '' },
+    { label: 'Notizen', value: bean.flavorNotes?.join(', ') ?? '' },
+  ].filter((f) => f.value)
+
   const bestByMethod = METHODS
     .map((m) => {
       const list = brews.filter((b) => b.method === m && (b.tasting?.rating ?? 0) >= 4)
@@ -308,95 +370,106 @@ export function BeanDetail({
 
   return (
     <Screen>
-      <Header title={bean.name} subtitle={bean.roaster} onBack={onBack} />
-
-      <Section
-        title="Profil"
-        action={
-          <Button size="sm" variant="ghost" className="-mr-3" onClick={() => setShowEdit(true)}>
+      <Header
+        title={bean.name}
+        subtitle={bean.roaster}
+        onBack={onBack}
+        right={
+          <Button size="sm" variant="ghost" className="-mr-2" onClick={() => setShowEdit(true)}>
             Bearbeiten
           </Button>
         }
-      >
+      />
+
+      {/* 1 + 2 — Karte und Legende. Der einzige Teil dieses Bildschirms,
+          den man ohne Lesen erfasst, steht deshalb zuerst. */}
+      <Section title="Herkunft">
         <Card>
-          {/* Wo sie wächst, bevor was sie ist: Die Karte ist der einzige
-              Teil dieses Bildschirms, den man ohne Lesen erfasst. */}
           <Suspense
             fallback={
-              <div className="mb-4">
+              <div>
                 <div className="aspect-[360/116] w-full rounded-xl border border-line bg-paper" />
-                <div className="mt-1.5 h-[15px]" />
+                <div className="mt-2.5 h-[17px]" />
               </div>
             }
           >
-            <OriginMap origins={bean.origins} className="mb-4" />
+            <OriginMap origins={bean.origins} />
           </Suspense>
-
-          <div className="grid grid-cols-2 gap-4">
-            <Stat label="Roast" value={ROAST_LABEL[bean.roastLevel]} />
-            <Stat label="Process" value={PROCESS_LABEL[bean.process]} />
-            {/* Beim Blend nur der Sammelwert: Die Bestandteile stehen
-                unter der Karte, und vier Ländernamen brechen in einer
-                Zweispalte auf vier Zeilen um. */}
-            <Stat
-              label="Origin"
-              value={
-                istBlend
-                  ? 'Blend'
-                  : bean.origins.map((o) => o.country).join(', ') || '—'
-              }
-              hint={
-                istBlend && blendLaender.length
-                  ? `${blendLaender.length} ${blendLaender.length === 1 ? 'Herkunft' : 'Herkünfte'}`
-                  : undefined
-              }
-            />
-            {bean.origins[0]?.farm && <Stat label="Farm" value={bean.origins[0].farm} />}
-            {bean.altitudeMasl && (
-              <Stat label="Altitude" value={`${bean.altitudeMasl[0]}–${bean.altitudeMasl[1]}`} unit="m" />
-            )}
-            {bean.varieties?.length ? <Stat label="Varietal" value={bean.varieties.join(', ')} /> : null}
-            {bean.isDecaf && <Stat label="Koffein" value="Entkoffeiniert" />}
-          </div>
-          {bean.flavorNotes?.length ? (
-            <div className="mt-4 border-t border-line pt-3">
-              <p className="text-[12px] text-mute">Notizen des Rösters</p>
-              <p className="mt-1 text-[15px]">{bean.flavorNotes.join(', ')}</p>
-            </div>
-          ) : null}
         </Card>
       </Section>
 
-      <Section title="Fit">
+      {/* 3 + 4 — die zwei Werte mit einer echten Skala. Zusammen in einem
+          Abschnitt, weil sie zusammen gelesen werden: Ein helles Natural
+          und ein dunkles Washed sind zwei verschiedene Kaffees. */}
+      <Section title="Charakter">
         <Card>
-          <div className="space-y-2">
-            {METHODS.map((m) => {
-              const fit = suitability(bean, m)
-              return (
-                <div key={m} className="flex items-center gap-3">
-                  <span className="w-24 shrink-0 text-[14px]">{METHOD_LABEL[m]}</span>
-                  <span className="flex gap-0.5" aria-label={SUITABILITY_LABEL[fit.level]}>
-                    {[1, 2, 3, 4, 5].map((n) => (
-                      <span
-                        key={n}
-                        className={`h-1.5 w-5 rounded-full ${
-                          n <= Math.round(fit.score)
-                            ? fit.isWarning
-                              ? 'bg-warn'
-                              : 'bg-crema'
-                            : 'bg-line'
-                        }`}
-                      />
-                    ))}
-                  </span>
-                  <span className="text-[13px] text-mute">{SUITABILITY_LABEL[fit.level]}</span>
-                </div>
-              )
-            })}
-          </div>
-          <p className="mt-3 border-t border-line pt-3 text-[13px] leading-relaxed text-mute">
-            {suitability(bean, bestMethodFor(bean).method).reason}
+          <RoastScale bean={bean} />
+        </Card>
+        <Card className="mt-2">
+          <ProcessMark process={bean.process} />
+        </Card>
+      </Section>
+
+      {/* 5 — Fit.
+          Zwei Achsen, und das ist der ganze Grund für die Legende oben
+          in der Karte: Die Reihenfolge sagt, wo die Bohne glänzt
+          (Herkunftsprofil), das Wort sagt, wie leicht die Methode zu
+          treffen ist (Eignung). Ohne diese Erklärung stand hier eine
+          Liste, in der die French Press unter dem Espresso saß und
+          trotzdem „gut geeignet" hieß — sichtbar widersprüchlich in
+          einem einzigen Blick. */}
+      <Section title="Fit" action={<span className="text-[12px] text-faint">nach Empfehlung</span>}>
+        <Card>
+          <p className="mb-3 text-[11px] leading-snug text-faint">
+            Balken: wo die Bohne ihre Stärken ausspielt. Wort: wie leicht die Methode zu treffen
+            ist.
           </p>
+          <div className="space-y-2.5">
+            {fit.map(({ method: m, suitability: f, rank, viable }, i) => (
+              <div key={m} className="flex items-center gap-3">
+                <span className={`w-24 shrink-0 text-[14px] ${i === 0 ? 'font-semibold' : ''}`}>
+                  {METHOD_LABEL[m]}
+                </span>
+                <span
+                  className="flex gap-0.5"
+                  aria-label={`Empfehlung ${Math.max(1, Math.round(rank))} von 5`}
+                >
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <span
+                      key={n}
+                      className={`h-1.5 w-5 rounded-full ${
+                        n <= Math.max(1, Math.round(rank))
+                          ? viable
+                            ? 'bg-crema'
+                            : 'bg-warn'
+                          : 'bg-line'
+                      }`}
+                    />
+                  ))}
+                </span>
+                <span
+                  className={`min-w-0 flex-1 text-[13px] ${
+                    f.isWarning || !viable ? 'text-warn' : i === 0 ? 'text-ink' : 'text-mute'
+                  }`}
+                >
+                  {SUITABILITY_LABEL[f.level]}
+                </span>
+              </div>
+            ))}
+          </div>
+          {/* Die Begründung gehört zur obersten Zeile — und die ist jetzt
+              die empfohlene, nicht mehr die erste in der Anzeigereihenfolge. */}
+          <p className="mt-3 border-t border-line pt-3 text-[13px] leading-relaxed text-mute">
+            {fit[0]!.suitability.reason}
+          </p>
+        </Card>
+      </Section>
+
+      {/* 6 — die trockenen Fakten. Schmucklos ist hier die Absicht: Sie
+          konkurrieren nicht mit den Grafiken darüber. */}
+      <Section title="Fakten">
+        <Card>
+          <FactTable facts={fakten} />
         </Card>
       </Section>
 

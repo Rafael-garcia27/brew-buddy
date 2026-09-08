@@ -16,8 +16,8 @@ import type { Bean, BrewMethod } from '@domain'
 import type { Route } from '@/router'
 import { useStore } from '@/store'
 import { METHODS, METHOD_LABEL, ROAST_LABEL, PROCESS_LABEL } from '@/labels'
-import { getMethod, getOrigin } from '@/kb'
-import { suitability, SUITABILITY_LABEL, type Suitability } from '@/engine/suitability'
+import { getMethod } from '@/kb'
+import { rankMethodsFor, SUITABILITY_LABEL, type Suitability } from '@/engine/suitability'
 import { Screen, Header, Section, Card, GearButton } from '@/components/ui'
 
 interface Props {
@@ -32,26 +32,22 @@ interface Bewertet {
   method: BrewMethod
   suitability?: Suitability
   rank: number
+  /** Über der Schwierigkeitssperre — nur mit Bohne gesetzt. */
+  viable?: boolean
 }
 
 export default function MethodPicker({ bean, navigate, back }: Props) {
   const lastMethod = useStore((s) => s.settings.lastMethod)
 
-  const liste: Bewertet[] = METHODS.map((m) => {
-    if (!bean) {
-      // Ohne Bohne gibt es keine Eignung — dann steht die zuletzt
-      // benutzte Methode oben, weil sie am wahrscheinlichsten wieder
-      // gebraucht wird. Alles andere behält die Anzeigereihenfolge.
-      return { method: m, rank: m === lastMethod ? 1 : 0 }
-    }
-    const suit = suitability(bean, m)
-    const origin = bean.origins[0] ? getOrigin(bean.origins[0].country) : undefined
-    const fit = origin?.methodSuitability?.[m]
-    // Dieselbe Rechnung wie in bestMethodFor: Empfohlen wird nach dem
-    // Herkunftsprofil, die Schwierigkeit kommt als Abschlag dazu.
-    const basis = fit ?? suit.score
-    return { method: m, suitability: suit, rank: basis - (suit.score < 3.5 ? 0.75 : 0) }
-  }).sort((a, b) => b.rank - a.rank)
+  // Mit Bohne kommt die Reihenfolge aus der Engine — dieselbe, die die
+  // Empfehlung und der Fit im Profil benutzen. Ohne Bohne gibt es keine
+  // Eignung; dann steht die zuletzt benutzte Methode oben, weil sie am
+  // wahrscheinlichsten wieder gebraucht wird.
+  const liste: Bewertet[] = bean
+    ? rankMethodsFor(bean)
+    : METHODS.map((m) => ({ method: m, rank: m === lastMethod ? 1 : 0 })).sort(
+        (a, b) => b.rank - a.rank,
+      )
 
   return (
     <Screen>
@@ -75,7 +71,7 @@ export default function MethodPicker({ bean, navigate, back }: Props) {
         <div className="space-y-2">
           {liste.map((e, i) => {
             const profil = getMethod(e.method)
-            const erste = i === 0 && !!bean && e.rank >= 3
+            const erste = i === 0 && !!bean && e.viable === true && e.rank >= 3
             const zuletzt = !bean && e.method === lastMethod
             return (
               <Card

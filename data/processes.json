@@ -1,0 +1,79 @@
+{
+  "version": "1.0.0",
+  "source": "kb/04-rohkaffee.md §4 — Aufbereitung",
+  "_note": "Die Aufbereitung hat eine echte Achse: wie viel Fruchtfleisch beim Trocknen an der Bohne blieb (kb/04 §4.3). Washed 0 %, Honey 25–100 %, Natural die ganze Kirsche. Deshalb darf die App sie als Skala zeichnen. Die fermentationsgetriebenen Verfahren haben diese Achse nicht — sie bekommen eine eigene Familie und keinen Skalenwert, statt einen zu erfinden. Die Prozentwerte in `mucilage` stammen aus kb/04 §4.3.",
+  "families": [
+    {
+      "id": "washed",
+      "label": "Washed",
+      "symbol": "drop",
+      "mucilagePct": [
+        0,
+        0
+      ],
+      "short": "Fruchtfleisch abgewaschen, dann getrocknet",
+      "profile": "klar, transparent, säurebetont, terroir-treu, leichter Körper",
+      "brewNote": "Zeigt Fehler sofort — verzeiht am wenigsten, ist dafür am ehrlichsten."
+    },
+    {
+      "id": "honey",
+      "label": "Honey",
+      "symbol": "half",
+      "mucilagePct": [
+        25,
+        100
+      ],
+      "short": "entpulpt, aber ungewaschen getrocknet",
+      "profile": "süß, zwischen Klarheit und Frucht — je mehr Mucilage, desto sirupöser",
+      "brewNote": "Verhält sich mit steigendem Fruchtanteil zunehmend wie ein Natural."
+    },
+    {
+      "id": "natural",
+      "label": "Natural",
+      "symbol": "cherry",
+      "mucilagePct": [
+        100,
+        100
+      ],
+      "short": "ganze Kirsche getrocknet",
+      "profile": "intensiv fruchtig, schwerer Körper, süßer, weinig, weniger Säure",
+      "brewNote": "Löst sich leichter — rund einen Schritt gröber mahlen als ein Washed gleichen Röstgrads."
+    },
+    {
+      "id": "fermented",
+      "label": "Fermentiert",
+      "symbol": "flask",
+      "mucilagePct": null,
+      "short": "gesteuerte Fermentation unter CO₂ oder mit Hefe",
+      "profile": "sehr intensiv, oft Zimt, Rum, tropisch — polarisierend",
+      "brewNote": "Oft atypisch hohe Löslichkeit: kürzere Kontaktzeit oder gröber, als das Röstprofil vermuten lässt."
+    },
+    {
+      "id": "wet-hulled",
+      "label": "Wet Hulled",
+      "symbol": "husk",
+      "mucilagePct": null,
+      "short": "Pergamin bei 30–35 % Restfeuchte entfernt",
+      "profile": "erdig, holzig, Kräuter, Tabak, sehr niedrige Säure, enormer Körper",
+      "brewNote": "Der Körper trägt viel — Säure ist hier kein Maßstab für die Extraktion."
+    }
+  ],
+  "map": {
+    "washed": "washed",
+    "natural": "natural",
+    "honey-yellow": "honey",
+    "honey-red": "honey",
+    "honey-black": "honey",
+    "anaerobic": "fermented",
+    "carbonic-maceration": "fermented",
+    "wet-hulled": "wet-hulled",
+    "experimental": "fermented"
+  },
+  "mucilage": {
+    "washed": 0,
+    "honey-yellow": 38,
+    "honey-red": 62,
+    "honey-black": 88,
+    "natural": 100
+  }
+}

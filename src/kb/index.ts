@@ -15,6 +15,7 @@ import grindersRaw from '@data/grinders.json'
 import glossaryRaw from '@data/glossary.json'
 import formulasRaw from '@data/formulas.json'
 import countriesRaw from '@data/countries.json'
+import processesRaw from '@data/processes.json'
 import type { BrewMethod, RoastLevel, Process } from '@domain'
 
 // ── Methoden ──────────────────────────────────────────────────────────
@@ -630,6 +631,21 @@ export function findCountry(eingabe: string): Country | undefined {
   return COUNTRIES.find((c) => c.de.toLowerCase() === g || c.en?.toLowerCase() === g)
 }
 
+/**
+ * Geschmacksschlüssel → deutsches Wort.
+ *
+ * Die Schlüssel stehen als englische Kennungen in origins.json, weil sie
+ * dort Datenfelder sind. Angezeigt wird deutsch — und die Übersetzung
+ * liegt neben den Daten, nicht im Code, damit ein neues Herkunftsprofil
+ * sein Vokabular gleich mitbringt (Leitentscheidung E2).
+ */
+const FLAVOR_LABELS = (originsRaw as unknown as { flavorLabels?: Record<string, string> })
+  .flavorLabels ?? {}
+
+export function flavorLabel(key: string): string {
+  return FLAVOR_LABELS[key] ?? key
+}
+
 /** Reihenfolge der Exporteure, oben in jeder Herkunftsauswahl. */
 export const EXPORT_RANKING = (
   originsRaw as unknown as { exportRanking?: { iso: string[] } }
@@ -690,6 +706,100 @@ export function getTerm(id: string): GlossaryTerm | undefined {
 export function termsForLevel(level: 'basis' | 'advanced' | 'expert'): GlossaryTerm[] {
   const order = { basis: 0, advanced: 1, expert: 2 }
   return GLOSSARY.filter((t) => order[t.level] <= order[level])
+}
+
+// ── Röstgrad als Messgröße (kb/05 §2.1) ───────────────────────────────
+
+/**
+ * Die Agtron-Bänder.
+ *
+ * Der Röstgrad ist der einzige Bohnenwert, der eine echte Messskala hat:
+ * Infrarot-Reflexion des Mahlguts, 25–95, höher = heller. Deshalb darf
+ * die App ihn als Skala zeichnen und nicht nur als Wort.
+ *
+ * kb/05 §2.1 sagt außerdem, warum das nötig ist: Etikettenbezeichnungen
+ * sind nicht standardisiert und streuen zwischen Röstern um bis zu zwei
+ * Stufen. Ein gemessener Agtron und ein aufgedrucktes „Medium" sind also
+ * nicht dasselbe — und werden hier auch nicht gleich dargestellt.
+ */
+export interface AgtronBand {
+  min: number
+  max: number
+  level: RoastLevel
+  label: string
+  /** Was an dieser Stelle im Röster passiert — macht die Zahl lesbar. */
+  context: string
+}
+
+const AGTRON = formulasRaw.agtronBands as unknown as {
+  range: [number, number]
+  bands: AgtronBand[]
+}
+
+export const AGTRON_RANGE: [number, number] = AGTRON.range
+/** Von hell nach dunkel — die Anzeigereihenfolge einer Skala. */
+export const AGTRON_BANDS: AgtronBand[] = AGTRON.bands
+
+/** In welchem Band liegt dieser Messwert? Außerhalb: das Randband. */
+export function agtronBand(agtron: number): AgtronBand {
+  const treffer = AGTRON_BANDS.find((b) => agtron >= b.min && agtron < b.max)
+  if (treffer) return treffer
+  // Die Obergrenze gehört zum obersten Band, alles darunter zum untersten.
+  return agtron >= AGTRON_RANGE[1] ? AGTRON_BANDS[0]! : AGTRON_BANDS[AGTRON_BANDS.length - 1]!
+}
+
+/**
+ * Welche Agtron-Spanne deckt eine Etikettenbezeichnung ab?
+ *
+ * Bewusst eine Spanne, kein Punkt: „Light" umfasst zwei Bänder (75–95).
+ * Wer daraus eine einzelne Zahl macht, behauptet eine Messung, die nicht
+ * stattgefunden hat.
+ */
+export function agtronSpan(level: RoastLevel): [number, number] {
+  const treffer = AGTRON_BANDS.filter((b) => b.level === level)
+  if (!treffer.length) return AGTRON_RANGE
+  return [Math.min(...treffer.map((b) => b.min)), Math.max(...treffer.map((b) => b.max))]
+}
+
+// ── Aufbereitung (kb/04 §4) ───────────────────────────────────────────
+
+export interface ProcessFamily {
+  id: string
+  label: string
+  /** Kennung für das Symbol, das die App zeichnet — keine Grafik in den Daten. */
+  symbol: string
+  /** Verbleibende Mucilage in Prozent, oder null wo die Achse nicht greift. */
+  mucilagePct: [number, number] | null
+  short: string
+  profile: string
+  brewNote: string
+}
+
+export const PROCESS_FAMILIES = processesRaw.families as unknown as ProcessFamily[]
+
+/**
+ * Aufbereitung → Familie.
+ *
+ * Fünf Familien statt neun Einzelwerte, weil die Unterschiede innerhalb
+ * einer Familie fürs Brühen kleiner sind als die zwischen ihnen — und
+ * weil kb/04 §4.4 ausdrücklich verlangt, die fermentierten Verfahren
+ * NICHT unter „natural" zu führen.
+ */
+export function processFamily(process: Process): ProcessFamily {
+  const id = (processesRaw.map as Record<string, string>)[process]
+  return PROCESS_FAMILIES.find((f) => f.id === id) ?? PROCESS_FAMILIES[0]!
+}
+
+/**
+ * Wie viel Fruchtfleisch beim Trocknen an der Bohne blieb (kb/04 §4.3).
+ *
+ * Das ist die Achse hinter Washed → Honey → Natural und der Grund, warum
+ * daraus eine Skala werden darf. `null` heißt: dieses Verfahren liegt
+ * nicht auf dieser Achse, sondern auf der Fermentationsachse.
+ */
+export function mucilagePct(process: Process): number | null {
+  const werte = processesRaw.mucilage as Record<string, number>
+  return werte[process] ?? null
 }
 
 // ── Formeln (Zielkorridore und Grenzen) ───────────────────────────────

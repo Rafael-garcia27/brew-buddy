@@ -13,7 +13,8 @@ import { describe, it, expect } from 'vitest'
 import originsRaw from '@data/origins.json'
 import { BLEND, COUNTRIES, EXPORT_RANKING, findCountry, originOptions } from './index'
 import { WORLD_MAP, mapPath } from './worldmap'
-import { originCountries, originMapState } from '@/components/OriginMap'
+import { originCountries, originLegend, originMapState } from '@/components/OriginMap'
+import { readFileSync } from 'node:fs'
 
 const APP_HERKUENFTE = (originsRaw.origins as { name: string }[]).map((o) => o.name)
 
@@ -154,5 +155,75 @@ describe('Zustand der Karte', () => {
 
   it('nennt kein Land doppelt', () => {
     expect(originCountries([{ country: 'Kenia' }, { country: 'Kenia' }])).toEqual(['KEN'])
+  })
+})
+
+describe('Kartenlegende', () => {
+  it('gibt jeder Herkunft eine eigene Farbe', () => {
+    // Der ganze Zweck der Legende: Drei Länder in einer Farbe sind auf
+    // der Karte nicht auseinanderzuhalten, und der Text darunter
+    // behauptet trotzdem eine Zuordnung.
+    const l = originLegend([{ country: BLEND }, { country: 'Brasilien' }, { country: 'Kolumbien' }])
+    expect(l.map((e) => e.name)).toEqual(['Brasilien', 'Kolumbien'])
+    expect(new Set(l.map((e) => e.color)).size).toBe(2)
+  })
+
+  it('lässt den Sammelwert „Blend" aus der Legende heraus', () => {
+    // „Blend" ist kein Land und hat keinen Fleck auf der Karte.
+    const l = originLegend([{ country: BLEND }])
+    expect(l).toEqual([])
+  })
+
+  it('verzichtet auf Farben, statt sie zu wiederholen', () => {
+    const viele = [
+      'Brasilien', 'Kolumbien', 'Äthiopien', 'Kenia', 'Guatemala', 'Indonesien',
+    ].map((country) => ({ country }))
+    const l = originLegend(viele)
+    expect(l).toHaveLength(6)
+    expect(l.every((e) => e.color === undefined)).toBe(true)
+  })
+
+  it('nimmt Region, Farm und Anteil der Bohne mit', () => {
+    const l = originLegend([{ country: 'Kolumbien', region: 'Huila', farm: 'El Paraíso', sharePct: 60 }])
+    expect(l[0]!.detail).toBe('Huila · El Paraíso · 60 %')
+  })
+
+  it('greift ohne eigene Angabe auf das Herkunftsprofil zurück', () => {
+    // Eine Legendenzeile, die nur den Ländernamen wiederholt, den die
+    // Karte schon zeigt, wäre keine Ergänzung.
+    const l = originLegend([{ country: 'Äthiopien' }])
+    expect(l[0]!.detail).toBeUndefined()
+    expect(l[0]!.character).toBeTruthy()
+    // Und zwar deutsch: Die Schlüssel in origins.json sind englisch.
+    expect(l[0]!.character).not.toMatch(/[a-z][A-Z]/)
+  })
+
+  it('markiert ein Land, das der Ausschnitt nicht zeigt', () => {
+    const l = originLegend([{ country: 'Norwegen' }])
+    expect(l[0]!.offMap).toBe(true)
+    expect(originLegend([{ country: 'Brasilien' }])[0]!.offMap).toBe(false)
+  })
+
+  it('nennt jedes Land nur einmal, auch bei doppelter Angabe', () => {
+    const l = originLegend([{ country: 'Brasilien' }, { country: 'Brazil' }])
+    expect(l).toHaveLength(1)
+  })
+
+  it('bleibt bei fehlender Herkunft leer', () => {
+    expect(originLegend(undefined)).toEqual([])
+    expect(originLegend([])).toEqual([])
+  })
+
+  it('hat für jede Legendenfarbe ein Token im Stylesheet', () => {
+    // Eine Farbe ohne Token rendert transparent — das Land wäre
+    // eingezeichnet und unsichtbar.
+    const css = readFileSync(new URL('../index.css', import.meta.url), 'utf8')
+    const viele = ['Brasilien', 'Kolumbien', 'Äthiopien', 'Kenia', 'Guatemala'].map((country) => ({
+      country,
+    }))
+    for (const e of originLegend(viele)) {
+      const token = e.color!.replace(/var\(|\)/g, '')
+      expect(css).toContain(`${token}:`)
+    }
   })
 })
