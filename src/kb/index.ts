@@ -38,6 +38,8 @@ export interface MethodProfile {
   id: BrewMethod
   label: string
   physics: string
+  /** Ein Satz: was die Methode tut und was das für die Tasse heißt. */
+  short?: string
   grindSensitivity: number
   timeSensitivity: number
   agitationRelevant: boolean

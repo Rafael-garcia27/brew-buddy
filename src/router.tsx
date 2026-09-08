@@ -8,23 +8,57 @@
 import { useCallback, useEffect, useState } from 'react'
 
 /**
- * `beans` ist das Zuhause der App, nicht `brew`.
+ * Zwei Einstiege, weil die App zwei Fragen beantwortet.
  *
- * Gebrüht wird immer eine bestimmte Bohne — die Auswahl stand deshalb
- * ohnehin am Anfang jedes Durchgangs. Sie ist damit keine Vorstufe des
- * Brühens, sondern die Oberfläche selbst; Brühen, Profil und Log sind
- * Aktionen AN einer Bohne und tragen ihre Kennung in der Route.
+ *   „Ich will einen V60 — welche Bohne nehme ich?"   → brew
+ *   „Ich habe diese Bohne — wie brühe ich sie?"      → coffee
+ *
+ * Beide sind vollwertige Startpunkte, keiner ist Vorstufe des anderen.
+ * Eine Zeit lang war `beans` der einzige Einstieg (c11c1db); die damalige
+ * Begründung — drei von vier Zielen ergeben nur mit einer bestimmten
+ * Bohne Sinn — gilt für Profil und Log weiter, aber nicht mehr fürs
+ * Brühen, sobald die Methode selbst der Anfang ist.
+ *
+ * `profile`, `log` und `setup` sind keine Reiter, sondern Ziele: Sie
+ * hängen an einer Bohne (bzw. an nichts) und werden von den beiden
+ * Einstiegen aus geöffnet.
  */
-export type Tab = 'beans' | 'brew' | 'profile' | 'log' | 'setup'
+export type Tab = 'coffee' | 'brew' | 'profile' | 'log' | 'setup'
 
+/**
+ * Was `id` und `detail` bedeuten, hängt am Reiter.
+ *
+ * Die Felder sind generisch, ihre Belegung nicht — deshalb hier
+ * festgehalten, statt es an fünf Stellen im Code zu erraten:
+ *
+ * | Reiter    | `id`                     | `detail`        |
+ * | --------- | ------------------------ | --------------- |
+ * | `coffee`  | Bohne (Vorauswahl)       | `new`           |
+ * | `brew`    | **Methode**              | **Bohne**       |
+ * | `profile` | Bohne                    | —               |
+ * | `log`     | Bohne (Filter)           | Brew            |
+ * | `setup`   | —                        | `grinder`       |
+ *
+ * `brew` ist der Grund für diese Tabelle: Dort steht in `id` keine Bohne,
+ * sondern die Methode, und die Bohne rutscht auf `detail`. Das folgt der
+ * Reihenfolge, in der man wählt.
+ */
 export interface Route {
   tab: Tab
-  detail?: string
-  /** Die Bohne, um die es geht — bei brew, profile und log verpflichtend. */
   id?: string
+  detail?: string
 }
 
-const TABS: Tab[] = ['beans', 'brew', 'profile', 'log', 'setup']
+const TABS: Tab[] = ['coffee', 'brew', 'profile', 'log', 'setup']
+
+/** Typisierte Leser, damit `route.id` nicht überall gedeutet werden muss. */
+export function beanOf(r: Route): string | undefined {
+  return r.tab === 'brew' ? r.detail : r.id
+}
+
+export function methodOf(r: Route): string | undefined {
+  return r.tab === 'brew' ? r.id : undefined
+}
 
 /**
  * Alte Adressen weiterleiten.
@@ -33,7 +67,7 @@ const TABS: Tab[] = ['beans', 'brew', 'profile', 'log', 'setup']
  * war. Ohne diese Zuordnung landet ein Update auf `#/shelf` und zeigt
  * einen leeren Bildschirm.
  */
-const ALT: Record<string, Tab> = { shelf: 'beans' }
+const ALT: Record<string, Tab> = { shelf: 'coffee', beans: 'coffee' }
 
 /**
  * Segmentfolge: `#/tab/id/detail`.
@@ -44,6 +78,9 @@ const ALT: Record<string, Tab> = { shelf: 'beans' }
  * rutscht das Detail auf die Position der Kennung, und `#/beans/<id>`
  * käme als `detail` zurück. Genau das ist beim Umbau passiert; die
  * Auswahl sprang nach dem Zurückgehen auf die falsche Bohne.
+ *
+ * Bei `brew` sind beide Segmente belegt (`#/brew/v60/<bohne>`), der
+ * Platzhalter kommt dort also nicht vor.
  */
 const LEER = '-'
 
@@ -55,7 +92,7 @@ function parse(hash: string): Route {
   const clean = hash.replace(/^#\/?/, '')
   const [tab, id, detail] = clean.split('/')
   const roh = tab ?? ''
-  const t = (TABS as string[]).includes(roh) ? (roh as Tab) : (ALT[roh] ?? 'beans')
+  const t = (TABS as string[]).includes(roh) ? (roh as Tab) : (ALT[roh] ?? 'coffee')
   return { tab: t, id: seg(id), detail: seg(detail) }
 }
 

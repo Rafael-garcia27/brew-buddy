@@ -1,25 +1,60 @@
 /**
- * Eine Oberfläche, keine Registerkarten.
+ * Zwei Einstiege, weil die App zwei Fragen beantwortet.
  *
- * Die Navigationsleiste hat vier gleichrangige Ziele angeboten, von denen
- * drei nur mit einer bestimmten Bohne Sinn ergeben: Brühen, Profil und Log
- * beziehen sich immer auf eine. Beans ist deshalb kein Reiter neben den
- * anderen, sondern der Ort, an den man zurückkehrt — die drei Aktionen
- * hängen an der dort gewählten Bohne, und der Weg zurück ist der Pfeil im
- * Kopf oder die Wischgeste.
+ *   Brew   — „Ich will einen V60 machen, welche Bohne nehme ich?"
+ *   Coffee — „Ich habe diese Bohne, wie brühe ich sie am besten?"
  *
- * Setup fällt aus dieser Logik heraus: Es gehört keiner Bohne und wird
- * einmal eingerichtet. Es sitzt hinter dem Zahnrad im Kopf von Beans.
+ * Beide sind vollwertige Startpunkte. Eine Zeit lang war Coffee (damals
+ * „Beans") der einzige, mit der Begründung: drei von vier Reiterzielen
+ * ergeben nur mit einer bestimmten Bohne Sinn. Für Profil und Log gilt
+ * das weiter — deshalb sind sie keine Reiter, sondern Ziele. Fürs Brühen
+ * gilt es nicht, sobald die Methode selbst der Anfang ist.
+ *
+ * Setup gehört keiner Bohne und keiner Methode und sitzt hinter dem
+ * Zahnrad. Das Logbuch über alle Bohnen hängt am Kopf von Coffee: Dort
+ * steht die Frage „was habe ich schon gebrüht?" am nächsten.
  */
-import { useEffect, useRef, useState } from 'react'
-import { useRouter } from './router'
+import { useEffect, useRef, useState, type ReactElement } from 'react'
+import { useRouter, beanOf, methodOf, type Tab } from './router'
 import { useStore } from './store'
 import type { BeanTrash } from './domain'
+import type { BrewMethod } from '@domain'
+import { METHOD_IDS } from './kb'
 import { UndoBar } from './components/system'
 import BrewScreen from './screens/BrewScreen'
+import MethodPicker from './screens/MethodPicker'
+import BeanPicker from './screens/BeanPicker'
 import BeansScreen, { BeanDetail } from './screens/BeansScreen'
 import LogScreen from './screens/LogScreen'
 import SetupScreen from './screens/SetupScreen'
+
+const REITER: { id: Tab; label: string; icon: ReactElement }[] = [
+  {
+    id: 'brew',
+    label: 'Brew',
+    icon: (
+      <path
+        d="M6 9h11a3 3 0 010 6h-1M6 9v5a5 5 0 005 5h0a5 5 0 005-5V9M6 9H5m1-4v1m4-1v1m4-1v1M4 21h14"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    ),
+  },
+  {
+    id: 'coffee',
+    label: 'Coffee',
+    icon: (
+      // Kaffeebohne: Ellipse mit der Naht auf der Längsachse. Beide in
+      // EINER gedrehten Gruppe — vorher war nur die Ellipse gedreht und
+      // die Naht lief quer über sie hinweg.
+      <g transform="rotate(-30 12 12)">
+        <ellipse cx="12" cy="12" rx="6" ry="9" strokeWidth="1.8" />
+        <path d="M12 3.2c-2.9 4.2-2.9 13.4 0 17.6" strokeWidth="1.8" strokeLinecap="round" />
+      </g>
+    ),
+  },
+]
 
 export default function App() {
   const { route, navigate, back } = useRouter()
@@ -31,10 +66,10 @@ export default function App() {
   /**
    * Was gerade gelöscht wurde, für „Rückgängig“.
    *
-   * Liegt hier und nicht im Profil: Der Bildschirm, auf dem gelöscht
-   * wird, verschwindet im selben Moment. Eine Wischgeste ohne Rückfrage
-   * braucht aber einen Weg zurück — mit der Bohne gehen ihre Tüten und
-   * ihre Protokolle, also die Datenbasis, aus der die App gelernt hat.
+   * Liegt hier und nicht im Bildschirm, der gelöscht hat: Der wird im
+   * selben Moment neu aufgebaut. Eine Wischgeste ohne Rückfrage braucht
+   * aber einen Weg zurück — mit der Bohne gehen ihre Tüten und ihre
+   * Protokolle, also die Datenbasis, aus der die App gelernt hat.
    */
   const [papierkorb, setPapierkorb] = useState<BeanTrash | null>(null)
   const uhr = useRef<number | undefined>(undefined)
@@ -57,40 +92,58 @@ export default function App() {
   }
 
   /**
-   * Zurück zu Beans, auch ohne Verlauf.
+   * Zurück, auch ohne Verlauf.
    *
-   * `history.back()` führt ins Nichts, wenn die Route direkt geöffnet wurde
-   * — beim Kaltstart einer installierten PWA mit gespeichertem Hash ist
-   * genau das der Normalfall.
+   * `history.back()` führt ins Nichts, wenn die Route direkt geöffnet
+   * wurde — beim Kaltstart einer installierten PWA mit gespeichertem Hash
+   * ist genau das der Normalfall.
    */
   const heim = () => {
     if (window.history.length > 1) back()
-    else navigate({ tab: 'beans' }, true)
+    else navigate({ tab: 'coffee' }, true)
   }
 
-  /** Die Bohne, um die es in dieser Route geht. */
-  const bean = route.id ? beans.find((b) => b.id === route.id) : undefined
+  const bean = beans.find((b) => b.id === beanOf(route))
+  const rohMethode = methodOf(route)
+  // Nur eine Methode, die die Wissensbasis wirklich führt. Eine erfundene
+  // Kennung in der Adresszeile darf die Engine nicht erreichen.
+  const methode = (METHOD_IDS as string[]).includes(rohMethode ?? '')
+    ? (rohMethode as BrewMethod)
+    : undefined
+
+  const coffee = (
+    <BeansScreen route={route} navigate={navigate} back={heim} onDeleted={merken} />
+  )
 
   return (
     <div className="flex h-[100dvh] flex-col">
       <main className="scroll-area flex-1 overflow-y-auto">
-        {route.tab === 'beans' && <BeansScreen route={route} navigate={navigate} back={heim} onDeleted={merken} />}
+        {route.tab === 'coffee' && coffee}
 
-        {/* Eine gelöschte Bohne macht ihre Aktionen gegenstandslos. Statt
-            einen halb gefüllten Bildschirm zu zeigen, geht es zurück. */}
+        {/* Drei Stufen, in der Reihenfolge, in der man wählt: Methode,
+            dann Bohne, dann der Durchgang. */}
         {route.tab === 'brew' &&
-          (bean ? (
-            <BrewScreen route={route} navigate={navigate} back={heim} />
+          (!methode ? (
+            // Ohne Methode: der Katalog. Mit Bohne aber ohne Methode
+            // (`#/brew/-/<bohne>`) derselbe Bildschirm, nur nach Eignung
+            // für diese Bohne sortiert — das ist der Weg aus Coffee.
+            <MethodPicker bean={bean} route={route} navigate={navigate} back={heim} />
+          ) : !bean ? (
+            <BeanPicker method={methode} route={route} navigate={navigate} back={heim} />
           ) : (
-            <BeansScreen route={{ tab: 'beans' }} navigate={navigate} back={heim} onDeleted={merken} />
+            <BrewScreen
+              method={methode}
+              bean={bean}
+              route={route}
+              navigate={navigate}
+              back={heim}
+            />
           ))}
 
+        {/* Eine gelöschte Bohne macht ihr Profil gegenstandslos. Statt
+            einen halb gefüllten Bildschirm zu zeigen, geht es zurück. */}
         {route.tab === 'profile' &&
-          (bean ? (
-            <BeanDetail bean={bean} onBack={heim} onDeleted={merken} />
-          ) : (
-            <BeansScreen route={{ tab: 'beans' }} navigate={navigate} back={heim} onDeleted={merken} />
-          ))}
+          (bean ? <BeanDetail bean={bean} onBack={heim} onDeleted={merken} /> : coffee)}
 
         {route.tab === 'log' && <LogScreen route={route} navigate={navigate} back={heim} />}
         {route.tab === 'setup' && <SetupScreen route={route} navigate={navigate} back={heim} />}
@@ -107,6 +160,31 @@ export default function App() {
           }}
         />
       )}
+
+      {/* Nur die beiden Einstiege. Profil, Log und Setup sind Ziele und
+          gehören nicht in eine Leiste, die immer sichtbar ist. */}
+      <nav className="pb-safe border-t border-line bg-paper/95 backdrop-blur-xl">
+        <div className="flex">
+          {REITER.map((t) => {
+            const aktiv = route.tab === t.id || (t.id === 'coffee' && route.tab === 'profile')
+            return (
+              <button
+                key={t.id}
+                onClick={() => navigate({ tab: t.id })}
+                aria-current={aktiv ? 'page' : undefined}
+                className={`flex h-[54px] flex-1 flex-col items-center justify-center gap-1 ${
+                  aktiv ? 'text-crema' : 'text-faint'
+                }`}
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden>
+                  {t.icon}
+                </svg>
+                <span className="text-[10px] font-medium">{t.label}</span>
+              </button>
+            )
+          })}
+        </div>
+      </nav>
     </div>
   )
 }

@@ -58,7 +58,7 @@ export default function LogScreen({ route, navigate, back }: Props) {
           body="Jeder Brew macht die Empfehlungen präziser. Nach drei gut bewerteten Tassen pro Bohne kennt die App deinen Geschmack."
           action={
             gefilterteBohne ? (
-              <Button onClick={() => navigate({ tab: 'brew', id: gefilterteBohne.id })}>
+              <Button onClick={() => navigate({ tab: 'brew', detail: gefilterteBohne.id })}>
                 Ersten Kaffee brühen
               </Button>
             ) : undefined

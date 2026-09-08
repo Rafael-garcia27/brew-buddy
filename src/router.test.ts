@@ -6,7 +6,7 @@
  * Bohne. Deshalb gibt es hier die Rundreise als Test.
  */
 import { describe, it, expect } from 'vitest'
-import { _internal, type Route } from './router'
+import { _internal, beanOf, methodOf, type Route } from './router'
 
 const { parse, stringify } = _internal
 
@@ -17,10 +17,12 @@ function rundreise(r: Route): Route {
 
 describe('Routen überleben die Adresszeile', () => {
   const faelle: Route[] = [
-    { tab: 'beans' },
-    { tab: 'beans', id: 'bean-1' },
-    { tab: 'beans', detail: 'new' },
-    { tab: 'brew', id: 'bean-1' },
+    { tab: 'coffee' },
+    { tab: 'coffee', id: 'bean-1' },
+    { tab: 'coffee', detail: 'new' },
+    // brew trägt Methode UND Bohne — der Grund für die Segmenttabelle.
+    { tab: 'brew', id: 'v60' },
+    { tab: 'brew', id: 'v60', detail: 'bean-1' },
     { tab: 'profile', id: 'bean-1' },
     { tab: 'log', id: 'bean-1' },
     { tab: 'log', id: 'bean-1', detail: 'brew-9' },
@@ -36,16 +38,40 @@ describe('Routen überleben die Adresszeile', () => {
   }
 })
 
-describe('Unbekannte Adressen', () => {
-  it('landen auf Beans statt auf einem leeren Bildschirm', () => {
-    expect(parse('#/').tab).toBe('beans')
-    expect(parse('').tab).toBe('beans')
-    expect(parse('#/quatsch').tab).toBe('beans')
+describe('Bedeutung der Segmente', () => {
+  it('liest bei brew die Methode aus `id` und die Bohne aus `detail`', () => {
+    const r = parse('#/brew/v60/bean-1')
+    expect(methodOf(r)).toBe('v60')
+    expect(beanOf(r)).toBe('bean-1')
   })
 
-  it('leiten die alte Regal-Adresse weiter', () => {
+  it('liest überall sonst die Bohne aus `id` und kennt keine Methode', () => {
+    for (const tab of ['coffee', 'profile', 'log'] as const) {
+      const r = parse(`#/${tab}/bean-1`)
+      expect(beanOf(r)).toBe('bean-1')
+      expect(methodOf(r)).toBeUndefined()
+    }
+  })
+})
+
+describe('Unbekannte Adressen', () => {
+  it('landen auf Beans statt auf einem leeren Bildschirm', () => {
+    expect(parse('#/').tab).toBe('coffee')
+    expect(parse('').tab).toBe('coffee')
+    expect(parse('#/quatsch').tab).toBe('coffee')
+  })
+
+  it('leiten die alten Regal-Adressen weiter', () => {
+    // Zweimal umbenannt: shelf → beans → coffee. Eine installierte PWA
+    // startet mit dem Hash des letzten Besuchs, also müssen beide
+    // Zwischenstände weiterleiten.
+    expect(parse('#/beans').tab).toBe('coffee')
+    expect(parse('#/beans/-/bean-1')).toEqual({ tab: 'coffee', detail: 'bean-1' })
+  })
+
+  it('leitet die erste Regal-Adresse weiter', () => {
     // Eine installierte PWA startet mit dem Hash des letzten Besuchs.
-    expect(parse('#/shelf').tab).toBe('beans')
-    expect(parse('#/shelf/-/bean-1')).toEqual({ tab: 'beans', detail: 'bean-1' })
+    expect(parse('#/shelf').tab).toBe('coffee')
+    expect(parse('#/shelf/-/bean-1')).toEqual({ tab: 'coffee', detail: 'bean-1' })
   })
 })

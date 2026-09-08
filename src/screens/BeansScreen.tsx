@@ -1,5 +1,7 @@
 /**
- * Beans — die Hauptoberfläche der App.
+ * Coffee — das Regal, und die eine Hälfte der Frage, die die App
+ * beantwortet: „Ich habe diese Bohne, wie brühe ich sie am besten?"
+ * Die andere Hälfte steht unter Brew.
  *
  * Briefing A6: Herkunft, Farm, Röstdatum und Röster-Empfehlung sind keine
  * Deko, sondern Eingaben für die Startpunkt-Berechnung.
@@ -23,7 +25,7 @@ import { getOrigin, BLEND, findCountry, originOptions } from '@/kb'
 import { METHODS, ROAST_LABEL, PROCESS_LABEL, METHOD_LABEL } from '@/labels'
 import {
   Screen, Header, Section, Card, Button, Field, TextInput, Select, Sheet,
-  Empty, Stat, FreshnessRing, Stepper, Toggle, Chip, GearButton, num,
+  Empty, Stat, FreshnessRing, Stepper, Toggle, Chip, GearButton, LogButton, num,
 } from '@/components/ui'
 import { BackupBanner, SetupNudge } from '@/components/system'
 /**
@@ -78,7 +80,7 @@ export default function BeansScreen({ route, navigate, onDeleted }: Props) {
     setSelected(id)
     // Ersetzen, nicht anhängen: Ein Auswahlwechsel ist kein Schritt, den
     // man mit der Zurück-Geste rückgängig machen will.
-    navigate({ tab: 'beans', id }, true)
+    navigate({ tab: 'coffee', id }, true)
   }
 
   const loeschen = (bean: Bean) => {
@@ -108,7 +110,7 @@ export default function BeansScreen({ route, navigate, onDeleted }: Props) {
   return (
     <Screen>
       <Header
-        title="Beans"
+        title="Coffee"
         large
         right={
           <div className="flex items-center gap-1">
@@ -116,6 +118,12 @@ export default function BeansScreen({ route, navigate, onDeleted }: Props) {
               <Button size="sm" variant="secondary" onClick={() => setShowNew(true)}>
                 + Bohne
               </Button>
+            )}
+            {/* Das Logbuch über ALLE Bohnen hat mit zwei Reitern keinen
+                eigenen Einstieg mehr. Es sitzt hier, weil „was habe ich
+                schon gebrüht?" am Regal am nächsten steht. */}
+            {beans.length > 0 && (
+              <LogButton onClick={() => navigate({ tab: 'log' })} />
             )}
             {/* Setup gehört nicht in den Weg: Es wird einmal eingerichtet
                 und danach selten angefasst. Ein Zahnrad reicht. */}
@@ -202,7 +210,13 @@ export default function BeansScreen({ route, navigate, onDeleted }: Props) {
                         keine davon wüsste, worauf sie sich bezieht. */}
                     {aktiv && (
                       <div className="mt-2 grid grid-cols-3 gap-2">
-                        <Button className="w-full" onClick={() => navigate({ tab: 'brew', id: bean.id })}>
+                        {/* Ohne Methode: Der nächste Bildschirm empfiehlt
+                            sie für genau diese Bohne. Das ist die
+                            Coffee-Richtung — Bohne zuerst, Methode danach. */}
+                        <Button
+                          className="w-full"
+                          onClick={() => navigate({ tab: 'brew', detail: bean.id })}
+                        >
                           Brühen
                         </Button>
                         <Button

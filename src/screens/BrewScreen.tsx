@@ -8,7 +8,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { Route } from '@/router'
 import { useStore, selectActiveWater, grinderFor } from '@/store'
 import type {
-  BrewMethod, Defect, Character, FlowState, PuckState, BloomBehavior, SpeedFeel,
+  Bean, BrewMethod, Defect, Character, FlowState, PuckState, BloomBehavior, SpeedFeel,
   BrewActual, Observation, Tasting,
 } from '@domain'
 import type { EngineContext } from '@/domain'
@@ -46,19 +46,27 @@ import {
 type Phase = 'proposal' | 'record' | 'check' | 'taste' | 'result'
 
 interface Props {
+  /** Beides steht in der Route und wird von App aufgelöst. */
+  method: BrewMethod
+  bean: Bean
   route: Route
-  navigate: (r: Route) => void
+  navigate: (r: Route, replace?: boolean) => void
   back: () => void
 }
 
-export default function BrewScreen({ route, navigate, back }: Props) {
+export default function BrewScreen({ method, bean, navigate, back }: Props) {
   const s = useStore()
   const [phase, setPhase] = useState<Phase>('proposal')
-  const [method, setMethod] = useState<BrewMethod>(s.settings.lastMethod ?? 'espresso')
 
-  // Die Bohne kommt aus der Route, nicht aus einem eigenen Zustand: Der
-  // Screen wird von Beans aus für genau diese Bohne geöffnet.
-  const bean = s.beans.find((b) => b.id === route.id) ?? s.beans[0]
+  /**
+   * Methode wechseln heißt navigieren, nicht Zustand setzen.
+   *
+   * Sie steht in der Adresse (`#/brew/<methode>/<bohne>`); ein stiller
+   * Zustandswechsel würde die Adresse belügen und beim Zurückgehen die
+   * falsche Methode zeigen. Ersetzen statt anhängen: Ein Wechsel ist kein
+   * Schritt, den man mit der Zurück-Geste einzeln rückgängig macht.
+   */
+  const setMethod = (m: BrewMethod) => navigate({ tab: 'brew', id: m, detail: bean.id }, true)
   // Espresso darf eine eigene Mühle haben — bei einem Siebträger mit
   // verbautem Mahlwerk ist genau das der Normalfall.
   const grinders = useStore((st) => st.grinders)

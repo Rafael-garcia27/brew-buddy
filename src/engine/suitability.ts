@@ -10,9 +10,10 @@
  * die eine Präzision suggerieren, die es nicht gibt. Hier fünf Stufen aus
  * `data/methods.json` plus Herkunftsprofil.
  */
-import type { Bean, BrewMethod, Process } from '@domain'
+import type { Bag, Bean, BrewMethod, Process } from '@domain'
 import { METHODS } from '@/labels'
-import { getMethod, getOrigin } from '@/kb'
+import { getMethod, getOrigin, getMethodDefaults } from '@/kb'
+import { assessFreshness, type Freshness } from './freshness'
 
 export type SuitabilityLevel = 'ideal' | 'gut' | 'machbar' | 'anspruchsvoll' | 'schwierig'
 
@@ -68,6 +69,49 @@ export function suitability(bean: Bean, method: BrewMethod): Suitability {
   }
 }
 
+/**
+ * Warum diese Bohne in dieser Methode so eingeordnet ist.
+ *
+ * Ein Eintrag JE METHODE, nicht eine Kette aus `if`. Die alte Fassung
+ * behandelte Espresso und V60 und ließ alles andere auf den
+ * AeroPress-Text durchfallen — die French Press bekam dadurch seit ihrer
+ * Einführung „die AeroPress verzeiht viel" zu lesen. Aufgefallen ist das
+ * erst, als der Methodenbildschirm die Begründungen nebeneinander
+ * zeigte. Als Record erzwingt der Compiler bei jeder neuen Methode einen
+ * eigenen Text, statt still einen fremden zu übernehmen.
+ */
+type Ton = 'schlecht' | 'ideal' | 'mittel'
+
+const GRUND: Record<BrewMethod, Record<Ton, string>> = {
+  espresso: {
+    schlecht:
+      'dicht und säurebetont. Im Druckformat wird die Säure schnell dominant — weite Ratio (1:2,5–1:3), hohe Temperatur, feiner Mahlgrad. Als V60 spielt diese Bohne ihre Stärken besser aus.',
+    ideal: 'löst sich leicht, trägt Körper und Süße — das klassische Espressoprofil.',
+    mittel: 'funktioniert im Espresso solide.',
+  },
+  v60: {
+    schlecht:
+      'wenig Säure und viel Röstaroma. Im V60 wirkt das schnell flach und bitter — AeroPress oder Espresso passen besser.',
+    ideal: 'genau das Profil, das der V60 zeigen kann — Klarheit, Säurestruktur, Aromatik.',
+    mittel: 'im V60 gut machbar.',
+  },
+  aeropress: {
+    schlecht:
+      'im Grenzbereich — die AeroPress verzeiht zwar viel, kann aber nicht herausholen, was nicht drin ist.',
+    ideal: 'die AeroPress holt hier Süße und Körper heraus.',
+    mittel: 'die AeroPress verzeiht viel — funktioniert.',
+  },
+  // kb/10b §7: Die French Press spielt Körper und Süße aus und dämpft
+  // Klarheit und Säure. Bei hellen gewaschenen Ostafrikanern deckt das
+  // Metallsieb genau die Stärke zu, für die man sie gekauft hat.
+  frenchpress: {
+    schlecht:
+      'lebt von Klarheit — und genau die deckt das Metallsieb zu. Nicht falsch, aber Verschwendung; im V60 oder in der AeroPress kommt mehr davon an.',
+    ideal: 'volle Immersion spielt hier Körper und Süße aus — das kann die French Press besser als jede andere Methode.',
+    mittel: 'in der French Press unkompliziert; der Mahlgrad ist hier der schwächste Hebel.',
+  },
+}
+
 function reasonFor(
   bean: Bean,
   method: BrewMethod,
@@ -82,24 +126,14 @@ function reasonFor(
         ? 'dunkle Röstung'
         : 'mittlere Röstung'
 
-  if (method === 'espresso') {
-    if (level === 'schwierig' || level === 'anspruchsvoll')
-      return `${o}${roastWord}: dicht und säurebetont. Im Druckformat wird die Säure schnell dominant — weite Ratio (1:2,5–1:3), hohe Temperatur, feiner Mahlgrad. Als V60 spielt diese Bohne ihre Stärken besser aus.`
-    if (level === 'ideal')
-      return `${o}${roastWord}: löst sich leicht, trägt Körper und Süße — das klassische Espressoprofil.`
-    return `${o}${roastWord}: funktioniert im Espresso solide.`
-  }
+  const ton: Ton =
+    level === 'schwierig' || level === 'anspruchsvoll'
+      ? 'schlecht'
+      : level === 'ideal'
+        ? 'ideal'
+        : 'mittel'
 
-  if (method === 'v60') {
-    if (level === 'schwierig' || level === 'anspruchsvoll')
-      return `${o}${roastWord}: wenig Säure und viel Röstaroma. Im V60 wirkt das schnell flach und bitter — AeroPress oder Espresso passen besser.`
-    if (level === 'ideal')
-      return `${o}${roastWord}: genau das Profil, das der V60 zeigen kann — Klarheit, Säurestruktur, Aromatik.`
-    return `${o}${roastWord}: im V60 gut machbar.`
-  }
-
-  if (level === 'ideal') return `${o}${roastWord}: die AeroPress holt hier Süße und Körper heraus.`
-  return `${o}${roastWord}: die AeroPress verzeiht viel — funktioniert.`
+  return `${o}${roastWord}: ${GRUND[method][ton]}`
 }
 
 /** Beste Methode für eine Bohne */
@@ -141,6 +175,142 @@ export function bestMethodFor(bean: Bean): { method: BrewMethod; suitability: Su
   else feld.sort((a, b) => b.rang - a.rang)
 
   return { method: feld[0]!.method, suitability: feld[0]!.suitability }
+}
+
+// ── Die Gegenrichtung: Methode gewählt, welche Bohne? ─────────────────
+
+export interface BeanRanking {
+  bean: Bean
+  bag?: Bag
+  suitability: Suitability
+  freshness: Freshness
+  /** Rang, mit dem sortiert wird. Höher ist besser. */
+  rank: number
+  /**
+   * Nicht brühbar: keine Tüte, leer, oder zu wenig für eine Dosis.
+   * Getrennt vom Rang, weil das kategorisch ist und nicht graduell —
+   * eine Bohne, die man nicht in der Hand hat, ist keine Empfehlung.
+   */
+  unavailable?: 'no-bag' | 'depleted' | 'too-little'
+  /** Warum diese Bohne oben oder unten steht. */
+  note: string
+}
+
+/**
+ * Wie stark die Frische den Rang drücken darf.
+ *
+ * 0,45 heißt: Eine überalterte Bohne behält 55 % ihrer fachlichen
+ * Eignung. Damit gewinnt eine mittelmäßige frische Bohne (3 × 1,0 = 3,0)
+ * gegen eine perfekte alte (5 × 0,55 = 2,75) — genau das soll passieren,
+ * ohne dass Alter die Fachlichkeit vollständig überstimmt.
+ */
+const FRISCHE_GEWICHT = 0.45
+
+/** Unterhalb dieses Rangs empfiehlt die App nichts mehr, sondern rät ab. */
+export const RANK_SCHWELLE = 2.2
+
+/**
+ * Bohnen für eine Methode, beste zuerst.
+ *
+ * Bewusst NICHT bloß `suitability` absteigend, aus demselben Grund, den
+ * `bestMethodFor` unten festhält: Eignung misst, wie leicht etwas
+ * schiefgeht. Empfohlen wird nach `origin.methodSuitability` — also
+ * danach, wo eine Bohne ihre Stärken ausspielt.
+ *
+ * Zwei Größen kommen hier dazu, die die Gegenrichtung nicht braucht:
+ * Frische und Bestand. Beim Vergleich von METHODEN für eine Bohne sind
+ * beide für alle Kandidaten gleich und kürzen sich weg. Beim Vergleich
+ * von BOHNEN entscheiden sie mit — eine fachlich perfekte Bohne, die
+ * sechzig Tage nach Röstung liegt, ist die falsche Empfehlung, und eine,
+ * von der acht Gramm übrig sind, ist gar keine.
+ */
+export function bestBeansFor(
+  method: BrewMethod,
+  beans: Bean[],
+  bags: Bag[],
+  today: Date = new Date(),
+): BeanRanking[] {
+  const dosis = getMethodDefaults(method, 'medium').doseG
+
+  const bewertet = beans.map((bean) => {
+    const suit = suitability(bean, method)
+    const origin = bean.origins[0] ? getOrigin(bean.origins[0].country) : undefined
+    const fit = origin?.methodSuitability?.[method]
+    // Ohne Herkunftsprofil — ein Blend etwa — trägt die Eignung allein.
+    const basis = fit ?? suit.score
+    // Anspruchsvoll heißt nicht ausgeschlossen, aber es kostet. Dieselbe
+    // Größe wie in bestMethodFor, damit beide Richtungen gleich strafen.
+    const fachlich = basis - (suit.score < 3.5 ? 0.75 : 0)
+
+    const bag = bags
+      .filter((b) => b.beanId === bean.id && !b.depleted)
+      .sort((a, b) => (b.roastDate ?? '').localeCompare(a.roastDate ?? ''))[0]
+    const fresh = assessFreshness(
+      bag,
+      method,
+      bean.roastLevel,
+      !!bean.isDecaf,
+      today,
+      bean.process,
+    )
+
+    const unavailable = verfuegbarkeit(bean, bags, bag, dosis)
+    const frischeFaktor = 1 - FRISCHE_GEWICHT + FRISCHE_GEWICHT * (fresh.score / 100)
+    const rank = Math.round(Math.max(0, fachlich) * frischeFaktor * 100) / 100
+
+    return {
+      bean,
+      bag,
+      suitability: suit,
+      freshness: fresh,
+      rank,
+      ...(unavailable ? { unavailable } : {}),
+      note: notiz(suit, fresh, unavailable, fit !== undefined),
+    }
+  })
+
+  // Nicht Verfügbares nach unten, darüber nach Rang. Innerhalb der
+  // Nichtverfügbaren weiter nach Rang, damit „nachkaufen" eine Ordnung hat.
+  return bewertet.sort((a, b) => {
+    if (!!a.unavailable !== !!b.unavailable) return a.unavailable ? 1 : -1
+    return b.rank - a.rank
+  })
+}
+
+function verfuegbarkeit(
+  bean: Bean,
+  alle: Bag[],
+  offen: Bag | undefined,
+  dosis: number,
+): BeanRanking['unavailable'] {
+  if (!offen) return alle.some((b) => b.beanId === bean.id) ? 'depleted' : 'no-bag'
+  if (offen.remainingGrams !== undefined && offen.remainingGrams < dosis) return 'too-little'
+  return undefined
+}
+
+/**
+ * Ein Satz, der die Platzierung erklärt.
+ *
+ * Die App sagt überall, warum — eine sortierte Liste ohne Begründung
+ * wäre die einzige Stelle, an der man ihr glauben müsste.
+ */
+function notiz(
+  suit: Suitability,
+  fresh: Freshness,
+  unavailable: BeanRanking['unavailable'],
+  hatHerkunftsprofil: boolean,
+): string {
+  if (unavailable === 'no-bag') return 'Keine Tüte angelegt — Röstdatum und Menge fehlen.'
+  if (unavailable === 'depleted') return 'Alle Tüten leer.'
+  if (unavailable === 'too-little') return 'Zu wenig übrig für eine ganze Dosis.'
+
+  if (fresh.state === 'stale') return `${fresh.label} — die Eignung spielt hier keine Rolle mehr.`
+  if (fresh.state === 'too-fresh') return `${fresh.label}. Fachlich passend, aber noch nicht stabil.`
+
+  if (suit.score < 2.5) return suit.reason
+  if (fresh.state === 'past-peak') return `${SUITABILITY_LABEL[suit.level]}, aber ${fresh.label}.`
+  if (!hatHerkunftsprofil) return `${SUITABILITY_LABEL[suit.level]} — Herkunft offen, geschätzt aus Röstgrad und Aufbereitung.`
+  return suit.reason
 }
 
 export const SUITABILITY_LABEL: Record<SuitabilityLevel, string> = {
