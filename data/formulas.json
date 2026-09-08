@@ -1029,6 +1029,14 @@
         "label": "Very Dark / French",
         "context": "Deutlich nach dem Second Crack, die Bohne wird ölig."
       }
-    ]
+    ],
+    "displayBandByLevel": {
+      "_note": "Welches Band eine Etikettenbezeichnung repräsentiert, wenn nur EIN Ton gezeigt werden kann — etwa als Füllfarbe einer Bohne in der Liste. „Light\" und „Dark\" umfassen je zwei Bänder, und der Mittelwert ihrer Spanne fällt bei beiden genau auf eine Bandgrenze. Statt die Rundung entscheiden zu lassen, steht die Wahl hier: jeweils das Band, das an den Nachbarröstgrad grenzt, weil das der üblichen Lesart der Etiketten entspricht. Ein gemessener Agtron-Wert nimmt diesen Weg nicht — er trifft sein Band selbst.",
+      "light": "Light / Nordic",
+      "medium-light": "Medium-Light",
+      "medium": "Medium",
+      "medium-dark": "Medium-Dark",
+      "dark": "Dark"
+    }
   }
 }

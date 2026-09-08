@@ -14,7 +14,8 @@ import type { Route } from '@/router'
 import { useStore } from '@/store'
 import { bestBeansFor, RANK_SCHWELLE, SUITABILITY_LABEL, type BeanRanking } from '@/engine/suitability'
 import { METHOD_LABEL, ROAST_LABEL, PROCESS_LABEL } from '@/labels'
-import { Screen, Header, Section, Card, Button, Empty, FreshnessRing, num } from '@/components/ui'
+import { Screen, Header, Section, Card, Button, Empty, num } from '@/components/ui'
+import { BeanRing } from '@/components/beanviz'
 
 interface Props {
   method: BrewMethod
@@ -125,8 +126,10 @@ function BohnenZeile({
   return (
     <Card tone={erste ? 'accent' : 'default'} onClick={onClick}>
       <div className="flex items-start gap-3">
+        {/* Dasselbe Element wie im Regal: Wer von Coffee kommt, soll die
+            Bohne am selben Zeichen wiedererkennen. */}
         <div className={unavailable ? 'opacity-40' : undefined}>
-          <FreshnessRing score={f.score} label={f.days !== null ? String(f.days) : '?'} />
+          <BeanRing bean={bean} score={f.score} label={f.days !== null ? String(f.days) : '?'} />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-2">

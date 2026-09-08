@@ -806,6 +806,7 @@ export interface AgtronBand {
 const AGTRON = formulasRaw.agtronBands as unknown as {
   range: [number, number]
   bands: AgtronBand[]
+  displayBandByLevel: Record<string, string>
 }
 
 export const AGTRON_RANGE: [number, number] = AGTRON.range
@@ -818,6 +819,29 @@ export function agtronBand(agtron: number): AgtronBand {
   if (treffer) return treffer
   // Die Obergrenze gehört zum obersten Band, alles darunter zum untersten.
   return agtron >= AGTRON_RANGE[1] ? AGTRON_BANDS[0]! : AGTRON_BANDS[AGTRON_BANDS.length - 1]!
+}
+
+/**
+ * Das eine Band, das für eine Etikettenbezeichnung steht.
+ *
+ * Für Stellen, an denen nur EIN Ton Platz hat — die Füllfarbe einer Bohne
+ * in der Liste etwa. „Light" und „Dark" umfassen je zwei Bänder, und der
+ * Mittelwert ihrer Spanne fällt bei beiden genau auf eine Bandgrenze:
+ * Eine Rundungsregel würde die Wahl treffen, ohne sie zu begründen.
+ * Deshalb steht sie in den Daten (siehe `displayBandByLevel`).
+ *
+ * Wo eine Skala Platz hat, wird weiter die ganze Spanne gezeigt —
+ * `agtronSpan`. Dieser Weg hier ist die Notlösung für einen Punkt, nicht
+ * die bessere Auskunft.
+ */
+export function displayBandFor(level: RoastLevel): AgtronBand {
+  const name = AGTRON.displayBandByLevel[level]
+  return AGTRON_BANDS.find((b) => b.label === name) ?? AGTRON_BANDS[3]!
+}
+
+/** Position eines Bandes in der Skala, 0 = hellstes. */
+export function agtronBandIndex(band: AgtronBand): number {
+  return AGTRON_BANDS.indexOf(band)
 }
 
 /**

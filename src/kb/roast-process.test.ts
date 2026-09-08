@@ -18,12 +18,15 @@ import {
   AGTRON_BANDS,
   AGTRON_RANGE,
   agtronBand,
+  agtronBandIndex,
   agtronSpan,
+  displayBandFor,
   mucilagePct,
   processFamily,
 } from './index'
 import { roastReading } from '@/components/beanviz'
-import { PROCESS_LABEL, ROAST_LABEL } from '@/labels'
+import { METHODS as METHODEN, PROCESS_LABEL, ROAST_LABEL } from '@/labels'
+import { suitability, GEEIGNET_AB } from '@/engine/suitability'
 
 const ROSTGRADE = Object.keys(ROAST_LABEL) as RoastLevel[]
 const PROZESSE = Object.keys(PROCESS_LABEL) as Process[]
@@ -250,6 +253,63 @@ describe('Die Skala braucht ihre Farben', () => {
     const dunkel = css.slice(css.indexOf('html.dark'))
     for (let i = 1; i <= AGTRON_BANDS.length; i++) {
       expect(dunkel).toContain(`--c-roast-${i}:`)
+    }
+  })
+})
+
+describe('Ein Ton für einen Röstgrad', () => {
+  // Für die Bohne im Regal ist nur EINE Farbe Platz. „Light" und „Dark"
+  // umfassen aber je zwei Bänder, und der Mittelwert ihrer Spanne fällt
+  // bei beiden genau auf eine Bandgrenze — eine Rundungsregel hätte die
+  // Wahl getroffen, ohne sie zu begründen.
+  it('nennt für jeden Röstgrad genau ein Band', () => {
+    for (const r of ROSTGRADE) {
+      const b = displayBandFor(r)
+      expect(b.level, `${r} → ${b.label}`).toBe(r)
+    }
+  })
+
+  it('hält die Reihenfolge hell nach dunkel ein', () => {
+    const indizes = ROSTGRADE.map((r) => agtronBandIndex(displayBandFor(r)))
+    for (let i = 0; i < indizes.length - 1; i++) {
+      expect(indizes[i]!).toBeLessThan(indizes[i + 1]!)
+    }
+  })
+
+  it('wählt bei zwei Bändern das zum Nachbarröstgrad hin', () => {
+    // „Light" ist auf einem Etikett fast nie Extremely Light, und „Dark"
+    // fast nie French. Die Wahl steht in den Daten und wird hier
+    // festgehalten, damit sie nicht unbemerkt kippt.
+    expect(displayBandFor('light').label).toBe('Light / Nordic')
+    expect(displayBandFor('dark').label).toBe('Dark')
+  })
+
+  it('gibt jedem Band eine Farbe, die es auch gibt', () => {
+    const css = readFileSync(new URL('../index.css', import.meta.url), 'utf8')
+    for (const r of ROSTGRADE) {
+      expect(css).toContain(`--c-roast-${agtronBandIndex(displayBandFor(r)) + 1}:`)
+    }
+  })
+})
+
+describe('Die Filterschwelle im Regal', () => {
+  it('deckt sich mit der Beschriftung „gut geeignet"', () => {
+    // Zwei Zahlen für dieselbe Aussage wären früher oder später zwei
+    // verschiedene Zahlen: „geeignet für" muss heißen „gut geeignet oder
+    // besser", sonst zeigt der Filter Bohnen, die die Zeile daneben als
+    // „machbar" bezeichnet.
+    const b: Parameters<typeof suitability>[0] = {
+      id: 'x',
+      name: 'x',
+      origins: [{ country: 'Kolumbien' }],
+      process: 'washed',
+      roastLevel: 'medium',
+      createdAt: new Date().toISOString(),
+    }
+    for (const m of METHODEN) {
+      const s = suitability(b, m)
+      if (s.score >= GEEIGNET_AB) expect(['ideal', 'gut']).toContain(s.level)
+      else expect(['ideal', 'gut']).not.toContain(s.level)
     }
   })
 })

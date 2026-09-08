@@ -13,16 +13,22 @@
  * sind Aktionen an der gewählten Bohne. Eine Navigationsleiste braucht es
  * dafür nicht: Es gibt nur einen Ort, an den man zurückkehrt.
  */
-import { lazy, Suspense, useMemo, useState } from 'react'
+import { lazy, Suspense, useMemo, useState, type ReactNode } from 'react'
 import type { Route } from '@/router'
 import { useStore } from '@/store'
 import type { Bean, RoastLevel, Process, BrewMethod } from '@domain'
 import type { BeanTrash } from '@/domain'
 import { assessFreshness } from '@/engine/freshness'
-import { bestMethodFor, rankMethodsFor, SUITABILITY_LABEL } from '@/engine/suitability'
-import { getOrigin, BLEND, findCountry, originOptions } from '@/kb'
+import {
+  suitability,
+  bestMethodFor,
+  rankMethodsFor,
+  SUITABILITY_LABEL,
+  GEEIGNET_AB,
+} from '@/engine/suitability'
+import { getOrigin, BLEND, findCountry, originOptions, processFamily, PROCESS_FAMILIES } from '@/kb'
 
-import { METHODS, ROAST_LABEL, PROCESS_LABEL, METHOD_LABEL } from '@/labels'
+import { METHODS, ROAST_LABEL, PROCESS_LABEL, METHOD_LABEL, METHOD_SHORT } from '@/labels'
 import {
   Screen, Header, Section, Card, Button, Field, TextInput, Select, Sheet,
   Empty, FreshnessRing, Stepper, Toggle, Chip, GearButton, LogButton, num,
@@ -36,7 +42,7 @@ import { BackupBanner, SetupNudge } from '@/components/system'
  */
 const OriginMap = lazy(() => import('@/components/OriginMap'))
 import SwipeReveal from '@/components/SwipeReveal'
-import { RoastScale, ProcessMark, FactTable, type Fact } from '@/components/beanviz'
+import { RoastScale, ProcessMark, FactTable, BeanRing, type Fact } from '@/components/beanviz'
 
 interface Props {
   route: Route
@@ -50,6 +56,15 @@ interface Props {
    */
   onDeleted?: (papierkorb: BeanTrash) => void
 }
+
+/**
+ * Ab so vielen Bohnen lohnt eine Filterzeile.
+ *
+ * Darunter sieht man das Regal auf einen Blick, und ein Filter wäre eine
+ * Bedienung, die keine Arbeit erspart. Vier ist der Punkt, ab dem die
+ * Liste auf 375 px scrollt.
+ */
+const FILTER_AB = 4
 
 /** Typische Anbauhöhe eines Ursprungslands, Mitte der bekannten Spanne. */
 function typicalAltitude(country: string): number | null {
@@ -92,8 +107,55 @@ export default function BeansScreen({ route, navigate, onDeleted }: Props) {
     if (papierkorb && onDeleted) onDeleted(papierkorb)
   }
 
+  /**
+   * Zwei Filter, und beide nur, wenn das Regal groß genug ist.
+   *
+   * Bei drei Bohnen sieht man alles auf einen Blick; eine Filterzeile
+   * wäre dann eine Bedienung, die keine Arbeit erspart, aber Platz
+   * kostet. Angeboten wird außerdem nur, was im Regal vorkommt — eine
+   * Auswahl „Anaerobic", die zu einer leeren Liste führt, ist keine
+   * Auswahl, sondern eine Falle.
+   */
+  const [filterFamilie, setFilterFamilie] = useState<string | undefined>()
+  const [filterMethode, setFilterMethode] = useState<BrewMethod | undefined>()
+  const [filterOffen, setFilterOffen] = useState(false)
+  const favRoh = useStore((s) => s.settings.favoriteMethods)
+
+  const filterbar = beans.length >= FILTER_AB
+  const familien = useMemo(() => {
+    const da = new Set(beans.map((b) => processFamily(b.process).id))
+    return PROCESS_FAMILIES.filter((f) => da.has(f.id))
+  }, [beans])
+  /**
+   * „Geeignet für", nicht „am besten als".
+   *
+   * Filtern ist eine Suchhandlung: Man will alle Bohnen sehen, mit denen
+   * ein V60 gelingt, nicht nur die eine, für die er die erste Wahl ist.
+   * Der strenge Fall bleibt in der Zeile sichtbar („Am besten als …").
+   *
+   * Angeboten werden nur Methoden aus der Hausauswahl — nach einer
+   * Methode zu filtern, die man nicht besitzt, hilft bei keiner Frage.
+   */
+  const methoden = useMemo(() => {
+    const imHaus = (favRoh ?? []).length
+      ? METHODS.filter((m) => favRoh!.includes(m))
+      : METHODS
+    return imHaus.filter((m) => beans.some((b) => suitability(b, m).score >= GEEIGNET_AB))
+  }, [beans, favRoh])
+
+  const sichtbar = useMemo(
+    () =>
+      beans.filter((b) => {
+        if (filterFamilie && processFamily(b.process).id !== filterFamilie) return false
+        if (filterMethode && suitability(b, filterMethode).score < GEEIGNET_AB) return false
+        return true
+      }),
+    [beans, filterFamilie, filterMethode],
+  )
+  const gefiltert = !!filterFamilie || !!filterMethode
+
   // „Welche Bohne heute?" — nach Frischefenster sortiert (Briefing Teil D)
-  const ranked = beans
+  const ranked = sichtbar
     .map((b) => {
       const best = bestMethodFor(b)
       const bag = bags.filter((x) => x.beanId === b.id && !x.depleted)[0]
@@ -144,7 +206,87 @@ export default function BeansScreen({ route, navigate, onDeleted }: Props) {
           <BackupBanner />
           <SetupNudge onGrinder={() => navigate({ tab: 'setup', detail: 'grinder' })} />
 
-          <Section action={<span className="text-[12px] text-faint">nach Frische</span>}>
+          {/* Zwei Achsen, einzeln umschaltbar — und eingeklappt.
+              Ausgeklappt brauchten die zehn Chips vier Zeilen und 350 px,
+              bevor die erste Bohne zu sehen war. Ein Filter, der die
+              Liste verdeckt, die er filtern soll, kostet mehr als er
+              bringt. Aktive Filter bleiben trotzdem sichtbar: Ein
+              eingeklappter Filter, der still wirkt, ist eine Falle.
+
+              Kein Mehrfachfilter je Achse: „Washed oder Natural" ist im
+              Regal von acht Bohnen dasselbe wie „alle". */}
+          {filterbar && (familien.length > 1 || methoden.length > 1) && (
+            <Section>
+              {filterOffen ? (
+                <div className="space-y-2">
+                  {familien.length > 1 && (
+                    <FilterZeile label="Aufbereitung">
+                      {familien.map((f) => (
+                        <Chip
+                          key={f.id}
+                          label={f.label}
+                          active={filterFamilie === f.id}
+                          onClick={() =>
+                            setFilterFamilie(filterFamilie === f.id ? undefined : f.id)
+                          }
+                        />
+                      ))}
+                    </FilterZeile>
+                  )}
+                  {methoden.length > 1 && (
+                    <FilterZeile label="geeignet für">
+                      {methoden.map((m) => (
+                        <Chip
+                          key={m}
+                          label={METHOD_SHORT[m]}
+                          active={filterMethode === m}
+                          onClick={() => setFilterMethode(filterMethode === m ? undefined : m)}
+                        />
+                      ))}
+                    </FilterZeile>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="-ml-3"
+                    onClick={() => setFilterOffen(false)}
+                  >
+                    Zuklappen
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <Button size="sm" variant="secondary" onClick={() => setFilterOffen(true)}>
+                    Filtern
+                  </Button>
+                  {filterFamilie && (
+                    <Chip
+                      label={`${familienName(filterFamilie)} ✕`}
+                      active
+                      onClick={() => setFilterFamilie(undefined)}
+                    />
+                  )}
+                  {filterMethode && (
+                    <Chip
+                      label={`${METHOD_SHORT[filterMethode]} ✕`}
+                      active
+                      onClick={() => setFilterMethode(undefined)}
+                    />
+                  )}
+                </div>
+              )}
+            </Section>
+          )}
+
+          <Section
+            action={
+              <span className="text-[12px] text-faint">
+                {gefiltert
+                  ? `${sichtbar.length} von ${beans.length}`
+                  : 'nach Frische'}
+              </span>
+            }
+          >
             <div className="space-y-2">
               {ranked.map(({ bean, fresh, count, best, bag }) => {
                 const aktiv = bean.id === selected
@@ -168,7 +310,13 @@ export default function BeansScreen({ route, navigate, onDeleted }: Props) {
                       onClick={() => waehle(aktiv ? undefined : bean.id)}
                     >
                       <div className="flex items-center gap-3">
-                        <FreshnessRing
+                        {/* Drei Angaben statt einer: Ring = Frische,
+                            Füllung = Röstgrad, Zahl = Tage. Die Zeile
+                            bleibt eine Zeile — eine Liste aus lauter
+                            Bohnenschaltflächen ohne Namen wäre ein
+                            Ratespiel (docs/05 §4.5). */}
+                        <BeanRing
+                          bean={bean}
                           score={fresh.score}
                           label={fresh.days !== null ? String(fresh.days) : '?'}
                         />
@@ -242,7 +390,28 @@ export default function BeansScreen({ route, navigate, onDeleted }: Props) {
             </div>
           </Section>
 
-          {!selected && (
+          {/* Ein Filter, der nichts übrig lässt, sieht ohne diesen Satz
+              aus wie ein leeres Regal. */}
+          {gefiltert && sichtbar.length === 0 && (
+            <Section>
+              <Card>
+                <p className="text-[15px] leading-snug">Keine Bohne passt zu dieser Auswahl.</p>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="mt-2 -ml-3"
+                  onClick={() => {
+                    setFilterFamilie(undefined)
+                    setFilterMethode(undefined)
+                  }}
+                >
+                  Filter zurücksetzen
+                </Button>
+              </Card>
+            </Section>
+          )}
+
+          {!selected && sichtbar.length > 0 && (
             <p className="px-4 pt-4 text-[13px] leading-snug text-faint">
               Bohne antippen — dann kannst du sie brühen, ihr Profil ansehen
               oder ihre Protokolle durchgehen.
@@ -964,4 +1133,27 @@ function BagSheet({
       </div>
     </Sheet>
   )
+}
+
+/**
+ * Eine Filterachse als waagerecht scrollende Zeile.
+ *
+ * Umbrechend brauchte „geeignet für" mit fünf Methoden zwei Zeilen, und
+ * mit einer sechsten Methode wären es drei. Waagerecht bleibt es bei
+ * einer, und die Chips behalten ihre 44 px Trefferfläche.
+ */
+function FilterZeile({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="w-[68px] shrink-0 text-[11px] leading-tight text-faint">{label}</span>
+      <div className="scroll-area -mx-1 flex flex-1 gap-1.5 overflow-x-auto px-1 py-0.5">
+        {children}
+      </div>
+    </div>
+  )
+}
+
+/** Der Anzeigename einer Aufbereitungsfamilie, für den aktiven Filterchip. */
+function familienName(id: string): string {
+  return PROCESS_FAMILIES.find((f) => f.id === id)?.label ?? id
 }

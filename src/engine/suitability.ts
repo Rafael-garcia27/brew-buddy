@@ -24,9 +24,23 @@ export interface Suitability {
   isWarning: boolean
 }
 
+/**
+ * Ab dieser Eignung gilt eine Bohne für eine Methode als geeignet.
+ *
+ * Die Schwelle für die Lesart „geeignet für" — die, nach der man sucht,
+ * wenn man das Regal filtert. Sie ist bewusst dieselbe Zahl, die
+ * `rankMethodsFor` als Abschlagsgrenze benutzt: Eine Bohne, für die eine
+ * Methode einen Abschlag kostet, soll unter dieser Methode auch nicht als
+ * geeignet gelistet werden.
+ */
+export const GEEIGNET_AB = 3.5
+
 const LEVELS: [number, SuitabilityLevel][] = [
   [4.5, 'ideal'],
-  [3.5, 'gut'],
+  // Absichtlich dieselbe Grenze: „geeignet für" heißt „gut geeignet oder
+  // besser". Zwei Zahlen für dieselbe Aussage wären früher oder später
+  // zwei verschiedene Zahlen.
+  [GEEIGNET_AB, 'gut'],
   [2.5, 'machbar'],
   [1.5, 'anspruchsvoll'],
   [0, 'schwierig'],
@@ -205,7 +219,7 @@ export function rankMethodsFor(bean: Bean): MethodRanking[] {
     return {
       method: m,
       suitability: suit,
-      rank: basis - (suit.score < 3.5 ? 0.75 : 0),
+      rank: basis - (suit.score < GEEIGNET_AB ? 0.75 : 0),
       viable: suit.score >= METHODEN_SPERRE,
     }
   })
@@ -300,7 +314,7 @@ export function bestBeansFor(
     const basis = fit ?? suit.score
     // Anspruchsvoll heißt nicht ausgeschlossen, aber es kostet. Dieselbe
     // Größe wie in bestMethodFor, damit beide Richtungen gleich strafen.
-    const fachlich = basis - (suit.score < 3.5 ? 0.75 : 0)
+    const fachlich = basis - (suit.score < GEEIGNET_AB ? 0.75 : 0)
 
     const bag = bags
       .filter((b) => b.beanId === bean.id && !b.depleted)

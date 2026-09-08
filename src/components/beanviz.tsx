@@ -30,7 +30,9 @@ import {
   AGTRON_BANDS,
   AGTRON_RANGE,
   agtronBand,
+  agtronBandIndex,
   agtronSpan,
+  displayBandFor,
   mucilagePct,
   processFamily,
 } from '@/kb'
@@ -425,5 +427,127 @@ export function FactTable({ facts }: { facts: Fact[] }) {
         </div>
       ))}
     </dl>
+  )
+}
+
+// ── Bohne im Ring ─────────────────────────────────────────────────────
+
+/**
+ * Drei Angaben in einem Element, an der Stelle, an der bisher eine stand.
+ *
+ * Der Wunsch war „Kaffeebohnen als Buttons". Die Falle daran ist bekannt:
+ * Eine bohnenförmige Schaltfläche ist beim ersten Mal charmant und beim
+ * zwanzigsten unbrauchbar — in eine Bohnenform passt kein Name, und ein
+ * Regal ohne Namen ist ein Ratespiel. Zwölf gleich aussehende Bohnen sind
+ * schlechter als zwölf Zeilen.
+ *
+ * Deshalb bleibt die Zeile eine Zeile, und die Bohne ersetzt nur den
+ * Frischering an ihrem Anfang. Dort trägt sie drei Dinge statt einem:
+ *
+ *   Ring     = Frische, 0–100, wie bisher
+ *   Füllung  = Röstgrad, in der Farbe seines Agtron-Bandes
+ *   Zahl     = Tage nach Röstung
+ *
+ * Die Zahl liegt auf der Füllung, und das war der schwierige Teil. Erster
+ * Versuch: Füllung auf 40 % Deckkraft, damit die normale Textfarbe in
+ * beiden Paletten reicht. Damit war der Kontrast in Ordnung und der
+ * Röstgrad weg — „Light" und „Dark" sahen beide beige aus, und die
+ * Information, um die es ging, war die einzige, die fehlte.
+ *
+ * Jetzt füllt der Ton voll, und die Zahl bekommt einen Rand in
+ * Kartenfarbe (`paintOrder: stroke`). Ein Halo hängt nicht davon ab, wie
+ * dunkel der Untergrund ist — es funktioniert auf jedem Ton und in beiden
+ * Paletten. Eine Regel nach Bandnummer hätte das nicht geschafft: In der
+ * hellen Palette ist das dunkelste Band das kritische, in der dunklen das
+ * hellste, und welches das ist, weiß das Stylesheet, nicht dieser Code.
+ */
+export function BeanRing({
+  bean,
+  score,
+  label,
+  size = 40,
+}: {
+  bean: Pick<Bean, 'roastLevel' | 'agtron'>
+  /** Frische 0–100 */
+  score: number
+  /** Was in der Bohne steht, meist die Tage nach Röstung. */
+  label?: string
+  size?: number
+}) {
+  const lesung = roastReading(bean)
+  const band = lesung.kind === 'measured' ? lesung.band : displayBandFor(lesung.level)
+  const ton = `var(--c-roast-${agtronBandIndex(band) + 1})`
+
+  const r = (size - 5) / 2
+  const c = 2 * Math.PI * r
+  const pct = Math.max(0, Math.min(100, score))
+  const ringFarbe = pct > 65 ? 'var(--c-ok)' : pct > 35 ? 'var(--c-warn)' : 'var(--c-bad)'
+
+  // Die Bohne füllt den Innenraum des Rings, nicht das ganze Feld.
+  const rx = r * 0.66
+  const ry = r * 0.9
+  const m = size / 2
+
+  return (
+    <div className="shrink-0" style={{ width: size, height: size }}>
+      <svg
+        width={size}
+        height={size}
+        role="img"
+        aria-label={`${band.label}, Frische ${Math.round(pct)} von 100${
+          label ? `, ${label} Tage` : ''
+        }`}
+      >
+        <g transform={`rotate(-24 ${m} ${m})`}>
+          <ellipse cx={m} cy={m} rx={rx} ry={ry} fill={ton} />
+          {/* Die Naht aus dem eigenen Ton gemischt — dieselbe Lösung wie
+              in der Röstskala, aus demselben Grund. */}
+          <path
+            d={`M${m} ${m - ry * 0.9}c${-rx * 0.5} ${ry * 0.5}${-rx * 0.5} ${ry * 1.3} 0 ${ry * 1.8}`}
+            fill="none"
+            stroke={`color-mix(in oklab, ${ton} 55%, var(--c-ink))`}
+            strokeWidth="1.4"
+          />
+        </g>
+
+        {/* Der Ring um 90° gedreht, damit er wie bisher oben beginnt: Er
+            ist ein bekanntes Element und soll sich nicht anders verhalten,
+            nur weil jetzt etwas darin liegt. */}
+        <g transform={`rotate(-90 ${m} ${m})`}>
+          <circle cx={m} cy={m} r={r} fill="none" stroke="var(--c-line)" strokeWidth="3" />
+          <circle
+            cx={m}
+            cy={m}
+            r={r}
+            fill="none"
+            stroke={ringFarbe}
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeDasharray={`${(pct / 100) * c} ${c}`}
+          />
+        </g>
+
+        {label && (
+          <text
+            x={m}
+            y={m}
+            textAnchor="middle"
+            dominantBaseline="central"
+            className="tnum"
+            fontSize={size * 0.28}
+            fontWeight="600"
+            fill="var(--c-ink)"
+            stroke="var(--c-card)"
+            // 2,4 statt 3: Ein breiterer Rand liest sich zwar noch besser,
+            // frisst aber die Bohnenfläche auf, die er lesbar machen soll.
+            strokeWidth="2.4"
+            strokeLinejoin="round"
+            style={{ paintOrder: 'stroke' }}
+          >
+            {label}
+          </text>
+        )}
+      </svg>
+    </div>
   )
 }
