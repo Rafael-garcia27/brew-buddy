@@ -23,7 +23,17 @@ import { consistencyWarning, brewsUntilPersonal } from '@/engine/learn'
 import { suitability, SUITABILITY_LABEL, bestMethodFor } from '@/engine/suitability'
 import { ratioTone, ratioLabel, RATIO_ANCHOR } from '@/engine/ratio'
 import { grindPlausibility, formatSetting, vendorRange } from '@/engine/grinder'
-import { GRINDER_CATALOG, grindersForMethod, targetTimeRange, beverageYield, isImmersion } from '@/kb'
+import { MethodIcon } from '@/components/methodicons'
+import {
+  GRINDER_CATALOG,
+  getMethod,
+  grindersForMethod,
+  targetTimeRange,
+  beverageYield,
+  isImmersion,
+  tempAdjustable,
+  tempRange,
+} from '@/kb'
 import { METHODS, METHOD_LABEL, METHOD_SHORT, DEFECT_LABEL, COMMON_DEFECTS, CHARACTER_LABEL, COMMON_CHARACTERS, FLOW_LABEL, FLOW_CHOICES, PUCK_LABEL, PUCK_CHOICES, BLOOM_LABEL, BLOOM_CHOICES, SPEED_CHOICES, speedLabel, speedQuestion } from '@/labels'
 import {
   Screen, Header, Section, Card, Button, Chip, SegmentedControl, Stepper, Field,
@@ -183,6 +193,13 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
   const consistency = consistencyWarning(s.learned, method)
   const untilPersonal = brewsUntilPersonal(s.learned, bean.id, method)
   const isEspresso = method === 'espresso'
+  /**
+   * Die Filterkaffeemaschine hat keine Temperaturwahl (kb/10c §1). Ein
+   * Stepper dafür wäre eine Schaltfläche, die nichts bewirkt — und die
+   * Zahl daneben eine Vorgabe, die niemand einstellen kann.
+   */
+  const tempFrei = tempAdjustable(method)
+  const tempSpanne = tempRange(method)
   // Am Handfilter und an der AeroPress läuft die Uhr in Minuten:Sekunden,
   // beim Espresso in nackten Sekunden — ein Shot dauert nie eine Minute.
   const alsUhr = !isEspresso
@@ -340,7 +357,11 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
             <SegmentedControl
               value={method}
               onChange={setMethod}
-              options={METHODS.map((m) => ({ value: m, label: METHOD_SHORT[m] }))}
+              options={METHODS.map((m) => ({
+                value: m,
+                label: METHOD_SHORT[m],
+                icon: <MethodIcon icon={getMethod(m).icon ?? m} className="h-[22px] w-[22px]" />,
+              }))}
             />
           </Section>
 
@@ -381,7 +402,13 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
                       term: 'ratio',
                       tone: isEspresso ? ratioTon : undefined,
                     },
-                    { label: 'Temp', value: `${tempC} °C` },
+                    {
+                      label: 'Temp',
+                      value: tempFrei
+                        ? `${tempC} °C`
+                        : `${tempSpanne.min}–${tempSpanne.max} °C`,
+                      hint: tempFrei ? undefined : 'geräteseitig',
+                    },
                     ...(grinder
                       ? [{ label: 'Grind', value: formatSetting(grindVal, grinder), term: 'grind' }]
                       : []),
@@ -557,9 +584,18 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
                   <Stepper value={waterG} onChange={setWaterG} step={1} min={80} max={900} unit="g" label="Wasser" />
                 </Field>
               )}
-              <Field label="Temp">
-                <Stepper value={tempC} onChange={setTempC} step={1} min={70} max={100} unit="°C" label="Temp" />
-              </Field>
+              {tempFrei ? (
+                <Field label="Temp">
+                  <Stepper value={tempC} onChange={setTempC} step={1} min={70} max={100} unit="°C" label="Temp" />
+                </Field>
+              ) : (
+                <Field label="Temp" hint={`${tempSpanne.min}–${tempSpanne.max} °C, geräteseitig`}>
+                  <p className="text-[15px] leading-snug text-mute">
+                    Die Maschine brüht mit ihrer eigenen Temperatur. Wenn der Kaffee bitter wird,
+                    hilft hier nicht kühler, sondern gröber oder eine weitere Ratio.
+                  </p>
+                </Field>
+              )}
             </div>
             </Section>
           ) : (

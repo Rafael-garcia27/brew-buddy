@@ -281,13 +281,21 @@ export function SegmentedControl<T extends string>({
   value,
   onChange,
 }: {
-  options: { value: T; label: string }[]
+  options: { value: T; label: string; icon?: ReactNode }[]
   value: T
   onChange: (v: T) => void
 }) {
-  // Ab vier Segmenten wird es auf 375 px eng. Statt umzubrechen — was die
-  // Zeile doppelt hoch macht und den Umschalter zerreißt — rückt die
-  // Schrift eine Stufe zurück und die Beschriftungen bleiben einzeilig.
+  /**
+   * Ab vier Segmenten wird es auf 375 px eng, ab fünf reicht keine
+   * Schriftstufe mehr: „Maschine" wurde zu „Masch…", und „AeroPress" war
+   * schon vorher abgeschnitten. Ein abgeschnittenes Wort ist als
+   * Beschriftung schlechter als gar keines.
+   *
+   * Deshalb: Wenn die Aufrufstelle Symbole mitgibt, stehen sie über einer
+   * kleinen Beschriftung. Das Symbol trägt die Erkennung, das Wort
+   * bestätigt sie — und beide passen bei fünf Segmenten noch nebeneinander.
+   */
+  const mitSymbol = options.some((o) => o.icon)
   const eng = options.length > 3
   return (
     <div className="flex gap-1 rounded-2xl bg-raised p-1">
@@ -295,11 +303,17 @@ export function SegmentedControl<T extends string>({
         <button
           key={o.value}
           onClick={() => onChange(o.value)}
-          className={`h-11 min-w-0 flex-1 truncate rounded-xl px-1 transition-colors ${
-            eng ? 'text-[13px]' : 'text-[15px]'
-          } ${value === o.value ? 'bg-crema font-semibold text-on-crema' : 'text-mute active:bg-line'}`}
+          aria-current={value === o.value ? 'true' : undefined}
+          className={`min-w-0 flex-1 rounded-xl px-1 transition-colors ${
+            mitSymbol ? 'flex h-[52px] flex-col items-center justify-center gap-0.5' : 'h-11 truncate'
+          } ${eng && !mitSymbol ? 'text-[13px]' : mitSymbol ? '' : 'text-[15px]'} ${
+            value === o.value ? 'bg-crema font-semibold text-on-crema' : 'text-mute active:bg-line'
+          }`}
         >
-          {o.label}
+          {o.icon}
+          <span className={`${mitSymbol ? 'w-full truncate text-[10px] leading-none' : ''}`}>
+            {o.label}
+          </span>
         </button>
       ))}
     </div>
@@ -789,7 +803,14 @@ export function Triad({ items }: { items: TriadItem[] }) {
 export function MetaRow({
   items,
 }: {
-  items: { label: string; value: string; term?: string; tone?: 'ok' | 'warn' | 'bad' }[]
+  items: {
+    label: string
+    value: string
+    term?: string
+    tone?: 'ok' | 'warn' | 'bad'
+    /** Ein Wort dahinter, wenn der Wert keine Einstellung ist. */
+    hint?: string
+  }[]
 }) {
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
@@ -809,6 +830,7 @@ export function MetaRow({
           >
             {it.value}
           </span>
+          {it.hint && <span className="text-[11px] text-faint">{it.hint}</span>}
           {it.term && <InfoDot termId={it.term} />}
         </span>
       ))}

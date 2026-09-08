@@ -23,13 +23,14 @@ import type {
  * Literal. Vier Methoden waren der Anlass: Beim Ergänzen der French Press
  * lagen sechs Kopien dieser Aufzählung im Code.
  */
-export const METHODS: BrewMethod[] = ['espresso', 'v60', 'aeropress', 'frenchpress']
+export const METHODS: BrewMethod[] = ['espresso', 'v60', 'aeropress', 'frenchpress', 'batchbrew']
 
 export const METHOD_LABEL: Record<BrewMethod, string> = {
   espresso: 'Espresso',
   v60: 'V60',
   aeropress: 'AeroPress',
   frenchpress: 'French Press',
+  batchbrew: 'Filterkaffeemaschine',
 }
 
 /**
@@ -43,6 +44,7 @@ export const METHOD_SHORT: Record<BrewMethod, string> = {
   v60: 'V60',
   aeropress: 'AeroPress',
   frenchpress: 'French',
+  batchbrew: 'Maschine',
 }
 
 export const ROAST_LABEL: Record<RoastLevel, string> = {

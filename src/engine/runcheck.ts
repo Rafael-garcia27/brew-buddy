@@ -29,6 +29,7 @@ import {
   tolerances,
   targetTimeRange,
   isImmersion,
+  timeSignalsGrind,
   tempRange,
   targetFlowRate,
   RUN_BANDS,
@@ -71,7 +72,15 @@ export type TimeBand =
   | 'farSlow'
 
 /** Warum aus der Zeit nichts über den Mahlgrad folgt. */
-export type TimeBlock = 'channeling' | 'aborted' | 'chosenTime' | 'tooFresh' | 'noTarget'
+export type TimeBlock =
+  | 'channeling'
+  | 'aborted'
+  /** Immersion: Die Kontaktzeit hat der Mensch gewählt. */
+  | 'chosenTime'
+  /** Filtermaschine: Die Zeit gehört der Pumpe, nicht dem Mahlgrad. */
+  | 'deviceTime'
+  | 'tooFresh'
+  | 'noTarget'
 
 export interface RunNote {
   text: string
@@ -232,6 +241,16 @@ export function checkRun(input: RunCheckInput): RunCheck {
   const method = ctx.method
   const isEspresso = method === 'espresso'
   const immersion = isImmersion(method)
+  /**
+   * Darf aus der Zeit auf den Mahlgrad geschlossen werden?
+   *
+   * Kommt aus dem `scope` von D-90/D-91 und nicht mehr aus der Physik:
+   * Die Filterkaffeemaschine ist Perkolation wie der V60, aber ihre Zeit
+   * gehört der Pumpe (kb/10c §4). Physik und Zeitdeutung sind also zwei
+   * verschiedene Fragen, auch wenn sie bei vier Methoden dieselbe Antwort
+   * hatten.
+   */
+  const zeitSagtMahlgrad = timeSignalsGrind(method)
   const lauf = isEspresso ? 'Der Shot lief' : 'Der Brew lief'
 
   const tol = tolerances(method)
@@ -278,19 +297,30 @@ export function checkRun(input: RunCheckInput): RunCheck {
   // Dieser Block steht vor allen Zeitprüfungen, weil er keine Zeit
   // braucht: Sonst hätte eine fehlende oder unplausible Zeit den
   // Presswiderstand mitverschluckt, obwohl er von ihr unabhängig ist.
-  if (immersion) {
-    const press = obs?.pressResistance
+  if (!zeitSagtMahlgrad) {
+    const press = immersion ? obs?.pressResistance : undefined
     // Ohne eingetragene Zeit gibt es keine Abweichung — aber der
     // Presswiderstand bleibt trotzdem auswertbar. Genau deshalb steht
     // dieser Block VOR den Zeitprüfungen.
     const abweichung = delta !== null && actual.timeS > 0 && Math.abs(delta) > tol.timeS
 
+    /**
+     * Das mechanische Ersatzsignal — nur wo es eines gibt.
+     *
+     * Bei Immersion ist es der Widerstand am Kolben. An der Maschine gibt
+     * es keines: Man greift nichts an, was Auskunft gäbe. Dann bleibt der
+     * Geschmack, und das ist die ehrliche Auskunft — nicht der Eindruck
+     * „lief schnell", denn wie schnell die Maschine läuft, entscheidet
+     * die Maschine.
+     */
     let sug: Suggestion | undefined
-    if (press && press !== 'normal') {
-      const zuGrob = press === 'none' || press === 'light'
-      sug = pressSuggestion(zuGrob, method, actual, ctx.grinder)
-    } else if (feel && feel !== 'onPoint') {
-      sug = pressSuggestion(feel === 'tooFast', method, actual, ctx.grinder)
+    if (immersion) {
+      if (press && press !== 'normal') {
+        const zuGrob = press === 'none' || press === 'light'
+        sug = pressSuggestion(zuGrob, method, actual, ctx.grinder)
+      } else if (feel && feel !== 'onPoint') {
+        sug = pressSuggestion(feel === 'tooFast', method, actual, ctx.grinder)
+      }
     }
 
     // Der Zeitbefund gehört genau einmal in die Ausgabe: als Nebenbefund,
@@ -302,19 +332,36 @@ export function checkRun(input: RunCheckInput): RunCheck {
     if (zeitSatz && sug) notes.push({ tone: 'info', text: zeitSatz })
     pushKnowledgeNotes(notes, { ctx, actual, obs, band, days, win, zuFrisch, alt, isEspresso })
 
+    /**
+     * Warum die Zeit hier nichts sagt — und was stattdessen zu prüfen ist.
+     *
+     * Der Satz ist bei der Maschine kein Achselzucken, sondern ein
+     * Hinweis: Eine Kanne außerhalb ihres Bandes hat eine Ursache, nur
+     * eben nicht im Mahlwerk (kb/10c §4).
+     */
+    const ohneBefund = immersion
+      ? 'Bei Immersion ist die Kontaktzeit gewählt, nicht Ergebnis — aus ihr folgt kein Mahlgradbefund. Der Geschmack entscheidet.'
+      : 'Die Durchlaufzeit bestimmt hier die Maschine, nicht das Mahlgut — aus ihr folgt kein Mahlgradbefund. Der Geschmack entscheidet.'
+    const geraetHinweis =
+      !immersion && abweichung
+        ? `Auffällig ist die Zeit trotzdem: ${
+            (delta ?? 0) > 0
+              ? 'Eine Kanne, die deutlich länger braucht, deutet auf Kalk im Gerät oder einen überfüllten Korb'
+              : 'Eine Kanne, die deutlich schneller durchläuft, deutet auf zu wenig Mehl im Korb oder ein undichtes Bett'
+          } — beides ist am Gerät zu prüfen, nicht am Mahlwerk.`
+        : null
+    if (geraetHinweis) notes.push({ tone: 'warn', text: geraetHinweis })
+
     return {
       ...basis,
       timeUsable: false,
-      blockedBy: 'chosenTime',
+      blockedBy: immersion ? 'chosenTime' : 'deviceTime',
       headline: sug
         ? headlineForPress(press, feel)
         : abweichung
           ? 'Andere Zeit als geplant'
           : 'Zeit ist hier kein Befund',
-      summary: sug
-        ? sug.why
-        : (zeitSatz ??
-          'Bei Immersion ist die Kontaktzeit gewählt, nicht Ergebnis — aus ihr folgt kein Mahlgradbefund. Der Geschmack entscheidet.'),
+      summary: sug ? sug.why : (zeitSatz ?? ohneBefund),
       suggestion: sug,
       notes,
       tastingWorthwhile: true,

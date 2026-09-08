@@ -396,3 +396,82 @@ describe('diagnose() führt Laufkontrolle und Sensorik zusammen', () => {
     expect(dia(19, [], 3).run?.band).toBe('farFast')
   })
 })
+
+describe('Filterkaffeemaschine: die Zeit gehört der Pumpe', () => {
+  /**
+   * Der Grund, warum diese Methode überhaupt Engine-Arbeit gekostet hat.
+   *
+   * Sie ist Perkolation wie der V60, also hätte die alte Prüfung
+   * (`isImmersion`) sie durchgelassen und aus jeder Zeitabweichung eine
+   * Mahlgradkorrektur gemacht. Genau das ist falsch: Die Durchlaufzeit
+   * bestimmt die Pumpe. Eine Kanne, die zu lange braucht, hat Kalk im
+   * Gerät oder einen überfüllten Korb (kb/10c §4) — wer daraufhin gröber
+   * mahlt, macht den Kaffee schlechter und den Fehler unsichtbar.
+   */
+  const MASCHINE_ZIEL = targetTimeRange('batchbrew', 35, 'medium')!
+
+  function maschine(timeS: number, obs: Observation = {}) {
+    return checkRun({
+      ctx: ctx({ method: 'batchbrew' }),
+      actual: {
+        doseG: 35,
+        waterG: 610,
+        timeS,
+        waterTempC: 94,
+        grindSetting: { equipmentId: 'gr1', value: 70, unit: 'clicks' },
+      },
+      observations: obs,
+      targetTimeS: MASCHINE_ZIEL,
+    })
+  }
+
+  it('hat überhaupt ein Zielband', () => {
+    expect(MASCHINE_ZIEL[0]).toBeGreaterThan(0)
+    expect(MASCHINE_ZIEL[1]).toBeGreaterThan(MASCHINE_ZIEL[0])
+  })
+
+  it('schlägt bei zu langer Zeit keinen Mahlgrad vor', () => {
+    const r = maschine(480)
+    expect(r.timeUsable).toBe(false)
+    expect(r.blockedBy).toBe('deviceTime')
+    expect(r.suggestion).toBeUndefined()
+  })
+
+  it('nennt stattdessen das Gerät', () => {
+    const r = maschine(480)
+    expect(r.notes.some((n) => /Kalk|überfüllt/.test(n.text))).toBe(true)
+  })
+
+  it('unterscheidet zu lang von zu kurz in der Ursache', () => {
+    expect(maschine(150).notes.some((n) => /zu wenig Mehl|undicht/.test(n.text))).toBe(true)
+    expect(maschine(150).notes.some((n) => /Kalk/.test(n.text))).toBe(false)
+  })
+
+  it('macht auch aus dem Eindruck „lief schnell" keinen Mahlgrad', () => {
+    // Wie schnell die Maschine läuft, entscheidet die Maschine. Der
+    // Eindruck ist bei Immersion ein Ersatzsignal, hier ist er keins.
+    const r = maschine(280, { perceivedSpeed: 'tooFast' as SpeedFeel })
+    expect(r.suggestion).toBeUndefined()
+  })
+
+  it('hält die Verkostung trotzdem für lohnend', () => {
+    // Der Mahlgrad ist nicht vom Tisch — er wird nur über den Geschmack
+    // bestimmt statt über die Uhr.
+    expect(maschine(480).tastingWorthwhile).toBe(true)
+    expect(maschine(270).tastingWorthwhile).toBe(true)
+  })
+
+  it('lässt eine Zeit im Band unkommentiert', () => {
+    const mitte = Math.round((MASCHINE_ZIEL[0] + MASCHINE_ZIEL[1]) / 2)
+    const r = maschine(mitte)
+    expect(r.headline).toBe('Zeit ist hier kein Befund')
+    expect(r.notes.some((n) => /Kalk|undicht/.test(n.text))).toBe(false)
+  })
+
+  it('lässt V60 und Espresso unangetastet', () => {
+    // Die Verallgemeinerung darf die beiden Methoden nicht mitnehmen, für
+    // die die Zeit sehr wohl der Mahlgradbefund ist.
+    expect(espresso(19).timeUsable).toBe(true)
+    expect(espresso(19).suggestion?.variable).toBe('grindSetting')
+  })
+})

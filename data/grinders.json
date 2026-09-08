@@ -35,6 +35,10 @@
       700,
       950
     ],
+    "batchbrew": [
+      700,
+      1000
+    ],
     "frenchpress": [
       900,
       1200
@@ -722,5 +726,6 @@
       ],
       "downside": "20-40 % Verlust, hoher Zeitaufwand, beim Espresso Körperverlust"
     }
-  ]
+  ],
+  "_batchbrewNote": "batchbrew 700–1000 µm nach kb/10c §2.1: gröber als V60 (550–800), weil das Bett tiefer liegt und die Kontaktzeit mit 4–6 min länger ist. Deckt sich weitgehend mit chemex — dieselbe Ursache, langsamerer Durchlauf durch mehr Widerstand."
 }

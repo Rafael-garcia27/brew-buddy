@@ -18,7 +18,8 @@
       "v60_metal": 1.8,
       "aeropress_standard": 1.5,
       "aeropress_inverted": 1.6,
-      "frenchpress": 2.2
+      "frenchpress": 2.2,
+      "batchbrew": 2.0
     },
     "iceTempC": -18,
     "espressoLandingTempC": 80,
@@ -540,9 +541,32 @@
             "tPeak": 6,
             "sigma": 8
           }
+        },
+        "batchbrew": {
+          "light": {
+            "tPeak": 12,
+            "sigma": 9
+          },
+          "medium-light": {
+            "tPeak": 10,
+            "sigma": 8.5
+          },
+          "medium": {
+            "tPeak": 9,
+            "sigma": 8
+          },
+          "medium-dark": {
+            "tPeak": 7,
+            "sigma": 7
+          },
+          "dark": {
+            "tPeak": 6,
+            "sigma": 6
+          }
         }
       },
-      "openedPenalty": "score * max(0.6, 1 - 0.004 * daysSinceOpened)"
+      "openedPenalty": "score * max(0.6, 1 - 0.004 * daysSinceOpened)",
+      "_batchbrewNote": "Fenstermitte wie beim V60 — derselbe Papierfilter, dieselbe Entgasung. Sigma liegt zwischen V60 und Immersion: Das tiefe Bett und die feste Agitation mitteln Unterschiede aus, das Fenster ist also breiter, aber nicht so breit wie bei voller Immersion (kb/10c §1)."
     },
     {
       "id": "F-32",

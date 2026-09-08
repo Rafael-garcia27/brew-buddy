@@ -483,6 +483,57 @@ nicht vergessen — und der Router-Test deckt es ab.
 
 ---
 
+## 6b. Was bei der Umsetzung anders kam
+
+Dieses Dokument ist die Grundlage, nicht das Protokoll. Vier Stellen sind
+beim Bauen anders entschieden worden, und zwar aus Gründen, die vorher
+nicht sichtbar waren.
+
+**Angekündigte Methoden sind kein Feld, sondern eine eigene Liste.**
+§4.2 sah `tier: 'full' | 'announced'` am Methodenobjekt vor, mit einer
+Sperre in `startingPoint`. Umgesetzt ist eine getrennte Liste `announced`
+in methods.json mit eigenem Typ `AnnouncedMethod`. Der Unterschied ist
+nicht Geschmack: Eine angekündigte Methode ist damit KEINE `BrewMethod`
+und kann die Engine gar nicht erreichen — der Compiler hält die Sperre,
+nicht eine Abfrage zur Laufzeit, die man vergessen kann. Der Preis ist,
+dass eine Aufnahme in den vollen Katalog zwei Schritte kostet (Eintrag
+verschieben, Typ erweitern). Das ist der richtige Preis: Danach zählt der
+Compiler auf, was noch fehlt.
+
+**Zeit und Mahlgrad hängen nicht überall zusammen — und der Code wusste
+das nicht.** Die Regeln D-90/D-91 in diagnostics.json führen seit immer
+ein `scope: ["espresso", "v60"]`. Gelesen wurde er nie; `runcheck.ts`
+prüfte stattdessen auf Immersion, was bei vier Methoden dasselbe Ergebnis
+hatte. Die Filterkaffeemaschine ist die erste Methode, bei der es
+auseinandergeht: Perkolation, aber die Durchlaufzeit gehört der Pumpe
+(kb/10c §4). Ohne die neue Prüfung `timeSignalsGrind()` hätte die App bei
+einer verkalkten Maschine „mahle gröber" empfohlen — mit hoher
+Zuversicht, weil D-91 als sichere Regel geführt ist. Das war der
+teuerste Fund dieses Pakets und hat nichts mit der Oberfläche zu tun.
+
+**Ein Startpunkt darf nichts vorschlagen, was das Gerät nicht kann.**
+Die Brühtemperatur der Maschine liegt geräteseitig bei 92–96 °C. Die
+Modifikatoren für Röstgrad, Höhe und Koffein rechnen trotzdem eine
+Temperatur — fachlich richtig, praktisch nicht ausführbar. Neu:
+`tempAdjustable()`, und wo sie falsch ist, wird die Temperatur auf den
+Gerätewert zurückgesetzt UND die Begründung entsprechend gekürzt. Der
+erste Anlauf schrieb „dichtere Bohne, deshalb feiner und heißer" zwei
+Zeilen über „die Brühtemperatur ist nicht einstellbar".
+
+**Fünf Methoden sprengen den Umschalter.** `METHOD_SHORT` reichte bis
+vier, bei fünf wurde „Maschine" zu „Masch…" und „AeroPress" war schon
+vorher abgeschnitten. Der `SegmentedControl` nimmt jetzt Symbole und
+stellt sie über eine kleine Beschriftung — die Icons aus §3.3 zahlen sich
+damit an einer Stelle aus, für die sie nicht gedacht waren.
+
+**Erledigte offene Entscheidungen:** 6.1 Kopfknopf auf Coffee (Paket 1) ·
+6.2 Filterkaffeemaschine (Paket 3) · 6.3 Cold Brew bleibt Modifier ·
+6.4 Auswahl an der Liste selbst, kein zweiter Ort im Setup ·
+6.5 Agtron wird angezeigt, nicht gerechnet (Paket 2) ·
+6.6 Weiterleitung steht, Router-Test deckt sie ab.
+
+---
+
 ## 7. Was dieses Dokument nicht klärt
 
 * **Keine Icons entworfen.** §3.3 legt Stil und Unterscheidungsmerkmale

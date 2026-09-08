@@ -12,7 +12,21 @@
 //  ENUMS
 // ═══════════════════════════════════════════════════════════════
 
-export type BrewMethod = 'espresso' | 'v60' | 'aeropress' | 'frenchpress'
+/**
+ * Die Methoden, die die App wirklich einmessen kann.
+ *
+ * Bewusst ein Literal-Union und kein `string`: `Record<BrewMethod, …>`
+ * wird an einem Dutzend Stellen verlangt — Beschriftungen, Frischefenster,
+ * Eignungstexte —, und jeder neue Wert bricht sie alle. Genau das ist der
+ * Zweck. Der Compiler zählt dann auf, was für die neue Methode noch fehlt,
+ * statt sie stillschweigend mit Vorgabewerten durchzulassen.
+ *
+ * Methoden, über die die App nur BESCHEID weiß, stehen deshalb nicht hier,
+ * sondern als `announced` in methods.json (siehe `AnnouncedMethod`). Der
+ * Unterschied ist keine Kosmetik: So kann eine nur angekündigte Methode
+ * die Engine nicht erreichen, weil sie den Typ nicht hat.
+ */
+export type BrewMethod = 'espresso' | 'v60' | 'aeropress' | 'frenchpress' | 'batchbrew'
 
 export type RoastLevel =
   | 'light' | 'medium-light' | 'medium' | 'medium-dark' | 'dark'

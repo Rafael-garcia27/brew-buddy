@@ -13,7 +13,8 @@
       ],
       "short": "Fruchtfleisch abgewaschen, dann getrocknet",
       "profile": "klar, transparent, säurebetont, terroir-treu, leichter Körper",
-      "brewNote": "Zeigt Fehler sofort — verzeiht am wenigsten, ist dafür am ehrlichsten."
+      "brewNote": "Zeigt Fehler sofort — verzeiht am wenigsten, ist dafür am ehrlichsten.",
+      "matrixFamily": "washed"
     },
     {
       "id": "honey",
@@ -25,7 +26,8 @@
       ],
       "short": "entpulpt, aber ungewaschen getrocknet",
       "profile": "süß, zwischen Klarheit und Frucht — je mehr Mucilage, desto sirupöser",
-      "brewNote": "Verhält sich mit steigendem Fruchtanteil zunehmend wie ein Natural."
+      "brewNote": "Verhält sich mit steigendem Fruchtanteil zunehmend wie ein Natural.",
+      "matrixFamily": "honey"
     },
     {
       "id": "natural",
@@ -37,7 +39,8 @@
       ],
       "short": "ganze Kirsche getrocknet",
       "profile": "intensiv fruchtig, schwerer Körper, süßer, weinig, weniger Säure",
-      "brewNote": "Löst sich leichter — rund einen Schritt gröber mahlen als ein Washed gleichen Röstgrads."
+      "brewNote": "Löst sich leichter — rund einen Schritt gröber mahlen als ein Washed gleichen Röstgrads.",
+      "matrixFamily": "natural"
     },
     {
       "id": "fermented",
@@ -46,7 +49,8 @@
       "mucilagePct": null,
       "short": "gesteuerte Fermentation unter CO₂ oder mit Hefe",
       "profile": "sehr intensiv, oft Zimt, Rum, tropisch — polarisierend",
-      "brewNote": "Oft atypisch hohe Löslichkeit: kürzere Kontaktzeit oder gröber, als das Röstprofil vermuten lässt."
+      "brewNote": "Oft atypisch hohe Löslichkeit: kürzere Kontaktzeit oder gröber, als das Röstprofil vermuten lässt.",
+      "matrixFamily": "fermented"
     },
     {
       "id": "wet-hulled",
@@ -55,7 +59,9 @@
       "mucilagePct": null,
       "short": "Pergamin bei 30–35 % Restfeuchte entfernt",
       "profile": "erdig, holzig, Kräuter, Tabak, sehr niedrige Säure, enormer Körper",
-      "brewNote": "Der Körper trägt viel — Säure ist hier kein Maßstab für die Extraktion."
+      "brewNote": "Der Körper trägt viel — Säure ist hier kein Maßstab für die Extraktion.",
+      "matrixFamily": "natural",
+      "matrixFamilyNote": "Für die Anzeige eine eigene Familie, für die Eignungsmatrix unter natural nachgesehen: Wet Hulled teilt mit Natural den schweren Körper und die niedrige Säure (kb/04 §4.5) — die Werte je Methode und Röstgrad sind dafür nicht eigens erhoben, und geraten wäre schlechter als eingeordnet."
     }
   ],
   "map": {

@@ -898,3 +898,85 @@ describe('Blend als Herkunft', () => {
     expect(a.proposal.waterTempC).toBe(b.proposal.waterTempC)
   })
 })
+
+describe('Filterkaffeemaschine: kein Vorschlag, der nicht ausführbar ist', () => {
+  /**
+   * kb/10c §1: Die Brühtemperatur liegt geräteseitig bei 92–96 °C. Die
+   * Röstgrad-Modifikatoren rechnen trotzdem — eine dunkle Röstung will
+   * kühler —, und das Ergebnis wäre ein Startpunkt, der eine
+   * Einstellmöglichkeit behauptet, die das Gerät nicht hat.
+   */
+  const proben: RoastLevel[] = ['light', 'medium', 'dark']
+
+  it('schlägt für jeden Röstgrad dieselbe Temperatur vor', () => {
+    const temps = proben.map(
+      (roastLevel) =>
+        startingPoint(ctx({ method: 'batchbrew', bean: bean({ roastLevel }) })).proposal.waterTempC,
+    )
+    expect(new Set(temps).size).toBe(1)
+  })
+
+  it('bleibt im Bereich, den das Gerät wirklich liefert', () => {
+    for (const roastLevel of proben) {
+      const t = startingPoint(ctx({ method: 'batchbrew', bean: bean({ roastLevel }) })).proposal
+        .waterTempC
+      expect(t).toBeGreaterThanOrEqual(92)
+      expect(t).toBeLessThanOrEqual(96)
+    }
+  })
+
+  it('sagt, dass die Temperatur nicht zur Auswahl steht', () => {
+    const sp = startingPoint(ctx({ method: 'batchbrew' }))
+    expect(sp.rationale.some((r) => /geräteseitig/.test(r.text))).toBe(true)
+  })
+
+  it('lässt die Temperatur bei den anderen Methoden dem Röstgrad folgen', () => {
+    // Die Sperre darf nicht auf Methoden übergreifen, bei denen die
+    // Temperatur der stärkste Hebel gegen Bitterkeit ist.
+    for (const method of ['espresso', 'v60'] as const) {
+      const hell = startingPoint(ctx({ method, bean: bean({ roastLevel: 'light' }) })).proposal
+        .waterTempC
+      const dunkel = startingPoint(ctx({ method, bean: bean({ roastLevel: 'dark' }) })).proposal
+        .waterTempC
+      expect(hell).toBeGreaterThan(dunkel)
+    }
+  })
+
+  it('rechnet die Ratio in den Golden-Cup-Korridor', () => {
+    // SCA Golden Cup: 55 g/L ± 10 %, also 50–60 g Kaffee je Liter Wasser
+    // (kb/10c §2). In der Schreibweise dieser App: Ratio 16,7–20.
+    for (const roastLevel of proben) {
+      const p = startingPoint(ctx({ method: 'batchbrew', bean: bean({ roastLevel }) })).proposal
+      const gPerL = (p.doseG / p.waterG!) * 1000
+      expect(gPerL, `${roastLevel}: ${gPerL.toFixed(1)} g/L`).toBeGreaterThanOrEqual(48)
+      expect(gPerL, `${roastLevel}: ${gPerL.toFixed(1)} g/L`).toBeLessThanOrEqual(62)
+    }
+  })
+})
+
+describe('Die Begründung nennt nur, was auch geschieht', () => {
+  // Der Startpunkt der Filterkaffeemaschine schrieb „dichtere Bohne,
+  // deshalb feiner und heißer" — und zwei Zeilen darunter „die
+  // Brühtemperatur ist nicht einstellbar". Beides stand gleichzeitig auf
+  // dem Bildschirm.
+  const hochland = bean({ altitudeMasl: [1500, 1900] })
+
+  it('verspricht keine Temperaturänderung, wo keine möglich ist', () => {
+    const sp = startingPoint(ctx({ method: 'batchbrew', bean: hochland }))
+    const versprochen = sp.rationale.filter((r) => /heißer|kühler/.test(r.text))
+    expect(versprochen).toEqual([])
+  })
+
+  it('tut es weiter, wo sie möglich ist', () => {
+    const sp = startingPoint(ctx({ method: 'v60', bean: hochland }))
+    expect(sp.rationale.some((r) => /heißer/.test(r.text))).toBe(true)
+  })
+
+  it('gilt auch für entkoffeinierte Bohnen', () => {
+    const koffeinfrei = bean({ isDecaf: true })
+    const maschine = startingPoint(ctx({ method: 'batchbrew', bean: koffeinfrei }))
+    expect(maschine.rationale.filter((r) => /kühler/.test(r.text))).toEqual([])
+    const v60 = startingPoint(ctx({ method: 'v60', bean: koffeinfrei }))
+    expect(v60.rationale.some((r) => /kühler/.test(r.text))).toBe(true)
+  })
+})

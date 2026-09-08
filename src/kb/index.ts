@@ -38,6 +38,10 @@ export interface MethodDefaults {
 export interface MethodProfile {
   id: BrewMethod
   label: string
+  /** Kennung der Zeichnung in components/methodicons.tsx. */
+  icon?: string
+  /** Immer 'full' für Einträge in `methods` — angekündigte stehen woanders. */
+  tier?: 'full'
   physics: string
   /** Ein Satz: was die Methode tut und was das für die Tasse heißt. */
   short?: string
@@ -87,6 +91,34 @@ const methods = methodsRaw.methods as unknown as MethodProfile[]
 
 export const METHODS = methods
 export const METHOD_IDS = methods.map((m) => m.id)
+
+/**
+ * Methoden, über die die App Bescheid weiß, ohne sie einmessen zu können.
+ *
+ * Sie sind mit Absicht KEINE `BrewMethod`. Der Solution Design hatte ein
+ * Feld `tier: 'full' | 'announced'` am Methodenobjekt vorgesehen, mit
+ * einer Sperre in `startingPoint`. Das wäre eine Prüfung zur Laufzeit
+ * gewesen, die man vergessen kann. Als eigene Liste mit eigenem Typ hält
+ * der Compiler die Sperre: Eine angekündigte Methode kann keinen
+ * Startpunkt erreichen, weil sie nicht in den Parameter passt.
+ *
+ * Der Preis ist, dass eine Aufnahme in den vollen Katalog zwei Schritte
+ * kostet — Eintrag verschieben und Typ erweitern. Das ist der richtige
+ * Preis: Danach zählt der Compiler auf, was der Methode noch fehlt.
+ */
+export interface AnnouncedMethod {
+  id: string
+  label: string
+  icon: string
+  /** Ein Satz: was das Gerät tut. */
+  teaser: string
+  /** Und warum die App es noch nicht einmessen kann. */
+  why: string
+}
+
+export const ANNOUNCED_METHODS = (
+  methodsRaw as unknown as { announced?: AnnouncedMethod[] }
+).announced ?? []
 
 export function getMethod(id: BrewMethod): MethodProfile {
   const m = methods.find((x) => x.id === id)
@@ -148,6 +180,46 @@ export function correctionOrder(
   if (!co) return null
   if (Array.isArray(co)) return co
   return co[richtung] ?? null
+}
+
+/**
+ * Verrät die Durchlaufzeit dieser Methode etwas über den Mahlgrad?
+ *
+ * D-90 und D-91 sind die beiden Regeln, die aus einer Zeitabweichung eine
+ * Mahlgradkorrektur machen, und ihr `scope` in diagnostics.json sagt seit
+ * immer, für welche Methoden das gilt: Espresso und V60. Gelesen wurde er
+ * nicht — der Code prüfte stattdessen auf Immersion, was bei vier
+ * Methoden dasselbe Ergebnis hatte.
+ *
+ * Mit der Filterkaffeemaschine hört es auf, dasselbe zu sein: Sie ist
+ * Perkolation, aber ihre Zeit gehört der Pumpe. Eine Kanne, die zu lange
+ * braucht, hat ein verkalktes Gerät oder einen überfüllten Korb — nicht
+ * zu feines Mahlgut (kb/10c §4). Ohne diese Prüfung hätte die App genau
+ * das Falsche empfohlen, und zwar mit hoher Zuversicht.
+ */
+export function timeSignalsGrind(method: BrewMethod): boolean {
+  // Fehlender scope heißt „für alle Methoden" — so wird er in
+  // diagnostics.json überall verwendet (etwa bei D-92).
+  const gilt = (id: string) => {
+    const r = getRunRule(id)
+    return !!r && (!r.scope || r.scope.includes(method))
+  }
+  return gilt('D-90') && gilt('D-91')
+}
+
+/**
+ * Kann man die Brühtemperatur bei dieser Methode überhaupt einstellen?
+ *
+ * Bei der Filterkaffeemaschine nicht: Sie liegt geräteseitig bei 92–96 °C,
+ * und kein Handgriff ändert das (kb/10c §1). Ein Startpunkt, der dort
+ * „92 °C" vorschlägt, behauptet eine Stellschraube, die es nicht gibt —
+ * und lenkt von den drei ab, die es gibt.
+ *
+ * Fehlt die Angabe, gilt einstellbar: So war es für alle Methoden, bevor
+ * es eine gab, bei der es nicht stimmt.
+ */
+export function tempAdjustable(method: BrewMethod): boolean {
+  return (getMethod(method) as unknown as { tempAdjustable?: boolean }).tempAdjustable !== false
 }
 
 export function isImmersion(method: BrewMethod): boolean {
@@ -768,6 +840,12 @@ export interface ProcessFamily {
   label: string
   /** Kennung für das Symbol, das die App zeichnet — keine Grafik in den Daten. */
   symbol: string
+  /**
+   * Unter welchem Schlüssel diese Familie in den Eignungsmatrizen von
+   * methods.json steht. Meist die eigene Kennung; Wet Hulled sieht unter
+   * natural nach, weil dort keine eigenen Werte erhoben sind.
+   */
+  matrixFamily: string
   /** Verbleibende Mucilage in Prozent, oder null wo die Achse nicht greift. */
   mucilagePct: [number, number] | null
   short: string
@@ -825,6 +903,8 @@ export function lrrFor(method: BrewMethod, inverted = false): number {
     // seines Eigengewichts zurück (kb/10b §5).
     return (getMethod('frenchpress') as unknown as { lrr?: number }).lrr ?? 2.0
   }
+  // Filtermaschine: derselbe Papierfilter wie der V60 (kb/10c §2).
+  if (method === 'batchbrew') return LRR_DEFAULTS['batchbrew'] ?? 2.0
   return 0
 }
 

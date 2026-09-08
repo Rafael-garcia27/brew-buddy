@@ -5,6 +5,8 @@
     {
       "id": "espresso",
       "label": "Espresso",
+      "icon": "espresso",
+      "tier": "full",
       "physics": "pressure-percolation",
       "short": "Neun bar durch ein gepresstes Bett. Konzentriert, mit Crema — und die einzige Methode, bei der Sekunden zählen.",
       "grindSensitivity": 3.0,
@@ -303,6 +305,8 @@
     {
       "id": "v60",
       "label": "V60",
+      "icon": "v60",
+      "tier": "full",
       "physics": "gravity-percolation",
       "short": "Schwerkraft durch Papier, in Güssen gesteuert. Zeigt Klarheit und Säurestruktur wie keine andere.",
       "grindSensitivity": 1.0,
@@ -730,6 +734,8 @@
     {
       "id": "aeropress",
       "label": "AeroPress",
+      "icon": "aeropress",
+      "tier": "full",
       "physics": "immersion",
       "short": "Immersion mit Druck am Ende. Der größte Spielraum bei der geringsten Empfindlichkeit — verzeiht fast alles.",
       "grindSensitivity": 0.6,
@@ -1174,6 +1180,8 @@
     {
       "id": "frenchpress",
       "label": "French Press",
+      "icon": "frenchpress",
+      "tier": "full",
       "physics": "immersion",
       "short": "Volle Immersion, Metallsieb. Körper und Süße; der Mahlgrad ist hier der schwächste Hebel.",
       "_source": "kb/10b-methode-frenchpress.md",
@@ -1381,6 +1389,152 @@
         "crust",
         "decantedImmediately"
       ]
+    },
+    {
+      "id": "batchbrew",
+      "label": "Filterkaffeemaschine",
+      "icon": "batchbrew",
+      "tier": "full",
+      "physics": "gravity-percolation",
+      "short": "Dieselbe Physik wie der V60, aber Temperatur und Guss gehören der Maschine. Verlässlich in Mengen, mit den wenigsten Hebeln.",
+      "_source": "kb/10c-methode-filtermaschine.md; Zielkorridore nach SCA Golden Cup (55 g/L ± 10 %) und der SCA-Gerätezertifizierung (92–96 °C, 4–8 min)",
+      "grindSensitivity": 0.7,
+      "timeSensitivity": 0.3,
+      "agitationRelevant": false,
+      "channelingPossible": true,
+      "lrr": 2.0,
+      "targetGrindMicron": [
+        700,
+        1000
+      ],
+      "timeIsResult": false,
+      "tempAdjustable": false,
+      "_tempNote": "Die Brühtemperatur ist geräteseitig. waterTempC steht als Auskunft in den Vorgaben, nicht als Einstellung — ein Vorschlag würde eine Stellschraube behaupten, die das Gerät nicht hat (kb/10c §1).",
+      "tempRangeC": {
+        "min": 92,
+        "max": 96
+      },
+      "variables": [
+        "doseG",
+        "waterG",
+        "ratio",
+        "grindSetting"
+      ],
+      "observations": [
+        "bedAppearance"
+      ],
+      "defaults": {
+        "light": {
+          "doseG": 35,
+          "ratio": 17.0,
+          "waterTempC": 94
+        },
+        "medium-light": {
+          "doseG": 35,
+          "ratio": 17.0,
+          "waterTempC": 94
+        },
+        "medium": {
+          "doseG": 35,
+          "ratio": 17.5,
+          "waterTempC": 94
+        },
+        "medium-dark": {
+          "doseG": 35,
+          "ratio": 18.0,
+          "waterTempC": 94
+        },
+        "dark": {
+          "doseG": 35,
+          "ratio": 19.0,
+          "waterTempC": 94
+        }
+      },
+      "targetTimeByDose": [
+        {
+          "doseG": 20,
+          "timeS": [
+            210,
+            270
+          ],
+          "grindOffset": -1,
+          "note": "2 Tassen — flaches Bett, darf feiner"
+        },
+        {
+          "doseG": 35,
+          "timeS": [
+            240,
+            300
+          ],
+          "grindOffset": 0,
+          "note": "4 Tassen — der Standard"
+        },
+        {
+          "doseG": 55,
+          "timeS": [
+            270,
+            330
+          ],
+          "grindOffset": 1,
+          "note": "6 Tassen — tiefes Bett, gröber"
+        },
+        {
+          "doseG": 70,
+          "timeS": [
+            300,
+            360
+          ],
+          "grindOffset": 1,
+          "note": "8 Tassen — Obergrenze der meisten Körbe"
+        }
+      ],
+      "correctionOrder": {
+        "default": [
+          "grind",
+          "ratio",
+          "dose"
+        ],
+        "_note": "Temperatur und Agitation fehlen, weil sie nicht zur Verfügung stehen. Die kürzeste Korrekturliste der App — und der Grund, warum die Methode die verlässlichste ist (kb/10c §4)."
+      },
+      "suitability": {
+        "_note": "Höhepunkt bei mittlerer Röstung. Helle nordische Röstungen brauchen Temperatur an der oberen Grenze und Zeit — beides gibt das Gerät nicht her (kb/10c §5).",
+        "light": {
+          "washed": 2,
+          "honey": 2,
+          "natural": 2,
+          "fermented": 2
+        },
+        "medium-light": {
+          "washed": 3,
+          "honey": 3,
+          "natural": 3,
+          "fermented": 3
+        },
+        "medium": {
+          "washed": 5,
+          "honey": 4,
+          "natural": 4,
+          "fermented": 3
+        },
+        "medium-dark": {
+          "washed": 4,
+          "honey": 4,
+          "natural": 4,
+          "fermented": 3
+        },
+        "dark": {
+          "washed": 3,
+          "honey": 3,
+          "natural": 3,
+          "fermented": 2
+        }
+      },
+      "tolerances": {
+        "_note": "Große Mengen, gröbere Steuerung — die Toleranzen sind entsprechend weiter als am Handfilter.",
+        "doseG": 2,
+        "timeS": 45,
+        "waterG": 25
+      }
     }
   ],
   "_suitabilityLegend": {
@@ -1390,5 +1544,40 @@
     "2": "anspruchsvoll",
     "1": "schwierig",
     "_note": "Bewusst vier bis fünf Stufen statt Prozentzahlen — die Datenlage gibt keine Prozentpräzision her."
-  }
+  },
+  "announced": [
+    {
+      "id": "chemex",
+      "label": "Chemex",
+      "icon": "chemex",
+      "teaser": "Dickeres Papier als der V60: mehr Klarheit, weniger Körper, langsamerer Durchlauf.",
+      "why": "Teilt die Physik des V60, braucht aber eigene Zielkorridore — das dickere Papier verschiebt Durchlaufzeit und Mahlgrad, und die Werte dafür sind hier nicht erhoben.",
+      "_source": "kb/09 §1 (gravity-percolation) — eigenes Kapitel steht aus"
+    },
+    {
+      "id": "kalita",
+      "label": "Kalita Wave",
+      "icon": "kalita",
+      "teaser": "Flachboden statt Kegel — das Bett läuft gleichmäßiger ab und verzeiht ungleichmäßige Güsse.",
+      "why": "Wie die Chemex ein V60-Nachbar. Der Flachboden ändert die Betthöhe und damit die Zielzeit; ohne eigene Werte wäre der Startpunkt der eines V60 mit falscher Beschriftung.",
+      "_source": "kb/09 §1 (gravity-percolation) — eigenes Kapitel steht aus"
+    },
+    {
+      "id": "mokapot",
+      "label": "Mokkakanne",
+      "icon": "mokapot",
+      "teaser": "Dampfdruck um 1,5 bar statt 9 — kräftig und dicht, aber ohne Crema.",
+      "why": "Ihre Physik hat in dieser App keinen Nachbarn: Dampfdruck aus dem Unterkessel, kein Pumpendruck, keine Vorbrühung, kein Puck im Sinne des Siebträgers. Das ist ein eigenes Wissenskapitel, nicht eine Zahlenreihe.",
+      "_source": "noch keins — die teuerste der naheliegenden Erweiterungen (docs/05 §3.2)"
+    },
+    {
+      "id": "cezve",
+      "label": "Cezve · türkisch",
+      "icon": "cezve",
+      "teaser": "Ungefiltert und ultrafein gemahlen: Der Satz bleibt in der Tasse, extrahiert wird über das Aufkochen.",
+      "why": "Ohne Filtration greift das Extraktionsmodell dieser App nicht — es rechnet mit Retentionswasser und einem Getränk ohne Mehl. Beides gibt es hier nicht.",
+      "_source": "noch keins"
+    }
+  ],
+  "_announcedNote": "Methoden, über die die App Bescheid weiß, ohne sie einmessen zu können. Sie sind absichtlich KEINE BrewMethod: So kann keine von ihnen einen Startpunkt erreichen, und der Compiler hält die Sperre, nicht eine Abfrage zur Laufzeit. Wer eine davon voll aufnimmt, verschiebt sie nach `methods` und erweitert den Typ — dann zählt der Compiler auf, was noch fehlt."
 }

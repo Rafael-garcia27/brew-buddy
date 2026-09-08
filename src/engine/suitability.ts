@@ -12,7 +12,7 @@
  */
 import type { Bag, Bean, BrewMethod, Process } from '@domain'
 import { METHODS } from '@/labels'
-import { getMethod, getOrigin, getMethodDefaults } from '@/kb'
+import { getMethod, getOrigin, getMethodDefaults, processFamily } from '@/kb'
 import { assessFreshness, type Freshness } from './freshness'
 
 export type SuitabilityLevel = 'ideal' | 'gut' | 'machbar' | 'anspruchsvoll' | 'schwierig'
@@ -32,13 +32,18 @@ const LEVELS: [number, SuitabilityLevel][] = [
   [0, 'schwierig'],
 ]
 
-/** Aufbereitungen auf die vier Familien der Eignungsmatrix abbilden */
-function family(p: Process): 'washed' | 'natural' | 'honey' | 'fermented' {
-  if (p.startsWith('honey')) return 'honey'
-  if (p === 'anaerobic' || p === 'carbonic-maceration' || p === 'experimental') return 'fermented'
-  if (p === 'wet-hulled') return 'natural'
-  if (p === 'natural') return 'natural'
-  return 'washed'
+/**
+ * Aufbereitung → Schlüssel in der Eignungsmatrix.
+ *
+ * Die Zuordnung stand hier zweimal, seit das Profil die Familien selbst
+ * anzeigt: einmal als Zeichenkettenvergleich in dieser Datei, einmal in
+ * data/processes.json. Beide waren sich nicht einmal einig — die Anzeige
+ * führt Wet Hulled als eigene Familie, die Matrix kennt nur vier. Jetzt
+ * entscheidet die Wissensbasis, und wo eine Familie in der Matrix nicht
+ * bewertet ist, sagt sie selbst, unter welchem Schlüssel nachgesehen wird.
+ */
+function family(p: Process): string {
+  return processFamily(p).matrixFamily
 }
 
 function levelOf(score: number): SuitabilityLevel {
@@ -109,6 +114,17 @@ const GRUND: Record<BrewMethod, Record<Ton, string>> = {
       'lebt von Klarheit — und genau die deckt das Metallsieb zu. Nicht falsch, aber Verschwendung; im V60 oder in der AeroPress kommt mehr davon an.',
     ideal: 'volle Immersion spielt hier Körper und Süße aus — das kann die French Press besser als jede andere Methode.',
     mittel: 'in der French Press unkompliziert; der Mahlgrad ist hier der schwächste Hebel.',
+  },
+  batchbrew: {
+    // Der wiederkehrende Grund steht in kb/10c §1: Temperatur und Guss
+    // gehören der Maschine. Was dort fehlt, kann man nicht nachregeln —
+    // also entscheidet die Bohnenwahl mehr als bei jeder anderen Methode.
+    schlecht:
+      'in der Maschine unter ihren Möglichkeiten: Sie bräuchte Temperatur an der oberen Grenze und mehr Zeit, und beides gibt das Gerät nicht her.',
+    ideal:
+      'genau das, wofür die Maschine gebaut ist — mehrere Tassen in gleichbleibender Qualität, ohne dass Gusstechnik hineinspielt.',
+    mittel:
+      'in der Maschine solide; es bleiben Dose, Ratio und Mahlgrad, denn Temperatur und Guss sind geräteseitig.',
   },
 }
 

@@ -12,6 +12,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import formulasRaw from '@data/formulas.json'
 import processesRaw from '@data/processes.json'
+import methodsRaw from '@data/methods.json'
 import type { Process, RoastLevel } from '@domain'
 import {
   AGTRON_BANDS,
@@ -189,6 +190,23 @@ describe('Aufbereitungs-Familien', () => {
       if (pct === null || !spanne) continue
       expect(pct).toBeGreaterThanOrEqual(spanne[0])
       expect(pct).toBeLessThanOrEqual(spanne[1])
+    }
+  })
+
+  it('findet für jede Familie einen Schlüssel in jeder Eignungsmatrix', () => {
+    // Fehlt der Schlüssel, fällt suitability() stumm auf 3 zurück — jede
+    // Bohne dieser Aufbereitung wäre dann für jede Methode „machbar",
+    // und niemand würde es merken.
+    for (const p of PROZESSE) {
+      const key = processFamily(p).matrixFamily
+      for (const m of methodsRaw.methods) {
+        const matrix = (m as unknown as { suitability?: Record<string, unknown> }).suitability
+        if (!matrix) continue
+        for (const [lvl, werte] of Object.entries(matrix)) {
+          if (lvl.startsWith('_')) continue
+          expect(Object.keys(werte as Record<string, number>)).toContain(key)
+        }
+      }
     }
   })
 

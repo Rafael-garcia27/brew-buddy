@@ -10,7 +10,16 @@ import type { BrewMethod, Brew, Bean, RoastLevel } from '@domain'
 import { targetYield } from '@domain'
 import type { EngineContext } from '@/domain'
 import { beanKey, daysOffRoast } from '@/domain'
-import { getMethodDefaults, targetTimeRange, doseGrindOffset, getProcess, getOrigin, tempRange, maxWaterG } from '@/kb'
+import {
+  getMethodDefaults,
+  targetTimeRange,
+  doseGrindOffset,
+  getProcess,
+  getOrigin,
+  tempRange,
+  tempAdjustable,
+  maxWaterG,
+} from '@/kb'
 import { assessFreshness, driftCorrection } from './freshness'
 import { suggestedSetting, roundToStep } from './grinder'
 import { LEARN_THRESHOLDS } from '@/config'
@@ -191,7 +200,19 @@ function applyBeanModifiers(
     const m = altitudeMods(altInfo.masl)
     applyGrind(m.grindSteps ?? 0)
     p.waterTempC += (m.waterTempC ?? 0) * sens.tempWeight
-    const wie = ctx.method === 'aeropress' ? 'länger ziehen und heißer' : 'feiner und heißer'
+    /**
+     * Die Begründung darf nur nennen, was auch geschieht.
+     *
+     * „deshalb feiner und heißer" stand einen Absatz über dem Satz „die
+     * Brühtemperatur ist nicht einstellbar" — die App hat sich in zwei
+     * aufeinanderfolgenden Zeilen selbst widersprochen. Wo die Temperatur
+     * dem Gerät gehört, bleibt der Mahlgrad die ganze Aussage.
+     */
+    const wie = !tempAdjustable(ctx.method)
+      ? 'feiner'
+      : ctx.method === 'aeropress'
+        ? 'länger ziehen und heißer'
+        : 'feiner und heißer'
     lines.push({
       text: altInfo.derived
         ? `Herkunftstypisch um ${Math.round(altInfo.masl / 50) * 50} m angebaut — dichtere Bohne, deshalb ${wie}.`
@@ -230,7 +251,9 @@ function applyBeanModifiers(
     applyGrind(m.grindSteps ?? 0)
     p.waterTempC += (m.waterTempC ?? 0) * sens.tempWeight
     lines.push({
-      text: `Entkoffeiniert — die Struktur ist poröser, deshalb gröber und kühler.`,
+      text: tempAdjustable(ctx.method)
+        ? `Entkoffeiniert — die Struktur ist poröser, deshalb gröber und kühler.`
+        : `Entkoffeiniert — die Struktur ist poröser, deshalb gröber.`,
       kind: 'modifier',
     })
   }
@@ -269,9 +292,25 @@ function applyBeanModifiers(
   if (p.grindSetting !== undefined) {
     p.grindSetting = Math.max(0, roundToStep(p.grindSetting + grindSteps, ctx.grinder))
   }
-  // Grenzen der jeweiligen Methode, nicht eine globale Klammer: Ein
-  // Siebträger liefert am Brühkopf keine 100 °C, ein Wasserkocher schon.
+  /**
+   * Grenzen der jeweiligen Methode, nicht eine globale Klammer: Ein
+   * Siebträger liefert am Brühkopf keine 100 °C, ein Wasserkocher schon.
+   *
+   * Und wo die Temperatur nicht einstellbar ist, werden die Modifikatoren
+   * wieder zurückgenommen. Die Rechnung darüber ist nicht falsch — eine
+   * dunkle Röstung WILL kühler —, sie ist nur nicht ausführbar. Ein
+   * Vorschlag, den das Gerät nicht annehmen kann, ist keine Empfehlung,
+   * sondern eine Ablenkung von den drei Hebeln, die es wirklich gibt
+   * (kb/10c §1).
+   */
   const tr = tempRange(ctx.method)
+  if (!tempAdjustable(ctx.method)) {
+    p.waterTempC = getMethodDefaults(ctx.method, ctx.bean.roastLevel).waterTempC
+    lines.push({
+      text: `Die Brühtemperatur liegt geräteseitig bei ${tr.min}–${tr.max} °C und ist nicht einstellbar — es bleiben Dose, Ratio und Mahlgrad.`,
+      kind: 'source',
+    })
+  }
   p.waterTempC = Math.round(Math.min(tr.max, Math.max(tr.min, p.waterTempC)))
   p.ratio = Math.round(p.ratio * 10) / 10
   p.yieldG = Math.round(targetYield(p.doseG, p.ratio) * 10) / 10

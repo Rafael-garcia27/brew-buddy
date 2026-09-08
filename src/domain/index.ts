@@ -69,6 +69,19 @@ export interface Settings {
    * Natural Earth — es landet nur hier, was ein Land ist.
    */
   extraOrigins?: string[]
+  /**
+   * Die Methoden, die man tatsächlich im Haus hat.
+   *
+   * Der Katalog kennt mehr Geräte als eine Küche. Wer keine Mokkakanne
+   * besitzt, will sie nicht bei jeder Auswahl vor sich haben — und wer
+   * eine bekommt, soll sehen, dass es sie gibt.
+   *
+   * `undefined` oder leer heißt ausdrücklich ALLE: Beim ersten Start hat
+   * noch niemand Favoriten gesetzt, und ein leerer Katalog wäre dann eine
+   * Sackgasse, die aussieht wie ein Fehler. Der Standard ist also nicht
+   * „keine", sondern „noch nicht eingeschränkt".
+   */
+  favoriteMethods?: BrewMethod[]
   onboardingDone: boolean
 }
 

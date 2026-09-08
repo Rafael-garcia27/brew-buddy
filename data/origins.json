@@ -58,7 +58,8 @@
         "espresso": 4,
         "v60": 4,
         "aeropress": 4,
-        "frenchpress": 3
+        "frenchpress": 3,
+        "batchbrew": 4
       },
       "modifiers": {},
       "notes": "Zwei Ernten pro Jahr, ganzjährig frische Ware. Ideale Einsteigerbohne für Dial-in."
@@ -114,7 +115,8 @@
         "espresso": 2,
         "v60": 5,
         "aeropress": 4,
-        "frenchpress": 2
+        "frenchpress": 2,
+        "batchbrew": 4
       },
       "modifiers": {
         "grindSteps": -1,
@@ -172,7 +174,8 @@
         "espresso": 2,
         "v60": 5,
         "aeropress": 4,
-        "frenchpress": 2
+        "frenchpress": 2,
+        "batchbrew": 4
       },
       "modifiers": {
         "grindSteps": -1,
@@ -230,7 +233,8 @@
         "espresso": 5,
         "v60": 2,
         "aeropress": 3,
-        "frenchpress": 5
+        "frenchpress": 5,
+        "batchbrew": 2
       },
       "modifiers": {
         "grindSteps": 1
@@ -268,7 +272,8 @@
         "espresso": 3,
         "v60": 5,
         "aeropress": 4,
-        "frenchpress": 2
+        "frenchpress": 2,
+        "batchbrew": 4
       },
       "warnings": [
         "Potato Defect möglich (Antestia-Wanze) — einzelne Tassen schmecken nach roher Kartoffel, nicht vorhersagbar und nicht korrigierbar"
@@ -302,7 +307,8 @@
         "espresso": 3,
         "v60": 5,
         "aeropress": 4,
-        "frenchpress": 2
+        "frenchpress": 2,
+        "batchbrew": 4
       },
       "warnings": [
         "Potato Defect möglich"
@@ -345,7 +351,8 @@
         "espresso": 4,
         "v60": 4,
         "aeropress": 4,
-        "frenchpress": 4
+        "frenchpress": 4,
+        "batchbrew": 4
       }
     },
     {
@@ -388,7 +395,8 @@
         "espresso": 4,
         "v60": 5,
         "aeropress": 4,
-        "frenchpress": 2
+        "frenchpress": 2,
+        "batchbrew": 4
       },
       "notes": "Micromill-Revolution — viele Honey-Varianten aus Kleinsterzeugung."
     },
@@ -430,7 +438,8 @@
         "espresso": 2,
         "v60": 5,
         "aeropress": 4,
-        "frenchpress": 2
+        "frenchpress": 2,
+        "batchbrew": 4
       },
       "modifiers": {
         "ratio": 0.5,
@@ -468,7 +477,8 @@
         "espresso": 4,
         "v60": 4,
         "aeropress": 4,
-        "frenchpress": 4
+        "frenchpress": 4,
+        "batchbrew": 4
       }
     },
     {
@@ -511,7 +521,8 @@
         "espresso": 4,
         "v60": 2,
         "aeropress": 3,
-        "frenchpress": 5
+        "frenchpress": 5,
+        "batchbrew": 2
       },
       "modifiers": {
         "waterTempC": -2
@@ -556,7 +567,8 @@
         "espresso": 5,
         "v60": 2,
         "aeropress": 3,
-        "frenchpress": 5
+        "frenchpress": 5,
+        "batchbrew": 2
       },
       "notes": "Fine Robusta aus Indien liefert exzellente Crema-Stabilität für Blends."
     },
@@ -591,7 +603,8 @@
         "espresso": 4,
         "v60": 4,
         "aeropress": 4,
-        "frenchpress": 5
+        "frenchpress": 5,
+        "batchbrew": 4
       },
       "notes": "Ältester Handelsursprung, sehr teuer, hohe Variabilität."
     }
@@ -1005,5 +1018,6 @@
     "tropical": "tropisch",
     "winey": "weinig",
     "woody": "holzig"
-  }
+  },
+  "_batchbrewNote": "methodSuitability.batchbrew ist aus dem V60-Wert abgeleitet: 3 + (v60 − 3) × 0,6, auf 1–5 begrenzt. Grundlage ist kb/10c §5 — dieselbe Physik, weniger Kontrolle, also macht die Herkunft weniger aus. Wo eine Herkunft an der Maschine erwiesen anders läuft, gehört der Wert einzeln überschrieben; bis dahin ist eine nachvollziehbare Regel ehrlicher als dreizehn geschätzte Zahlen."
 }
