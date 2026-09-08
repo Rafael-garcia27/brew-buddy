@@ -9,7 +9,15 @@
  */
 import { describe, it, expect } from 'vitest'
 import type { Bag, Bean } from '@domain'
-import { bestBeansFor, bestMethodFor, rankMethodsFor, suitability, RANK_SCHWELLE } from './suitability'
+import {
+  bestBeansFor,
+  bestMethodFor,
+  rankMethodsFor,
+  freshnessFor,
+  freshnessMethod,
+  suitability,
+  RANK_SCHWELLE,
+} from './suitability'
 import { METHODS, METHOD_LABEL } from '@/labels'
 
 const TODAY = new Date('2026-09-08T08:00:00Z')
@@ -299,5 +307,47 @@ describe('Eine Rangfolge für alle Bildschirme', () => {
       const kopf = rankMethodsFor(b)[0]!
       expect(kopf.suitability.reason).toBe(suitability(b, kopf.method).reason)
     }
+  })
+})
+
+describe('Eine Frische, nicht zwei', () => {
+  /**
+   * Das Ruhefenster ist methodenabhängig. Wo eine Bohne ohne Methode
+   * gezeigt wird, muss die App sich für eine entscheiden — und vorher
+   * entschied sie sich an zwei Stellen unterschiedlich: die Übersicht mit
+   * `bestMethodFor`, das Profil mit `preferredMethod ?? bestMethodFor`.
+   * Über der zweiten stand ein Kommentar, der behauptete, es sei dieselbe.
+   */
+  const b = bean('mit-Wunsch', { preferredMethod: 'frenchpress' })
+  // 22 Tage ist genau der Bereich, in dem die Fenster auseinandergehen:
+  // Die French Press hat das breitere (sigma 9,5 gegen 7), also gilt die
+  // Tüte dort noch als im Fenster und für die empfohlene Methode nicht.
+  const g = bag('mit-Wunsch', { roastDate: daysAgo(22) })
+
+  it('achtet auf den gesetzten Methodenwunsch', () => {
+    expect(freshnessMethod(b)).toBe('frenchpress')
+  })
+
+  it('nimmt ohne Wunsch die empfohlene Methode', () => {
+    const ohne = bean('ohne-Wunsch')
+    expect(freshnessMethod(ohne)).toBe(bestMethodFor(ohne).method)
+  })
+
+  it('kommt für dieselbe Tüte auf dieselbe Zahl wie die Engine', () => {
+    // Der eigentliche Punkt: Übersicht und Profil rufen jetzt dieselbe
+    // Funktion, also können sie nicht auseinanderlaufen.
+    const direkt = freshnessFor(b, g, TODAY)
+    const ueberRang = bestBeansFor('frenchpress', [b], [g], TODAY)[0]!.freshness
+    expect(direkt.days).toBe(ueberRang.days)
+    expect(direkt.label).toBe(ueberRang.label)
+  })
+
+  it('zeigt, dass der Wunsch überhaupt einen Unterschied macht', () => {
+    // Sonst wäre der Test oben wertlos: Er würde auch bestehen, wenn
+    // preferredMethod ignoriert würde.
+    const mitWunsch = freshnessFor(b, g, TODAY)
+    const ohneWunsch = freshnessFor(bean('gleich'), g, TODAY)
+    expect(mitWunsch.state).toBe('peak')
+    expect(ohneWunsch.state).toBe('past-peak')
   })
 })

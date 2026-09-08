@@ -251,6 +251,44 @@ export function bestMethodFor(bean: Bean): { method: BrewMethod; suitability: Su
   return { method: kopf.method, suitability: kopf.suitability }
 }
 
+/**
+ * Nach welcher Methode wird die Frische einer Bohne bemessen?
+ *
+ * Das Ruhefenster ist methodenabhängig (kb/05 §4): Dieselbe Tüte kann für
+ * Espresso über dem Optimum und für die French Press mitten im Fenster
+ * liegen. Wo eine Bohne ohne Methode gezeigt wird — im Regal, im Profil —
+ * muss die App sich also für eine entscheiden.
+ *
+ * Diese Funktion ist diese Entscheidung, und sie existiert, weil sie
+ * vorher zweimal getroffen wurde: Die Übersicht nahm `bestMethodFor`, das
+ * Profil `preferredMethod ?? bestMethodFor` — mit einem Kommentar
+ * darüber, der behauptete, es sei dieselbe Methode. Solange niemand
+ * `preferredMethod` setzt, fiel es nicht auf. Das ist keine Entwarnung,
+ * sondern die Beschreibung eines Fehlers, der auf seinen Auslöser wartet.
+ */
+export function freshnessMethod(bean: Bean): BrewMethod {
+  return bean.preferredMethod ?? bestMethodFor(bean).method
+}
+
+/**
+ * Die Frische einer Tüte, ohne dass der Aufrufer eine Methode wählen muss.
+ *
+ * Wer eine Methode HAT — der Brühbildschirm etwa — soll weiter
+ * `assessFreshness` mit ihr aufrufen: Dort ist die methodenbezogene
+ * Auskunft die richtige, und sie steht dort auch neben dem Namen der
+ * Methode.
+ */
+export function freshnessFor(bean: Bean, bag: Bag | undefined, today = new Date()): Freshness {
+  return assessFreshness(
+    bag,
+    freshnessMethod(bean),
+    bean.roastLevel,
+    !!bean.isDecaf,
+    today,
+    bean.process,
+  )
+}
+
 // ── Die Gegenrichtung: Methode gewählt, welche Bohne? ─────────────────
 
 export interface BeanRanking {

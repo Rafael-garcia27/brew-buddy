@@ -199,6 +199,20 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
    * Zahl daneben eine Vorgabe, die niemand einstellen kann.
    */
   const tempFrei = tempAdjustable(method)
+
+  /**
+   * Die Methoden, zwischen denen der Kopf umschalten darf.
+   *
+   * Dieselbe Auswahl wie im Katalog: Was nicht im Haus ist, gehört auch
+   * hier nicht angeboten. Die gerade gewählte Methode bleibt in jedem
+   * Fall enthalten — sie steht sonst als leerer Zustand im Umschalter.
+   */
+  const favRoh = useStore((s) => s.settings.favoriteMethods)
+  const umschalter = useMemo(() => {
+    const gesetzt = (favRoh ?? []).filter((m) => (METHODS as string[]).includes(m))
+    const basis = gesetzt.length ? gesetzt : METHODS
+    return METHODS.filter((m) => basis.includes(m) || m === method)
+  }, [favRoh, method])
   const tempSpanne = tempRange(method)
   // Am Handfilter und an der AeroPress läuft die Uhr in Minuten:Sekunden,
   // beim Espresso in nackten Sekunden — ein Shot dauert nie eine Minute.
@@ -354,10 +368,19 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
               Dose, Ratio, Temperatur und Zielzeit wandern beim Umschalten
               sichtbar mit. */}
           <Section title="Methode">
+            {/* Nur die Methoden aus der Hausauswahl — plus die gerade
+                gewählte, auch wenn sie nicht dazugehört.
+
+                Vorher standen hier alle fünf, während der Katalog eine
+                Zeile weiter zurück zwei davon als „nicht im Haus" nach
+                unten sortiert hatte. Zwei Bildschirme, zwei Meinungen
+                über dieselbe Frage. Die gewählte bleibt trotzdem drin,
+                sonst könnte man aus einem Direktaufruf nicht mehr
+                zurückschalten. */}
             <SegmentedControl
               value={method}
               onChange={setMethod}
-              options={METHODS.map((m) => ({
+              options={umschalter.map((m) => ({
                 value: m,
                 label: METHOD_SHORT[m],
                 icon: <MethodIcon icon={getMethod(m).icon ?? m} className="h-[22px] w-[22px]" />,

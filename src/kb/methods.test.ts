@@ -214,3 +214,41 @@ describe('Der Mahlgrad braucht für jede Methode einen Bezugspunkt', () => {
     expect(referenceMicron('batchbrew')).toBeLessThan(referenceMicron('frenchpress'))
   })
 })
+
+describe('Die Maschine ist die verlässliche, nicht die beste', () => {
+  /**
+   * kb/10c §5: „das Profil eines V60 mit weniger Klarheit und weniger
+   * Kontrolle". Der erste Anlauf gab ihr für mittlere Röstungen eine 5 —
+   * damit gewann sie im Regal gegen den V60, und die Liste behauptete
+   * das Gegenteil des Wissenskapitels.
+   */
+  const matrix = (id: string) =>
+    (methodsRaw.methods.find((m) => m.id === id) as unknown as {
+      suitability: Record<string, Record<string, number>>
+    }).suitability
+
+  it('bewertet keine Bohne als ideal', () => {
+    const werte = Object.entries(matrix('batchbrew'))
+      .filter(([k]) => !k.startsWith('_'))
+      .flatMap(([, row]) => Object.values(row))
+    expect(Math.max(...werte)).toBeLessThan(5)
+  })
+
+  it('liegt am hellen Ende unter dem V60 und am dunklen darüber', () => {
+    const m = matrix('batchbrew')
+    const v = matrix('v60')
+    expect(m['light']!['washed']!).toBeLessThan(v['light']!['washed']!)
+    expect(m['dark']!['washed']!).toBeGreaterThan(v['dark']!['washed']!)
+  })
+
+  it('hat ihren Höhepunkt bei mittlerer Röstung', () => {
+    const m = matrix('batchbrew')
+    const reihe = ['light', 'medium-light', 'medium', 'medium-dark', 'dark'].map(
+      (l) => m[l]!['washed']!,
+    )
+    expect(Math.max(...reihe)).toBe(m['medium']!['washed']!)
+    // Und fällt zu beiden Seiten ab — eine flache Kurve wäre keine Aussage.
+    expect(reihe[0]!).toBeLessThan(reihe[2]!)
+    expect(reihe[4]!).toBeLessThan(reihe[2]!)
+  })
+})

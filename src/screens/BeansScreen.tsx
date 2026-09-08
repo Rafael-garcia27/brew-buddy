@@ -18,11 +18,12 @@ import type { Route } from '@/router'
 import { useStore } from '@/store'
 import type { Bean, RoastLevel, Process, BrewMethod } from '@domain'
 import type { BeanTrash } from '@/domain'
-import { assessFreshness } from '@/engine/freshness'
 import {
   suitability,
   bestMethodFor,
   rankMethodsFor,
+  freshnessFor,
+  freshnessMethod,
   SUITABILITY_LABEL,
   GEEIGNET_AB,
 } from '@/engine/suitability'
@@ -159,7 +160,10 @@ export default function BeansScreen({ route, navigate, onDeleted }: Props) {
     .map((b) => {
       const best = bestMethodFor(b)
       const bag = bags.filter((x) => x.beanId === b.id && !x.depleted)[0]
-      const f = assessFreshness(bag, best.method, b.roastLevel, !!b.isDecaf, new Date(), b.process)
+      // Eine Entscheidung, ein Ort: Das Ruhefenster ist methodenabhängig,
+      // und welche Methode dafür zählt, sagt die Engine — nicht jeder
+      // Bildschirm für sich.
+      const f = freshnessFor(b, bag)
       return {
         bean: b,
         bag,
@@ -498,6 +502,24 @@ export function BeanDetail({
    * bei derselben Bohne, zwei Bildschirme voneinander entfernt.
    */
   const fit = useMemo(() => rankMethodsFor(bean), [bean])
+  /**
+   * Der Fit zeigt ALLE eingemessenen Methoden, auch die nicht im Haus.
+   *
+   * Anders als der Katalog und der Umschalter, und mit Absicht: Das
+   * Profil ist ein Informationsbildschirm. „Diese Bohne wäre im V60
+   * hervorragend" ist eine nützliche Auskunft, auch wenn gerade kein V60
+   * dasteht — sie ist ein Grund, einen zu kaufen. Verschwiegen würde sie
+   * zu einer Lücke, die man nicht sieht.
+   *
+   * Angemerkt wird es trotzdem, sonst widerspricht die Reihenfolge hier
+   * der Empfehlung zwei Bildschirme weiter, ohne dass erkennbar wäre,
+   * warum.
+   */
+  const favRoh = useStore((s) => s.settings.favoriteMethods)
+  const imHaus = useMemo(() => {
+    const gesetzt = (favRoh ?? []).filter((m) => (METHODS as string[]).includes(m))
+    return gesetzt.length ? gesetzt : METHODS
+  }, [favRoh])
 
   /** Was noch da ist — über alle offenen Tüten. */
   const vorrat = bags
@@ -596,8 +618,15 @@ export function BeanDetail({
           <div className="space-y-2.5">
             {fit.map(({ method: m, suitability: f, rank, viable }, i) => (
               <div key={m} className="flex items-center gap-3">
-                <span className={`w-24 shrink-0 text-[14px] ${i === 0 ? 'font-semibold' : ''}`}>
+                <span
+                  className={`w-24 shrink-0 text-[14px] ${i === 0 ? 'font-semibold' : ''} ${
+                    imHaus.includes(m) ? '' : 'text-mute'
+                  }`}
+                >
                   {METHOD_LABEL[m]}
+                  {!imHaus.includes(m) && (
+                    <span className="block text-[10px] leading-tight text-faint">nicht im Haus</span>
+                  )}
                 </span>
                 <span
                   className="flex gap-0.5"
@@ -642,7 +671,25 @@ export function BeanDetail({
         </Card>
       </Section>
 
-      <Section title="Bags" action={<Button size="sm" variant="ghost" onClick={() => setShowBag(true)}>+ Bag</Button>}>
+      {/* Welche Methode das Fenster bestimmt, gehört hierhin: Die Fit-Liste
+          darüber zeigt fünf Methoden, und das Ruhefenster gilt nur für
+          eine davon (kb/05 §4). Ohne diesen Zusatz stünde eine Tageszahl
+          über einer Liste, die fünf verschiedene richtig macht. */}
+      <Section
+        title="Bags"
+        action={
+          <div className="flex items-baseline gap-2">
+            {bags.length > 0 && (
+              <span className="text-[12px] text-faint">
+                Fenster für {METHOD_SHORT[freshnessMethod(bean)]}
+              </span>
+            )}
+            <Button size="sm" variant="ghost" onClick={() => setShowBag(true)}>
+              + Bag
+            </Button>
+          </div>
+        }
+      >
         {bags.length === 0 ? (
           <Card>
             <p className="text-[14px] text-mute">
@@ -652,18 +699,11 @@ export function BeanDetail({
         ) : (
           <div className="space-y-2">
             {bags.map((bag) => {
-              // Dieselbe Methode wie in der Übersicht: Das Ruhefenster ist
-              // methodenabhängig — mit 'espresso' als Notnagel nannte die
-              // Detailansicht eine andere Tageszahl als die Karte, von der
-              // man gerade kam.
-              const f = assessFreshness(
-                bag,
-                bean.preferredMethod ?? bestMethodFor(bean).method,
-                bean.roastLevel,
-                !!bean.isDecaf,
-                new Date(),
-                bean.process,
-              )
+              // Dieselbe Funktion wie in der Übersicht. Der Kommentar hier
+              // behauptete das schon vorher — die Rechnung war trotzdem
+              // eine andere, sobald eine Bohne `preferredMethod` gesetzt
+              // hätte.
+              const f = freshnessFor(bean, bag)
               return (
                 <Card key={bag.id}>
                   <div className="flex items-center gap-3">

@@ -1497,35 +1497,35 @@
         "_note": "Temperatur und Agitation fehlen, weil sie nicht zur Verfügung stehen. Die kürzeste Korrekturliste der App — und der Grund, warum die Methode die verlässlichste ist (kb/10c §4)."
       },
       "suitability": {
-        "_note": "Höhepunkt bei mittlerer Röstung. Helle nordische Röstungen brauchen Temperatur an der oberen Grenze und Zeit — beides gibt das Gerät nicht her (kb/10c §5).",
+        "_note": "Abgeleitet aus dem V60 und flacher als er: kb/10c §5 nennt die Maschine „das Profil eines V60 mit weniger Klarheit und weniger Kontrolle\". Weniger Kontrolle heißt am hellen Ende schlechter — helle Röstungen brauchen Temperatur an der oberen Grenze und Zeit, beides gibt das Gerät nicht her — und am dunklen Ende besser, weil das tiefe Bett und die feste Agitation Fehler ausmitteln. Bewusst nirgends eine 5: Die Maschine ist für keine Bohne die ideale Methode, sondern die verlässliche. Ihr Vorteil ist Menge bei gleichbleibender Qualität, und den misst diese Matrix nicht.",
         "light": {
-          "washed": 2,
-          "honey": 2,
-          "natural": 2,
+          "washed": 3,
+          "honey": 3,
+          "natural": 3,
           "fermented": 2
         },
         "medium-light": {
-          "washed": 3,
-          "honey": 3,
+          "washed": 4,
+          "honey": 4,
           "natural": 3,
           "fermented": 3
         },
         "medium": {
-          "washed": 5,
-          "honey": 4,
-          "natural": 4,
-          "fermented": 3
-        },
-        "medium-dark": {
           "washed": 4,
           "honey": 4,
           "natural": 4,
           "fermented": 3
         },
-        "dark": {
+        "medium-dark": {
           "washed": 3,
           "honey": 3,
           "natural": 3,
+          "fermented": 3
+        },
+        "dark": {
+          "washed": 2,
+          "honey": 2,
+          "natural": 2,
           "fermented": 2
         }
       },
