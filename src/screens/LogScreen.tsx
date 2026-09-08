@@ -8,8 +8,8 @@ import { useState } from 'react'
 import type { Route } from '@/router'
 import { useStore } from '@/store'
 import type { BrewMethod } from '@domain'
-import { METHODS, METHOD_LABEL, DEFECT_LABEL, CHARACTER_LABEL, FLOW_LABEL } from '@/labels'
-import { Screen, Header, Section, Card, Empty, Chip, Stat, Button, num } from '@/components/ui'
+import { METHODS, METHOD_LABEL, METHOD_SHORT, DEFECT_LABEL, CHARACTER_LABEL, FLOW_LABEL } from '@/labels'
+import { Screen, Header, Section, Card, Empty, Chip, FilterRow, Stat, Button, num } from '@/components/ui'
 // Dieselbe Schreibweise wie in den Empfehlungen: „25 s“, nicht „25s“.
 import { fmtDauer } from '@/engine/text'
 import { formatSetting } from '@/engine/grinder'
@@ -48,6 +48,18 @@ export default function LogScreen({ route, navigate, back }: Props) {
 
   const beanName = (id: string) => beans.find((b) => b.id === id)?.name ?? 'Unbekannt'
 
+  /**
+   * Was im Logbuch tatsächlich vorkommt — und nur das wird angeboten.
+   *
+   * Die gerade gewählte Bohne bleibt in jedem Fall in der Liste: Sie kann
+   * aus der Route kommen (`#/log/<bohne>`), auch wenn zu ihr noch kein
+   * Brew existiert. Ohne sie stünde ein aktiver Filter ohne seinen Chip da.
+   */
+  const gebrauchteMethoden = METHODS.filter((m) => brews.some((b) => b.method === m))
+  const gebrauchteBohnen = beans.filter(
+    (b) => b.id === filterBean || brews.some((x) => x.beanId === b.id),
+  )
+
   return (
     <Screen>
       <Header title="Log" subtitle={gefilterteBohne?.name} onBack={back} />
@@ -57,41 +69,79 @@ export default function LogScreen({ route, navigate, back }: Props) {
           title="Noch keine Brews"
           body="Jeder Brew macht die Empfehlungen präziser. Nach drei gut bewerteten Tassen pro Bohne kennt die App deinen Geschmack."
           action={
-            gefilterteBohne ? (
-              <Button onClick={() => navigate({ tab: 'brew', detail: gefilterteBohne.id })}>
+            // Auch ohne vorgefilterte Bohne führt der leere Log irgendwohin:
+            // Ohne Handlung war der Zurück-Pfeil im Kopf der einzige Ausgang.
+            beans.length > 0 ? (
+              <Button
+                onClick={() =>
+                  navigate(
+                    gefilterteBohne
+                      ? { tab: 'brew', detail: gefilterteBohne.id }
+                      : { tab: 'brew' },
+                  )
+                }
+              >
                 Ersten Kaffee brühen
               </Button>
-            ) : undefined
+            ) : (
+              <Button onClick={() => navigate({ tab: 'coffee', detail: 'new' })}>
+                Erste Bohne anlegen
+              </Button>
+            )
           }
         />
       ) : (
         <>
-          <Section title="Filter">
-            <div className="flex flex-wrap gap-2">
-              <Chip label="Alle" active={filterMethod === 'all'} onClick={() => setFilterMethod('all')} />
-              {METHODS.map((m) => (
-                <Chip
-                  key={m}
-                  label={METHOD_LABEL[m]}
-                  active={filterMethod === m}
-                  onClick={() => setFilterMethod(filterMethod === m ? 'all' : m)}
-                />
-              ))}
-            </div>
-            {beans.length > 1 && (
-              <div className="mt-2 flex flex-wrap gap-2">
-                <Chip label="Alle Bohnen" active={filterBean === 'all'} onClick={() => setFilterBean('all')} />
-                {beans.map((b) => (
-                  <Chip
-                    key={b.id}
-                    label={b.name}
-                    active={filterBean === b.id}
-                    onClick={() => setFilterBean(filterBean === b.id ? 'all' : b.id)}
-                  />
-                ))}
+          {/* Angeboten wird nur, was im Logbuch auch vorkommt.
+              Vorher standen hier alle Methoden und alle Bohnen — mit der
+              fünften Methode brach die Zeile dreifach um, und die Hälfte
+              der Chips führte garantiert auf „Für diesen Filter gibt es
+              noch keinen Brew". Ein Filter, dessen Ergebnis man vorher
+              kennt, ist keine Auswahl.
+
+              Die Zeilen scrollen waagerecht statt umzubrechen: Bei zwölf
+              Bohnen wären es sonst vier Zeilen Chips über zwei Zeilen
+              Inhalt. */}
+          {(gebrauchteMethoden.length > 1 || gebrauchteBohnen.length > 1) && (
+            <Section title="Filter">
+              <div className="space-y-2">
+                {gebrauchteMethoden.length > 1 && (
+                  <FilterRow label="Methode">
+                    <Chip
+                      label="Alle"
+                      active={filterMethod === 'all'}
+                      onClick={() => setFilterMethod('all')}
+                    />
+                    {gebrauchteMethoden.map((m) => (
+                      <Chip
+                        key={m}
+                        label={METHOD_SHORT[m]}
+                        active={filterMethod === m}
+                        onClick={() => setFilterMethod(filterMethod === m ? 'all' : m)}
+                      />
+                    ))}
+                  </FilterRow>
+                )}
+                {gebrauchteBohnen.length > 1 && (
+                  <FilterRow label="Bohne">
+                    <Chip
+                      label="Alle"
+                      active={filterBean === 'all'}
+                      onClick={() => setFilterBean('all')}
+                    />
+                    {gebrauchteBohnen.map((b) => (
+                      <Chip
+                        key={b.id}
+                        label={b.name}
+                        active={filterBean === b.id}
+                        onClick={() => setFilterBean(filterBean === b.id ? 'all' : b.id)}
+                      />
+                    ))}
+                  </FilterRow>
+                )}
               </div>
-            )}
-          </Section>
+            </Section>
+          )}
 
           <Section title="Brews">
             {filtered.length === 0 && (

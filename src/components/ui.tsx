@@ -276,6 +276,29 @@ export function Chip({
   )
 }
 
+/**
+ * Eine Filterachse als waagerecht scrollende Zeile.
+ *
+ * Umbrechend brauchte „geeignet für" mit fünf Methoden zwei Zeilen, und
+ * mit einer sechsten wären es drei — im Logbuch mit den vollen Namen
+ * sogar drei bei fünf Methoden. Waagerecht bleibt es bei einer Zeile, und
+ * die Chips behalten ihre 44 px Trefferfläche.
+ *
+ * Die Beschriftung links ist kein Schmuck: Zwei Chipzeilen übereinander
+ * ohne Achsennamen sind zwei Reihen Wörter, bei denen man raten muss,
+ * welche Frage sie beantworten.
+ */
+export function FilterRow({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="w-[68px] shrink-0 text-[11px] leading-tight text-faint">{label}</span>
+      <div className="scroll-area -mx-1 flex flex-1 gap-1.5 overflow-x-auto px-1 py-0.5">
+        {children}
+      </div>
+    </div>
+  )
+}
+
 export function SegmentedControl<T extends string>({
   options,
   value,

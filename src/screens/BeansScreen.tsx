@@ -13,7 +13,7 @@
  * sind Aktionen an der gewählten Bohne. Eine Navigationsleiste braucht es
  * dafür nicht: Es gibt nur einen Ort, an den man zurückkehrt.
  */
-import { lazy, Suspense, useMemo, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useMemo, useState } from 'react'
 import type { Route } from '@/router'
 import { useStore } from '@/store'
 import type { Bean, RoastLevel, Process, BrewMethod } from '@domain'
@@ -27,12 +27,22 @@ import {
   SUITABILITY_LABEL,
   GEEIGNET_AB,
 } from '@/engine/suitability'
-import { getOrigin, BLEND, findCountry, originOptions, processFamily, PROCESS_FAMILIES } from '@/kb'
+import {
+  getOrigin,
+  BLEND,
+  findCountry,
+  originOptions,
+  processFamily,
+  PROCESS_FAMILIES,
+  agtronBand,
+  agtronSpan,
+  AGTRON_RANGE,
+} from '@/kb'
 
 import { METHODS, ROAST_LABEL, PROCESS_LABEL, METHOD_LABEL, METHOD_SHORT } from '@/labels'
 import {
   Screen, Header, Section, Card, Button, Field, TextInput, Select, Sheet,
-  Empty, FreshnessRing, Stepper, Toggle, Chip, GearButton, LogButton, num,
+  Empty, FreshnessRing, Stepper, Toggle, Chip, GearButton, LogButton, FilterRow, num,
 } from '@/components/ui'
 import { BackupBanner, SetupNudge } from '@/components/system'
 /**
@@ -224,7 +234,7 @@ export default function BeansScreen({ route, navigate, onDeleted }: Props) {
               {filterOffen ? (
                 <div className="space-y-2">
                   {familien.length > 1 && (
-                    <FilterZeile label="Aufbereitung">
+                    <FilterRow label="Aufbereitung">
                       {familien.map((f) => (
                         <Chip
                           key={f.id}
@@ -235,10 +245,10 @@ export default function BeansScreen({ route, navigate, onDeleted }: Props) {
                           }
                         />
                       ))}
-                    </FilterZeile>
+                    </FilterRow>
                   )}
                   {methoden.length > 1 && (
-                    <FilterZeile label="geeignet für">
+                    <FilterRow label="geeignet für">
                       {methoden.map((m) => (
                         <Chip
                           key={m}
@@ -247,7 +257,7 @@ export default function BeansScreen({ route, navigate, onDeleted }: Props) {
                           onClick={() => setFilterMethode(filterMethode === m ? undefined : m)}
                         />
                       ))}
-                    </FilterZeile>
+                    </FilterRow>
                   )}
                   <Button
                     size="sm"
@@ -826,6 +836,21 @@ function BeanSheet({
     () => bean?.origins.filter((o) => o.country !== BLEND).map((o) => o.country) ?? [],
   )
   const [roast, setRoast] = useState<RoastLevel>(bean?.roastLevel ?? 'medium')
+  /**
+   * Der gemessene Röstgrad — optional und mit Absicht umständlich.
+   *
+   * Ohne dieses Feld war die Unterscheidung zwischen „gemessen" und „laut
+   * Etikett" im Profil eine Sackgasse: Die App schrieb „ein gemessener
+   * Agtron-Wert wäre genauer" und bot keinen Weg, einen einzutragen.
+   *
+   * `agtronTouched` ist derselbe Schutz wie bei der gelaufenen Zeit im
+   * Brühbildschirm: Der Startwert ist die Mitte des Bandes, das die
+   * Etikettenangabe meint. Wer ihn stehen lässt, hat nichts gemessen —
+   * gespeichert wird er dann auch nicht. Sonst zeichnete die Skala einen
+   * präzisen Zeiger auf eine Schätzung.
+   */
+  const [agtron, setAgtron] = useState<number | null>(bean?.agtron ?? null)
+  const [agtronTouched, setAgtronTouched] = useState(false)
   const [process, setProcess] = useState<Process>(bean?.process ?? 'washed')
   // Kein fester Vorgabewert: 1500 m wäre eine erfundene Angabe, die jede
   // Bohne bekäme — und die Herkunftsableitung der Engine käme nie zum Zug.
@@ -856,6 +881,8 @@ function BeanSheet({
       origins,
       process,
       roastLevel: roast,
+      // Nur ein bewegter Wert ist eine Messung (siehe agtronTouched).
+      agtron: agtron !== null && (agtronTouched || bean?.agtron !== undefined) ? agtron : undefined,
       altitudeMasl: (altitude !== null ? [altitude - 100, altitude + 100] : undefined) as
         | [number, number]
         | undefined,
@@ -934,6 +961,49 @@ function BeanSheet({
             onChange={setRoast}
             options={(Object.keys(ROAST_LABEL) as RoastLevel[]).map((r) => ({ value: r, label: ROAST_LABEL[r] }))}
           />
+        </Field>
+        {/* Direkt unter Roast, weil er dieselbe Frage genauer beantwortet.
+            Eingeklappt, weil ihn die wenigsten Bags nennen — ein leeres
+            Zahlenfeld im Weg wäre für die meisten Bohnen nur Ballast. */}
+        <Field
+          label="Agtron"
+          hint={
+            agtron === null
+              ? 'Gemessene Röstfarbe, 25–95. Steht nur auf wenigen Bags — hat aber Vorrang vor der Bezeichnung, weil die zwischen Röstern um bis zu zwei Stufen streut.'
+              : agtronTouched || bean?.agtron !== undefined
+                ? agtronBand(agtron).level === roast
+                  // Gleiches Band: „überstimmt" wäre hier falsch, er
+                  // bestätigt. Der Gewinn ist trotzdem echt — aus einer
+                  // Spanne von zwei Bändern wird ein Punkt.
+                  ? `Gemessen: ${agtronBand(agtron).label}. Deckt sich mit „${ROAST_LABEL[roast]}" und macht daraus einen Punkt statt einer Spanne.`
+                  : `Gemessen: ${agtronBand(agtron).label} — das überstimmt die Bezeichnung „${ROAST_LABEL[roast]}" (kb/05 §2.1).`
+                : 'Das ist noch die Mitte dessen, was die Bezeichnung meint — keine Messung. Verschieb den Wert, sonst speichere ich ihn nicht.'
+          }
+        >
+          {agtron === null ? (
+            <Button
+              variant="ghost"
+              onClick={() => {
+                const [lo, hi] = agtronSpan(roast)
+                setAgtron(Math.round((lo + hi) / 2))
+              }}
+              className="w-full"
+            >
+              Agtron-Wert eintragen
+            </Button>
+          ) : (
+            <Stepper
+              value={agtron}
+              onChange={(v) => {
+                setAgtron(v)
+                setAgtronTouched(true)
+              }}
+              step={1}
+              min={AGTRON_RANGE[0]}
+              max={AGTRON_RANGE[1]}
+              label="Agtron"
+            />
+          )}
         </Field>
         <Field label="Process" term="process">
           <Select
@@ -1172,24 +1242,6 @@ function BagSheet({
         )}
       </div>
     </Sheet>
-  )
-}
-
-/**
- * Eine Filterachse als waagerecht scrollende Zeile.
- *
- * Umbrechend brauchte „geeignet für" mit fünf Methoden zwei Zeilen, und
- * mit einer sechsten Methode wären es drei. Waagerecht bleibt es bei
- * einer, und die Chips behalten ihre 44 px Trefferfläche.
- */
-function FilterZeile({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="flex items-center gap-2">
-      <span className="w-[68px] shrink-0 text-[11px] leading-tight text-faint">{label}</span>
-      <div className="scroll-area -mx-1 flex flex-1 gap-1.5 overflow-x-auto px-1 py-0.5">
-        {children}
-      </div>
-    </div>
   )
 }
 
