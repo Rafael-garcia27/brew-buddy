@@ -1,15 +1,37 @@
 /**
- * Mahlgradregler der Sage Barista Express — der runde Drehknopf an der
- * linken Gehäuseseite, nachgebildet.
+ * Mahlgradregler der Sage Barista Express.
  *
- * Bewusst anders aufgebaut als die Mylo SG2: Dort schiebt man einen
- * gerändelten Zylinderring waagerecht, hier dreht man einen Knopf in
- * gebürstetem Edelstahl. Der Knopf sitzt in einer Blende, um ihn herum
- * läuft die Skala von FEINER nach GRÖBER; der eingekerbte Zeiger dreht
- * sich mit. Die Skala ist stufenlos — es gibt keine Rastung, nur einen
- * durchgehenden Verstellweg.
+ * Der erste Entwurf war ein freistehender runder Drehknopf mit einer
+ * Skala ringsherum. So sieht die Maschine nicht aus, und das war kein
+ * Schönheitsfehler: Wer den Wert an seinem Gerät abliest, sucht das
+ * Bild, das er dort sieht. An der Maschine sitzt das Zahlenrad in der
+ * linken Gehäusewand und ragt nur zu einem Viertel heraus — durch einen
+ * Schlitz sieht man immer bloß einen kleinen Bogen davon, darüber steht
+ * „GRIND SIZE", und ein fester Zeiger in der Mitte markiert die Zahl.
+ *
+ * Genau das zeichnet dieses Bauteil nach: schwarzes Gehäuse, Schlitz,
+ * ein großes Rad, dessen Mittelpunkt weit unterhalb des Schlitzes liegt.
+ * Sichtbar sind rund 30 Grad Bogen — mehr wäre gelogen.
+ *
+ * Die Zahlen laufen nach rechts absteigend, wie an der Maschine. Ein Zug
+ * nach rechts bringt damit die höheren Zahlen zum Zeiger — gröber also,
+ * dieselbe Richtung wie an der Mylo.
+ *
+ * „FEINER" und „GRÖBER" an den Enden hat dieses Bauteil deshalb NICHT.
+ * Sie hätten das Gegenteil dessen behauptet, was danebensteht: Rechts
+ * neben dem Zeiger liegen die kleineren Zahlen, also das feinere Ende
+ * der Skala, obwohl das Ziehen nach rechts gröber macht. Beides stimmt
+ * gleichzeitig und ist nebeneinander nicht lesbar. Die Maschine selbst
+ * beschriftet auch nur „GRIND SIZE" — die Zahl unter dem Zeiger ist die
+ * Auskunft, und wohin man will, sagt die Empfehlung darüber.
+ *
+ * Und das Ziehen läuft an React vorbei. Der Vorgänger rief bei jeder
+ * Zeigerbewegung `onChange` — damit rendert der ganze Brühbildschirm
+ * samt Vorschlagskarte neu, sechzigmal in der Sekunde, und die Geste
+ * fühlt sich stufig an. Jetzt dreht die Bewegung das Rad direkt im DOM;
+ * der Wert nach außen geht gebündelt einmal pro Bildschirmbild raus.
  */
-import { useCallback, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 interface Props {
   /** Skalenwert 0–max, stufenlos */
@@ -23,287 +45,309 @@ interface Props {
   disabled?: boolean
 }
 
+/** Zeichenfläche des Schlitzes in SVG-Einheiten. */
+const B = 320
+const H = 96
+
 /**
- * Verstellweg: 0 links unten, Maximum rechts unten, aufsteigend im
- * Uhrzeigersinn über die Zwölf. So liest sich jeder Drehregler — die
- * kleinste Zahl links, die größte rechts.
+ * Radius des Zahlenrads und Lage seines Mittelpunkts.
+ *
+ * Der Mittelpunkt liegt weit unter dem Schlitz, damit oben nur ein
+ * flacher Bogen stehen bleibt — das ist der ganze Trick an der
+ * Darstellung. Die Radoberkante liegt bei y = 22, also 12 Einheiten
+ * unter der Schlitzkante: So steckt das Rad sichtbar IM Gehäuse und
+ * klebt nicht davor.
+ *
+ * Der erste Anlauf setzte den Mittelpunkt auf y = 78 + R. Damit ragte
+ * das Rad gerade sechs Einheiten in den Schlitz, und zu sehen war ein
+ * grauer Streifen ohne eine einzige Zahl.
  */
-const SWEEP = 280
-const START = -140 // Grad ab „12 Uhr", im Uhrzeigersinn
+const R = 420
+const CX = B / 2
+const CY = 22 + R
 
-const R = 100 // SVG-Einheiten, Mittelpunkt bei 110/110
-const CX = 110
-const CY = 110
+/**
+ * Grad je Skalenschritt — und damit, wie viele Zahlen gleichzeitig
+ * sichtbar sind.
+ *
+ * 6,5° zeigt knapp sieben Nummern im Ausschnitt. Die Maschine selbst
+ * zeigt vier bis fünf, das wären 12°; dann bräuchte die ganze Skala aber
+ * 1400 px Ziehweg, und auf einem Telefon ist das dreieinhalb Mal über
+ * den ganzen Bildschirm. Sieben Zahlen sind der Kompromiss zwischen dem
+ * Bild und der Bedienbarkeit.
+ */
+const GRAD_PRO_EINHEIT = 6.5
 
-const rad = (deg: number) => ((deg - 90) * Math.PI) / 180
-const pt = (deg: number, r: number) => ({
-  x: CX + Math.cos(rad(deg)) * r,
-  y: CY + Math.sin(rad(deg)) * r,
-})
+/**
+ * Ziehweg je Skaleneinheit.
+ *
+ * Muss zur Bogenlänge passen, sonst läuft das Rad schneller oder
+ * langsamer als der Finger, und genau das fühlt sich „grob" an. Bei
+ * R − 34 und 6,5° sind das 44 Zeichen­einheiten, auf 375 px Bildschirm
+ * rund 43 Pixel.
+ */
+const PX_PRO_EINHEIT = 43
+
+const rad = (deg: number) => (deg * Math.PI) / 180
 
 export default function SageGrindDial({ value, onChange, max, step, highlight, disabled }: Props) {
   const box = useRef<HTMLDivElement | null>(null)
-  const drag = useRef<{ lastAngle: number; acc: number } | null>(null)
-  const [active, setActive] = useState(false)
+  const radRef = useRef<SVGGElement | null>(null)
+  const anzeige = useRef<HTMLSpanElement | null>(null)
+  const zug = useRef<{ x0: number; start: number } | null>(null)
+  /** Der laufende Wert während der Geste — außerhalb von React. */
+  const wert = useRef(value)
+  const bild = useRef<number | null>(null)
+  const [aktiv, setAktiv] = useState(false)
 
-  const angleOf = (v: number) => START + (v / max) * SWEEP
   const clamp = (v: number) => Math.max(0, Math.min(max, v))
   /** Auf den Anzeigeschritt runden — die Mühle selbst rastet nicht. */
   const snap = (v: number) => Math.round(clamp(v) / step) * step
+  const text = (v: number) => snap(v).toFixed(step < 1 ? 1 : 0).replace('.', ',')
 
-  /** Winkel des Fingers relativ zur Knopfmitte, in Grad ab „12 Uhr". */
-  const pointerAngle = useCallback((clientX: number, clientY: number) => {
-    const r = box.current?.getBoundingClientRect()
-    if (!r) return null
-    const dx = clientX - (r.left + r.width / 2)
-    const dy = clientY - (r.top + r.height / 2)
-    return (Math.atan2(dy, dx) * 180) / Math.PI + 90
-  }, [])
+  // Von außen gesetzte Werte übernehmen, solange niemand zieht.
+  useEffect(() => {
+    if (zug.current) return
+    wert.current = value
+    zeichnen(value)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value])
+
+  /**
+   * Rad drehen und Zahl setzen, ohne Renderdurchlauf.
+   *
+   * Das Rad dreht um seinen Mittelpunkt weit unterhalb — ein einziges
+   * `transform` auf der Gruppe bewegt Zahlen, Striche und Zähne
+   * gemeinsam, und der Browser kann es auf der Grafikkarte erledigen.
+   */
+  const zeichnen = (v: number) => {
+    radRef.current?.setAttribute('transform', `rotate(${v * GRAD_PRO_EINHEIT} ${CX} ${CY})`)
+    if (anzeige.current) anzeige.current.textContent = text(v)
+  }
+
+  /** Den Wert nach außen geben, höchstens einmal je Bildschirmbild. */
+  const melden = () => {
+    if (bild.current !== null) return
+    bild.current = requestAnimationFrame(() => {
+      bild.current = null
+      onChange(snap(wert.current))
+    })
+  }
 
   const onDown = (e: React.PointerEvent) => {
     if (disabled) return
-    const a = pointerAngle(e.clientX, e.clientY)
-    if (a === null) return
+    if (e.pointerType === 'mouse' && e.button !== 0) return
     try {
       ;(e.currentTarget as Element).setPointerCapture?.(e.pointerId)
     } catch {
-      /* ohne Zeigererfassung weitermachen */
+      /* ohne Erfassung geht es auch */
     }
-    drag.current = { lastAngle: a, acc: value }
-    setActive(true)
+    zug.current = { x0: e.clientX, start: wert.current }
+    setAktiv(true)
   }
 
   const onMove = (e: React.PointerEvent) => {
-    if (!drag.current) return
-    const a = pointerAngle(e.clientX, e.clientY)
-    if (a === null) return
-    // Kürzeste Winkeldifferenz — sonst springt der Wert beim Überschreiten
-    // von 180°/−180° über den ganzen Verstellweg.
-    let d = a - drag.current.lastAngle
-    if (d > 180) d -= 360
-    if (d < -180) d += 360
-    drag.current.lastAngle = a
-    drag.current.acc = clamp(drag.current.acc + (d / SWEEP) * max)
-    onChange(Math.round(drag.current.acc * 100) / 100)
+    const z = zug.current
+    if (!z) return
+    // Nach rechts ziehen heißt gröber: Die höheren Zahlen sitzen links
+    // auf dem Rad und wandern zum Zeiger, wenn man es nach rechts dreht.
+    wert.current = clamp(z.start + (e.clientX - z.x0) / PX_PRO_EINHEIT)
+    zeichnen(wert.current)
+    melden()
   }
 
   const onUp = () => {
-    if (drag.current) onChange(snap(drag.current.acc))
-    drag.current = null
-    setActive(false)
+    if (!zug.current) return
+    zug.current = null
+    setAktiv(false)
+    // Einrasten auf den Anzeigeschritt — die Mühle rastet nicht, die
+    // Anzeige schon, und ein Wert wie 6,37 wäre eine Genauigkeit, die
+    // niemand einstellen kann.
+    wert.current = snap(wert.current)
+    zeichnen(wert.current)
+    if (bild.current !== null) {
+      cancelAnimationFrame(bild.current)
+      bild.current = null
+    }
+    onChange(wert.current)
   }
 
-  const nudge = (dir: 1 | -1) => onChange(snap(clamp(value + dir * step)))
-
-  const inRange = highlight && value >= highlight.range[0] && value <= highlight.range[1]
-  const display = snap(value).toFixed(step >= 1 ? 0 : 1).replace('.', ',')
-
-  // Ganze Zahlen bekommen einen langen Strich mit Ziffer, halbe einen kurzen.
-  const majors = Array.from({ length: max + 1 }, (_, i) => i)
-  const minors = Array.from({ length: max * 2 + 1 }, (_, i) => i / 2).filter((v) => v % 1 !== 0)
-
-  const arcPath = (from: number, to: number, r: number) => {
-    const a = pt(angleOf(from), r)
-    const b = pt(angleOf(to), r)
-    const large = ((to - from) / max) * SWEEP > 180 ? 1 : 0
-    return `M ${a.x} ${a.y} A ${r} ${r} 0 ${large} 1 ${b.x} ${b.y}`
+  const schieben = (d: number) => {
+    wert.current = snap(clamp(wert.current + d))
+    zeichnen(wert.current)
+    onChange(wert.current)
   }
+
+  /** Die Zahlen auf dem Rad — ganze Nummern, wie am Gerät aufgedruckt. */
+  const nummern = Array.from({ length: Math.floor(max) + 1 }, (_, i) => i)
+  const imBereich =
+    !!highlight && snap(value) >= highlight.range[0] && snap(value) <= highlight.range[1]
 
   return (
     <div className="select-none">
-      {/* Ablesewert */}
-      <div className="mb-2 flex items-baseline justify-center gap-2">
-        <span className="tnum text-[42px] leading-none font-semibold">{display}</span>
-        {highlight && (
-          <span className={`text-[13px] ${inRange ? 'text-ok' : 'text-mute'}`}>
-            {highlight.label} {highlight.range[0]}–{highlight.range[1]}
+      {/* Ablesewert und Feinkorrektur wie bei der Mylo: eine Zeile, nicht
+          drei Elemente übereinander. */}
+      <div className="mb-2 flex items-center gap-3">
+        <button
+          type="button"
+          aria-label="feiner"
+          disabled={disabled}
+          onClick={() => schieben(-step)}
+          className="h-11 w-11 shrink-0 rounded-xl border border-line bg-raised text-xl text-crema active:bg-line disabled:opacity-40"
+        >
+          −
+        </button>
+        <div className="min-w-0 flex-1 text-center">
+          <span ref={anzeige} className="tnum text-[34px] leading-none font-semibold">
+            {text(value)}
           </span>
-        )}
+          {highlight && (
+            <span className={`ml-2 text-[13px] ${imBereich ? 'text-ok' : 'text-mute'}`}>
+              {highlight.label} {highlight.range[0]}–{highlight.range[1]}
+            </span>
+          )}
+        </div>
+        <button
+          type="button"
+          aria-label="gröber"
+          disabled={disabled}
+          onClick={() => schieben(step)}
+          className="h-11 w-11 shrink-0 rounded-xl border border-line bg-raised text-xl text-crema active:bg-line disabled:opacity-40"
+        >
+          +
+        </button>
       </div>
 
-      {/* ══ Die Blende mit dem Drehknopf ══ */}
+      {/* ══ Das Gehäuse ══ */}
       <div
-        className="relative mx-auto rounded-[20px]"
+        ref={box}
+        className="relative touch-none overflow-hidden rounded-[20px]"
         style={{
-          background: 'linear-gradient(155deg, #3a3a3d 0%, #232326 55%, #17171a 100%)',
           border: '1px solid var(--c-line)',
-          padding: 12,
-          maxWidth: 300,
+          background: 'linear-gradient(180deg,#2a2a2c 0%,#171719 55%,#101012 100%)',
+          cursor: disabled ? 'default' : aktiv ? 'grabbing' : 'grab',
+        }}
+        onPointerDown={onDown}
+        onPointerMove={onMove}
+        onPointerUp={onUp}
+        onPointerCancel={onUp}
+        role="slider"
+        aria-label="Mahlgrad"
+        aria-valuemin={0}
+        aria-valuemax={max}
+        aria-valuenow={snap(value)}
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'ArrowLeft') schieben(-step)
+          if (e.key === 'ArrowRight') schieben(step)
         }}
       >
-        {/* Typenbezeichnung wie auf dem Gehäuse */}
-        <div
-          className="absolute top-3 left-4 text-[9px] tracking-[0.22em]"
-          style={{ color: 'rgba(255,255,255,.42)' }}
+        {/* Gravur auf der Gehäusewand */}
+        <p
+          className="pt-3 text-center"
+          style={{ fontSize: 10, letterSpacing: '0.32em', color: 'rgba(255,255,255,.42)' }}
         >
           GRIND SIZE
-        </div>
-        <div
-          className="absolute top-3 right-4 text-[9px] tracking-[0.22em]"
-          style={{ color: 'rgba(255,255,255,.30)' }}
-        >
-          SAGE
-        </div>
+        </p>
 
-        <div
-          ref={box}
-          // Drehen ist die naheliegende Geste, darf aber nicht die einzige
-          // Bedienung sein — mit Tastatur oder Sprachsteuerung dreht
-          // niemand einen Knopf.
-          role="slider"
-          tabIndex={disabled ? -1 : 0}
-          aria-label="Mahlgrad"
-          aria-valuemin={0}
-          aria-valuemax={max}
-          aria-valuenow={snap(value)}
-          aria-valuetext={`Skala ${snap(value).toFixed(step >= 1 ? 0 : 1).replace('.', ',')}`}
-          aria-disabled={disabled || undefined}
-          onKeyDown={(e) => {
-            if (disabled) return
-            const gross = e.key === 'PageUp' || e.key === 'PageDown'
-            const weite = gross ? step * 4 : step
-            if (e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'PageUp') {
-              e.preventDefault()
-              onChange(snap(value + weite))
-            } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown' || e.key === 'PageDown') {
-              e.preventDefault()
-              onChange(snap(value - weite))
-            } else if (e.key === 'Home') {
-              e.preventDefault()
-              onChange(0)
-            } else if (e.key === 'End') {
-              e.preventDefault()
-              onChange(max)
-            }
-          }}
-          className="relative mx-auto touch-none rounded-full"
-          style={{ width: 220, height: 220, cursor: disabled ? 'default' : active ? 'grabbing' : 'grab' }}
-          onPointerDown={onDown}
-          onPointerMove={onMove}
-          onPointerUp={onUp}
-          onPointerCancel={onUp}
-        >
-          <svg viewBox="0 0 220 220" className="h-full w-full">
-            <defs>
-              {/* gebürsteter Edelstahl */}
-              <radialGradient id="sg-knob" cx="38%" cy="30%">
-                <stop offset="0%" stopColor="#e6e4e0" />
-                <stop offset="52%" stopColor="#b9b6b1" />
-                <stop offset="100%" stopColor="#7d7a76" />
-              </radialGradient>
-              <linearGradient id="sg-bevel" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="rgba(255,255,255,.55)" />
-                <stop offset="100%" stopColor="rgba(0,0,0,.45)" />
-              </linearGradient>
-              <radialGradient id="sg-well" cx="50%" cy="42%">
-                <stop offset="0%" stopColor="#2b2b2e" />
-                <stop offset="100%" stopColor="#131315" />
-              </radialGradient>
-            </defs>
+        <svg viewBox={`0 0 ${B} ${H}`} className="block w-full" aria-hidden>
+          <defs>
+            {/* Der Schlitz: Nur was hier drin liegt, ist zu sehen. Genau
+                das ist die Aussage der Zeichnung — das Rad steckt im
+                Gehäuse, sichtbar ist ein Ausschnitt. */}
+            <clipPath id="sg-schlitz">
+              <rect x="14" y="10" width={B - 28} height={H - 22} rx="10" />
+            </clipPath>
+            <linearGradient id="sg-rad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#f4f2ee" />
+              <stop offset="55%" stopColor="#d8d4cd" />
+              <stop offset="100%" stopColor="#a9a49c" />
+            </linearGradient>
+            {/* Schatten an den Schlitzkanten — ohne ihn klebt das Rad auf
+                der Blende, statt darin zu stecken. */}
+            <linearGradient id="sg-tiefe" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="rgba(0,0,0,.75)" />
+              <stop offset="22%" stopColor="rgba(0,0,0,0)" />
+              <stop offset="82%" stopColor="rgba(0,0,0,0)" />
+              <stop offset="100%" stopColor="rgba(0,0,0,.6)" />
+            </linearGradient>
+          </defs>
 
-            {/* Vertiefung im Gehäuse */}
-            <circle cx={CX} cy={CY} r={R + 6} fill="url(#sg-well)" />
+          <g clipPath="url(#sg-schlitz)">
+            {/* Hinterer Schlitzgrund */}
+            <rect x="14" y="10" width={B - 28} height={H - 22} fill="#0b0b0c" />
 
-            {/* Skalenbogen */}
-            <path d={arcPath(0, max, R - 4)} fill="none" stroke="rgba(255,255,255,.13)" strokeWidth="1.2" />
+            {/* Das Rad selbst, gedreht um seinen tief liegenden Mittelpunkt */}
+            <g ref={radRef} transform={`rotate(${value * GRAD_PRO_EINHEIT} ${CX} ${CY})`}>
+              <circle cx={CX} cy={CY} r={R} fill="url(#sg-rad)" />
+              {/* Zahnung am Radrand — der gerändelte Griff der Maschine */}
+              {Array.from({ length: 240 }, (_, i) => i * 1.5 - 180).map((a) => {
+                const x1 = CX + Math.sin(rad(a)) * R
+                const y1 = CY - Math.cos(rad(a)) * R
+                const x2 = CX + Math.sin(rad(a)) * (R - 9)
+                const y2 = CY - Math.cos(rad(a)) * (R - 9)
+                return (
+                  <line
+                    key={`z${a}`}
+                    x1={x1}
+                    y1={y1}
+                    x2={x2}
+                    y2={y2}
+                    stroke="rgba(0,0,0,.45)"
+                    strokeWidth="1.6"
+                  />
+                )
+              })}
 
-            {/* Empfohlener Bereich, direkt auf der Skala */}
-            {highlight && (
-              <path
-                d={arcPath(highlight.range[0], highlight.range[1], R - 4)}
-                fill="none"
-                stroke="var(--c-ok)"
-                strokeWidth="3.5"
-                strokeLinecap="round"
-                opacity="0.85"
-              />
-            )}
-
-            {/* Feinstriche */}
-            {minors.map((v) => {
-              const a = angleOf(v)
-              const p1 = pt(a, R - 9)
-              const p2 = pt(a, R - 14)
-              return <line key={`m${v}`} x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y}
-                stroke="rgba(255,255,255,.28)" strokeWidth="1" />
-            })}
-
-            {/* Hauptstriche mit Ziffern */}
-            {majors.map((v) => {
-              const a = angleOf(v)
-              const p1 = pt(a, R - 8)
-              const p2 = pt(a, R - 17)
-              const t = pt(a, R - 29)
-              return (
-                <g key={v}>
-                  <line x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y}
-                    stroke="rgba(255,255,255,.72)" strokeWidth="1.6" />
-                  <text x={t.x} y={t.y + 3.4} textAnchor="middle" fontSize="10"
-                    fill="rgba(255,255,255,.82)" fontWeight="500">
-                    {v}
-                  </text>
-                </g>
-              )
-            })}
-
-            {/* Der Knopf selbst */}
-            <circle cx={CX} cy={CY} r={R - 40} fill="url(#sg-knob)" />
-            <circle cx={CX} cy={CY} r={R - 40} fill="none" stroke="url(#sg-bevel)" strokeWidth="2" />
-
-            {/* Griffmulden am Rand des Knopfs */}
-            {Array.from({ length: 24 }, (_, i) => i * 15).map((a) => {
-              const p1 = pt(a, R - 42)
-              const p2 = pt(a, R - 48)
-              return <line key={`k${a}`} x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y}
-                stroke="rgba(0,0,0,.20)" strokeWidth="1.4" strokeLinecap="round" />
-            })}
-
-            {/* Zeiger — die eingefräste Kerbe im Knopfrand, dreht mit */}
-            <g transform={`rotate(${angleOf(value)} ${CX} ${CY})`}>
-              <rect x={CX - 2.6} y={CY - (R - 40)} width="5.2" height="20" rx="2.6"
-                fill="#17171a" />
-              <circle cx={CX} cy={CY - (R - 48)} r="2.2" fill="var(--c-crema)" />
+              {nummern.map((n) => {
+                // Minus: höhere Zahlen liegen links, wie an der Maschine.
+                const a = -n * GRAD_PRO_EINHEIT
+                const tx = CX + Math.sin(rad(a)) * (R - 34)
+                const ty = CY - Math.cos(rad(a)) * (R - 34)
+                const sx = CX + Math.sin(rad(a)) * (R - 12)
+                const sy = CY - Math.cos(rad(a)) * (R - 12)
+                const ix = CX + Math.sin(rad(a)) * (R - 20)
+                const iy = CY - Math.cos(rad(a)) * (R - 20)
+                return (
+                  <g key={n}>
+                    <line x1={sx} y1={sy} x2={ix} y2={iy} stroke="#3a3a3c" strokeWidth="1.6" />
+                    <text
+                      x={tx}
+                      y={ty}
+                      textAnchor="middle"
+                      dominantBaseline="central"
+                      transform={`rotate(${a} ${tx} ${ty})`}
+                      fontSize="21"
+                      fontWeight="600"
+                      fill="#2b2b2d"
+                    >
+                      {n}
+                    </text>
+                  </g>
+                )
+              })}
             </g>
 
-            {/* Laufrichtung — außerhalb der Skala, an den beiden Enden */}
-            <text x={26} y={212} textAnchor="start" fontSize="8.5"
-              fill="rgba(255,255,255,.45)" letterSpacing="1.4">
-              FEINER
-            </text>
-            <text x={194} y={212} textAnchor="end" fontSize="8.5"
-              fill="rgba(255,255,255,.45)" letterSpacing="1.4">
-              GRÖBER
-            </text>
-          </svg>
-        </div>
+            <rect
+              x="14"
+              y="10"
+              width={B - 28}
+              height={H - 22}
+              fill="url(#sg-tiefe)"
+              pointerEvents="none"
+            />
+          </g>
 
-        {/* Genaues Nachstellen ohne Drehen */}
-        <div className="mt-1 flex items-center justify-center gap-3">
-          <button
-            type="button"
-            onClick={() => nudge(-1)}
-            disabled={disabled || value <= 0}
-            className="h-11 w-16 rounded-xl text-[15px] disabled:opacity-30"
-            style={{ background: 'rgba(255,255,255,.09)', color: 'rgba(255,255,255,.85)' }}
-            aria-label={`Feiner, ${step} Schritte`}
-          >
-            −{String(step).replace('.', ',')}
-          </button>
-          <button
-            type="button"
-            onClick={() => nudge(1)}
-            disabled={disabled || value >= max}
-            className="h-11 w-16 rounded-xl text-[15px] disabled:opacity-30"
-            style={{ background: 'rgba(255,255,255,.09)', color: 'rgba(255,255,255,.85)' }}
-            aria-label={`Gröber, ${step} Schritte`}
-          >
-            +{String(step).replace('.', ',')}
-          </button>
-        </div>
+          {/* Der feste Zeiger in der Mitte — er dreht sich nicht mit. */}
+          <path d={`M${CX} 30l7 -12h-14z`} fill="#ffffff" opacity="0.92" />
+          <line x1={CX} y1="30" x2={CX} y2={H - 16} stroke="#ffffff" strokeWidth="1.4" opacity="0.35" />
+        </svg>
+
+        <div className="pb-3" />
       </div>
 
       <p className="mt-2 text-center text-[13px] text-faint">
-        Knopf drehen — die Skala läuft stufenlos.
+        Rad waagerecht ziehen — die Skala läuft stufenlos.
       </p>
     </div>
   )
