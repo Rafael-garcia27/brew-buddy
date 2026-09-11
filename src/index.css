@@ -177,6 +177,23 @@ textarea {
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom);
 }
+
+/* Untere Sicherheitszone für die Navigationsleiste.
+
+   Die volle Zone sind auf dem iPhone 12 im Standalone-Modus 34 px — im
+   Browser mit Werkzeugleiste dagegen 0. Beim Start vom Homebildschirm
+   wuchs die Leiste dadurch schlagartig um ein Drittel, und unter den
+   Beschriftungen stand mehr leere Fläche als Inhalt darüber.
+
+   Die 6 px Abzug sind kein Trick an Apples Vorgabe vorbei: Der Home
+   Indicator ist rund 5 px hoch und sitzt 8 px über der Kante. Was bleibt,
+   sind 28 px Abstand — reichlich, und die Leiste baut dafür 74 px statt
+   88. `max(…, 0px)` sorgt dafür, dass Geräte ohne Indicator nichts
+   Negatives bekommen. */
+.pb-nav {
+  padding-bottom: max(calc(env(safe-area-inset-bottom) - 6px), 0px);
+}
+
 .h-safe-bottom {
   height: env(safe-area-inset-bottom);
 }

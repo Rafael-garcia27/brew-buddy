@@ -12,6 +12,14 @@
  * versehentlich die Karte aufziehen. Die zweite ist die Tastatur: Die
  * Aktionen liegen deshalb als echte Knöpfe im Dokument, auch wenn sie
  * gerade verdeckt sind, und sind damit erreichbar, ohne zu wischen.
+ *
+ * Während der Geste wird NICHT über React gezeichnet. Der erste Entwurf
+ * hat bei jedem `pointermove` den Zustand gesetzt — damit rendert die
+ * ganze Zeile samt Bohnengrafik sechzigmal in der Sekunde neu, und das
+ * Ziehen hakt. Jetzt schreiben die Bewegungen direkt in den Stil der
+ * beiden beteiligten Elemente und in eine CSS-Variable `--ab`, aus der
+ * die Aktionskacheln ihre Deckkraft selbst ableiten. React erfährt erst
+ * beim Loslassen davon, wenn die Zeile auf ihre Stufe einrastet.
  */
 import { useRef, useState, type ReactNode } from 'react'
 
@@ -55,20 +63,68 @@ export default function SwipeReveal({
   children: ReactNode
 }) {
   const box = useRef<HTMLDivElement | null>(null)
+  const karte = useRef<HTMLDivElement | null>(null)
+  const hinweis = useRef<HTMLDivElement | null>(null)
   const zug = useRef<{ x0: number; y0: number; ab: number; achse: 'offen' | 'x' | 'y' } | null>(null)
+  /** Der laufende Wert während der Geste — bewusst außerhalb von React. */
+  const abJetzt = useRef(0)
   const [ab, setAb] = useState(0)
   const [zieht, setZieht] = useState(false)
 
   const offenBreite = actions.length * AKTION_PX
   const breite = box.current?.offsetWidth ?? 0
   const hinausAb = breite * HINAUS_ANTEIL
-  const hinaus = !!onSwipeAway && ab >= hinausAb
+
+  /**
+   * Den Stand zeichnen, ohne React zu bemühen.
+   *
+   * Drei Schreibvorgänge pro Bewegung statt eines Renderdurchlaufs: die
+   * Verschiebung und das Ausblenden der Karte, die Variable, aus der die
+   * Kacheln ihre Deckkraft rechnen, und der Hinweis fürs Hinausschieben.
+   */
+  const zeichnen = (wert: number) => {
+    abJetzt.current = wert
+    const k = karte.current
+    if (k) {
+      /**
+       * Zurücktreten, nicht durchsichtig werden.
+       *
+       * Der erste Versuch nahm 22 % Deckkraft — damit schien die rote
+       * Kachel durch die Karte hindurch, und die Überlappung sah
+       * verschmiert aus statt gestaffelt. Zehn Prozent plus anderthalb
+       * Prozent Verkleinerung geben dieselbe Aussage („diese Karte ist
+       * gerade nicht mehr die Hauptsache") ohne Durchscheinen.
+       *
+       * Ankerpunkt rechts: Sonst liefe die Karte durch das Verkleinern
+       * von ihrer eigenen Kante weg und gäbe rechts einen Spalt frei.
+       */
+      const anteil = breite > 0 ? Math.min(1, wert / breite) : 0
+      k.style.transform = `translateX(${-wert}px) scale(${1 - 0.015 * anteil})`
+      k.style.opacity = String(1 - 0.1 * anteil)
+    }
+    box.current?.style.setProperty('--ab', String(wert))
+    if (hinweis.current) {
+      hinweis.current.style.opacity = onSwipeAway && wert >= hinausAb ? '1' : '0'
+    }
+  }
+
+  /** Einrasten: React übernimmt wieder, die Übergangsdauer macht den Rest. */
+  const rasten = (wert: number) => {
+    abJetzt.current = wert
+    setAb(wert)
+    const k = karte.current
+    if (k) {
+      k.style.transform = ''
+      k.style.opacity = ''
+    }
+    box.current?.style.setProperty('--ab', String(wert))
+    if (hinweis.current) hinweis.current.style.opacity = '0'
+  }
 
   const onDown = (e: React.PointerEvent) => {
     // Maustaste rechts oder Mitte ignorieren.
     if (e.pointerType === 'mouse' && e.button !== 0) return
-    zug.current = { x0: e.clientX, y0: e.clientY, ab, achse: 'offen' }
-    setZieht(true)
+    zug.current = { x0: e.clientX, y0: e.clientY, ab: abJetzt.current, achse: 'offen' }
   }
 
   const onMove = (e: React.PointerEvent) => {
@@ -84,7 +140,6 @@ export default function SwipeReveal({
       z.achse = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y'
       if (z.achse === 'y') {
         zug.current = null
-        setZieht(false)
         return
       }
       // Ab hier gehört der Zeiger uns, auch wenn er das Element verlässt.
@@ -96,77 +151,106 @@ export default function SwipeReveal({
       } catch {
         /* ohne Erfassung geht es auch, nur endet die Geste am Rand */
       }
+      // Erst jetzt den Übergang abschalten: Solange die Achse offen war,
+      // hat sich nichts bewegt, und ein Render zu diesem Zeitpunkt kostet
+      // nichts.
+      setZieht(true)
     }
 
     const rohe = z.ab - dx
     // Nach rechts über die Ruhelage hinaus gibt es nichts zu zeigen.
     // Nach links höchstens bis zum Rand, sonst verschwindet die Karte.
     const grenze = onSwipeAway ? breite : offenBreite
-    setAb(Math.max(0, Math.min(grenze, rohe)))
+    zeichnen(Math.max(0, Math.min(grenze, rohe)))
   }
 
   const onUp = () => {
     if (!zug.current) return
+    const gezogen = zug.current.achse === 'x'
     zug.current = null
+    if (!gezogen) return
     setZieht(false)
 
-    if (onSwipeAway && ab >= hinausAb) {
+    const wert = abJetzt.current
+    if (onSwipeAway && wert >= hinausAb) {
       onSwipeAway()
-      setAb(0)
+      rasten(0)
       return
     }
     // Einrasten auf die nächstgelegene Stufe: geschlossen, erste Aktion,
     // alle Aktionen. Nichts bleibt auf halbem Weg stehen.
     const stufen = [0, ...actions.map((_, i) => (i + 1) * AKTION_PX)]
-    const naechste = stufen.reduce((a, b) => (Math.abs(b - ab) < Math.abs(a - ab) ? b : a), 0)
-    setAb(naechste)
+    rasten(stufen.reduce((a, b) => (Math.abs(b - wert) < Math.abs(a - wert) ? b : a), 0))
   }
 
-  const schliessen = () => setAb(0)
+  const schliessen = () => rasten(0)
 
   return (
-    <div ref={box} className={`relative overflow-hidden ${className}`}>
+    <div
+      ref={box}
+      className={`relative overflow-hidden ${className}`}
+      style={{ '--ab': ab } as React.CSSProperties}
+    >
       {/* Aktionen liegen darunter und werden von der Karte verdeckt.
           Umgekehrte Laufrichtung: Die Zeile schiebt sich nach links, frei
           wird also der Streifen am RECHTEN Rand. Die erste Aktion muss
           deshalb außen liegen, sonst greift der Daumen beim kurzen Wisch
-          zuerst auf die letzte — und das ist hier die, die löscht. */}
-      <div className="absolute inset-y-0 right-0 flex flex-row-reverse">
-        {actions.map((a, i) => {
-          // Die letzte Aktion deutet sich erst an, wenn man weiter zieht:
-          // Sie soll nicht mit dem ersten Anfassen als Angebot dastehen.
-          const abGesehen = i * AKTION_PX
-          const voll = (i + 1) * AKTION_PX
-          const anteil = Math.max(0, Math.min(1, (ab - abGesehen) / (voll - abGesehen || 1)))
-          return (
-            <button
-              key={a.label}
-              type="button"
-              onClick={() => {
-                schliessen()
-                a.onClick()
-              }}
-              style={{ width: AKTION_PX, opacity: 0.25 + 0.75 * anteil }}
-              className={`flex flex-col items-center justify-center gap-1 text-[13px] font-medium ${
-                a.tone === 'bad' ? 'bg-bad text-white' : 'bg-raised text-ink'
-              }`}
-            >
-              {a.label}
-            </button>
-          )
-        })}
+          zuerst auf die letzte — und das ist hier die, die löscht.
+
+          Als gerundete Kacheln mit Abstand, nicht als randlose Vollflächen:
+          Der rote Streifen sah sonst aus wie ein roher Block, der mit dem
+          Rest der Oberfläche nichts zu tun hat. */}
+      <div
+        className="absolute inset-y-0 right-0 flex flex-row-reverse gap-1.5 p-1.5"
+        style={{ width: offenBreite }}
+      >
+        {actions.map((a, i) => (
+          <button
+            key={a.label}
+            type="button"
+            onClick={() => {
+              schliessen()
+              a.onClick()
+            }}
+            /**
+             * Die Deckkraft rechnet die Kachel selbst aus `--ab`: Die
+             * letzte Aktion deutet sich erst an, wenn man weiter zieht —
+             * sie soll nicht schon beim Anfassen als Angebot dastehen.
+             * In CSS statt in JavaScript, damit die Geste ohne Render
+             * auskommt.
+             */
+            style={
+              {
+                '--start': i * AKTION_PX,
+                opacity: `clamp(0.2, calc(0.2 + 0.8 * (var(--ab, 0) - var(--start)) / ${AKTION_PX}), 1)`,
+              } as React.CSSProperties
+            }
+            className={`flex flex-1 flex-col items-center justify-center gap-1 rounded-xl text-[13px] font-medium ${
+              a.tone === 'bad' ? 'bg-bad text-white' : 'bg-raised text-ink'
+            }`}
+          >
+            {a.label}
+          </button>
+        ))}
       </div>
 
       {/* Der Hinweis für das vollständige Hinausschieben. Er liegt über
           den Aktionen und füllt die ganze Zeile, sobald die Schwelle
-          erreicht ist — dann ist die Geste eine andere. */}
-      {onSwipeAway && hinaus && (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-end bg-bad pr-5 text-[14px] font-semibold text-white">
+          erreicht ist — dann ist die Geste eine andere. Immer im
+          Dokument und nur ausgeblendet, damit das Umschalten während der
+          Geste keinen Render kostet. */}
+      {onSwipeAway && (
+        <div
+          ref={hinweis}
+          style={{ opacity: 0 }}
+          className={`pointer-events-none absolute inset-0 flex items-center justify-end bg-bad pr-5 text-[14px] font-semibold text-white transition-opacity duration-150 ${className}`}
+        >
           {swipeAwayLabel ?? 'Loslassen'}
         </div>
       )}
 
       <div
+        ref={karte}
         onPointerDown={onDown}
         onPointerMove={onMove}
         onPointerUp={onUp}
@@ -176,7 +260,9 @@ export default function SwipeReveal({
         style={{
           transform: `translateX(${-ab}px)`,
           touchAction: 'pan-y',
-          transition: zieht ? 'none' : 'transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1)',
+          transformOrigin: 'right center',
+          transition: zieht ? 'none' : 'transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 220ms',
+          willChange: 'transform',
         }}
         className="relative"
       >

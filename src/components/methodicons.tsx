@@ -160,3 +160,40 @@ export function MethodIcon({
     </svg>
   )
 }
+
+/**
+ * Der Knopf, der den Durchgang startet.
+ *
+ * Kein Rechteck, sondern die Methode selbst: Wer einen V60 aufgesetzt
+ * hat, sieht einen V60 und tippt ihn an. Das Zeichen wechselt mit der
+ * gewählten Methode, und genau das ist der Punkt — der Knopf bestätigt
+ * im Vorbeigehen, womit gleich gebrüht wird.
+ *
+ * Rund statt eckig hat außerdem einen nüchternen Grund: Ein Kreis mit
+ * 132 px ist die einzige Form, die das Symbol groß genug zeigt und
+ * trotzdem weniger hoch baut als ein Knopf über die volle Breite mit
+ * Symbol und Text nebeneinander. Auf diesem Bildschirm zählt jede
+ * Zeile — er muss ohne Scrollen erreichbar bleiben.
+ */
+export function BrewButton({
+  icon,
+  label = "Let's Brew",
+  onClick,
+}: {
+  icon: string
+  label?: string
+  onClick: () => void
+}) {
+  return (
+    <div className="flex justify-center">
+      <button
+        type="button"
+        onClick={onClick}
+        className="flex h-[132px] w-[132px] flex-col items-center justify-center gap-1 rounded-full bg-crema text-on-crema shadow-[0_6px_20px_-8px_rgba(0,0,0,0.45)] transition-transform active:scale-95"
+      >
+        <MethodIcon icon={icon} className="h-12 w-12" />
+        <span className="text-[15px] leading-none font-semibold tracking-tight">{label}</span>
+      </button>
+    </div>
+  )
+}

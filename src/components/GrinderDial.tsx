@@ -113,16 +113,44 @@ export default function GrinderDial({
 
   return (
     <div className="select-none">
-      {/* Ablesewert */}
-      <div className="mb-2 flex items-baseline justify-center gap-2">
-        <span className="tnum text-[42px] leading-none font-semibold">{value}</span>
-        {highlight && (
-          <span className={`text-[13px] ${inRange ? 'text-ok' : 'text-mute'}`}>
-            {highlight.label} {(highlight.range[0] / clicksPerNumber).toFixed(0)}–
-            {(highlight.range[1] / clicksPerNumber).toFixed(0)}
-            {highlight.derived ? ' (abgeleitet)' : ''}
-          </span>
-        )}
+      {/* Ablesewert und Feinkorrektur in EINER Zeile.
+
+          Vorher standen hier vier Elemente für einen einzigen Wert: die
+          große Zahl mit Empfehlungstext, das Rad, darunter noch eine
+          Übersichtsskala über den ganzen Verstellweg — mit eigenen ±
+          Knöpfen und eigenen Endbeschriftungen. Die Übersicht ist weg:
+          Sie zeigte die absolute Lage im Bereich, und danach handelt
+          niemand. Ihre ± Knöpfe sind hier hoch, wo die Zahl steht, die
+          sie verändern. */}
+      <div className="mb-2 flex items-center gap-3">
+        <button
+          type="button"
+          aria-label="ein Klick feiner"
+          disabled={disabled}
+          onClick={() => onChange(clamp(clicks - 1))}
+          className="h-11 w-11 shrink-0 rounded-xl border border-line bg-raised text-xl text-crema active:bg-line disabled:opacity-40"
+        >
+          −
+        </button>
+        <div className="min-w-0 flex-1 text-center">
+          <span className="tnum text-[34px] leading-none font-semibold">{value}</span>
+          {highlight && (
+            <span className={`ml-2 text-[13px] ${inRange ? 'text-ok' : 'text-mute'}`}>
+              {highlight.label} {(highlight.range[0] / clicksPerNumber).toFixed(0)}–
+              {(highlight.range[1] / clicksPerNumber).toFixed(0)}
+              {highlight.derived ? ' (abgeleitet)' : ''}
+            </span>
+          )}
+        </div>
+        <button
+          type="button"
+          aria-label="ein Klick gröber"
+          disabled={disabled}
+          onClick={() => onChange(clamp(clicks + 1))}
+          className="h-11 w-11 shrink-0 rounded-xl border border-line bg-raised text-xl text-crema active:bg-line disabled:opacity-40"
+        >
+          +
+        </button>
       </div>
 
       {/* ══ Die Mühle ══ */}
@@ -274,46 +302,6 @@ export default function GrinderDial({
         </div>
       </div>
 
-      {/* Übersicht über die ganze Skala + Feinkorrektur */}
-      <div className="mt-4 flex items-center gap-3">
-        <button
-          type="button"
-          aria-label="ein Klick feiner"
-          disabled={disabled}
-          onClick={() => onChange(clamp(clicks - 1))}
-          className="h-11 w-11 shrink-0 rounded-xl border border-line bg-raised text-xl text-crema active:bg-line disabled:opacity-40"
-        >
-          −
-        </button>
-        <div className="relative h-1.5 flex-1 rounded-full bg-line">
-          {highlight && (
-            <div
-              className="absolute inset-y-0 rounded-full"
-              style={{
-                left: `${(highlight.range[0] / maxClicks) * 100}%`,
-                width: `${((highlight.range[1] - highlight.range[0]) / maxClicks) * 100}%`,
-                background: 'var(--c-ok)',
-                opacity: 0.55,
-              }}
-            />
-          )}
-          <div
-            className="absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-paper bg-crema"
-            style={{ left: `${(clicks / maxClicks) * 100}%` }}
-          />
-          <span className="absolute -bottom-5 left-0 text-[11px] text-faint">0</span>
-          <span className="absolute -bottom-5 right-0 text-[11px] text-faint">{maxNumber}</span>
-        </div>
-        <button
-          type="button"
-          aria-label="ein Klick gröber"
-          disabled={disabled}
-          onClick={() => onChange(clamp(clicks + 1))}
-          className="h-11 w-11 shrink-0 rounded-xl border border-line bg-raised text-xl text-crema active:bg-line disabled:opacity-40"
-        >
-          +
-        </button>
-      </div>
       <div className="h-4" />
     </div>
   )

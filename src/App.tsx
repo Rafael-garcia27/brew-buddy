@@ -163,7 +163,9 @@ export default function App() {
 
       {/* Nur die beiden Einstiege. Profil, Log und Setup sind Ziele und
           gehören nicht in eine Leiste, die immer sichtbar ist. */}
-      <nav className="pb-safe border-t border-line bg-paper/95 backdrop-blur-xl">
+      {/* `pb-nav` statt `pb-safe`: die gekürzte Sicherheitszone. Warum
+          gekürzt, steht bei der Klasse in index.css. */}
+      <nav className="pb-nav border-t border-line bg-paper/95 backdrop-blur-xl">
         <div className="flex">
           {REITER.map((t) => {
             const aktiv = route.tab === t.id || (t.id === 'coffee' && route.tab === 'profile')
@@ -172,11 +174,11 @@ export default function App() {
                 key={t.id}
                 onClick={() => navigate({ tab: t.id })}
                 aria-current={aktiv ? 'page' : undefined}
-                className={`flex h-[54px] flex-1 flex-col items-center justify-center gap-1 ${
+                className={`flex h-[46px] flex-1 flex-col items-center justify-center gap-0.5 ${
                   aktiv ? 'text-crema' : 'text-faint'
                 }`}
               >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden>
+                <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden>
                   {t.icon}
                 </svg>
                 <span className="text-[10px] font-medium">{t.label}</span>

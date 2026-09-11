@@ -765,6 +765,15 @@ export interface TriadItem {
   term?: string
   hint?: string
   tone?: 'ok' | 'warn' | 'bad'
+  /**
+   * Gesetzt: Der Wert ist einstellbar und wird antippbar.
+   *
+   * Der Weg zum Anpassen lag vorher als eigener Knopf weit unter dem
+   * Vorschlag — man musste erst scrollen, um zu erfahren, dass sich
+   * überhaupt etwas ändern lässt. Die Zahl selbst ist der nächstliegende
+   * Ort dafür: Wer sie ändern will, tippt sie an.
+   */
+  onEdit?: () => void
 }
 
 /**
@@ -797,6 +806,17 @@ export function Triad({ items }: { items: TriadItem[] }) {
         // Uhrzeitspannen eine Stufe kleiner, sonst bricht die Zeile.
         const groesse =
           it.value.length >= 9 ? 'text-[17px]' : it.value.length >= 5 ? 'text-[23px]' : 'text-[29px]'
+
+        const zahl = (
+          <>
+            <div className={`tnum mt-1.5 leading-none font-semibold ${groesse} ${c}`}>
+              {it.value}
+              {it.unit && <span className="ml-0.5 text-[12px] font-normal text-mute">{it.unit}</span>}
+            </div>
+            {it.hint && <div className="mt-1 text-[11px] leading-tight text-faint">{it.hint}</div>}
+          </>
+        )
+
         return (
           <div key={it.label} className="min-w-0 px-0.5 text-center first:pl-0 last:pr-0">
             <div className="flex items-center justify-center gap-1">
@@ -805,11 +825,27 @@ export function Triad({ items }: { items: TriadItem[] }) {
               </span>
               {it.term && <InfoDot termId={it.term} />}
             </div>
-            <div className={`tnum mt-1.5 leading-none font-semibold ${groesse} ${c}`}>
-              {it.value}
-              {it.unit && <span className="ml-0.5 text-[12px] font-normal text-mute">{it.unit}</span>}
-            </div>
-            {it.hint && <div className="mt-1 text-[11px] leading-tight text-faint">{it.hint}</div>}
+            {it.onEdit ? (
+              /**
+               * Die gepunktete Linie unter der Zahl ist der ganze Hinweis.
+               *
+               * Ein Stiftsymbol neben jeder der drei Zahlen wäre dreimal
+               * dasselbe Zeichen in einer Reihe, in der sonst nur Zahlen
+               * stehen — und würde die Ziffern schmaler machen. Eine
+               * Unterstreichung sagt „daran lässt sich drehen", ohne
+               * Platz zu kosten.
+               */
+              <button
+                type="button"
+                onClick={it.onEdit}
+                aria-label={`${it.label} anpassen`}
+                className="w-full border-b border-dashed border-crema/45 pb-1 active:opacity-60"
+              >
+                {zahl}
+              </button>
+            ) : (
+              zahl
+            )}
           </div>
         )
       })}
@@ -833,13 +869,14 @@ export function MetaRow({
     tone?: 'ok' | 'warn' | 'bad'
     /** Ein Wort dahinter, wenn der Wert keine Einstellung ist. */
     hint?: string
+    /** Gesetzt: einstellbar, also antippbar — wie bei `Triad`. */
+    onEdit?: () => void
   }[]
 }) {
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-      {items.map((it) => (
-        <span key={it.label} className="inline-flex items-baseline gap-1 text-[13px]">
-          <span className="text-faint">{it.label}</span>
+      {items.map((it) => {
+        const wert = (
           <span
             className={`tnum font-medium ${
               it.tone === 'ok'
@@ -853,10 +890,27 @@ export function MetaRow({
           >
             {it.value}
           </span>
-          {it.hint && <span className="text-[11px] text-faint">{it.hint}</span>}
-          {it.term && <InfoDot termId={it.term} />}
-        </span>
-      ))}
+        )
+        return (
+          <span key={it.label} className="inline-flex items-baseline gap-1 text-[13px]">
+            <span className="text-faint">{it.label}</span>
+            {it.onEdit ? (
+              <button
+                type="button"
+                onClick={it.onEdit}
+                aria-label={`${it.label} anpassen`}
+                className="border-b border-dashed border-crema/45 active:opacity-60"
+              >
+                {wert}
+              </button>
+            ) : (
+              wert
+            )}
+            {it.hint && <span className="text-[11px] text-faint">{it.hint}</span>}
+            {it.term && <InfoDot termId={it.term} />}
+          </span>
+        )
+      })}
     </div>
   )
 }

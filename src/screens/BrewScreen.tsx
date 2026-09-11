@@ -4,7 +4,7 @@
  * Briefing G10: Von „Start“ bis „bewertet“ höchstens drei Pflichtinteraktionen.
  * Alles andere ist vorbelegt und optional.
  */
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Route } from '@/router'
 import { useStore, selectActiveWater, grinderFor } from '@/store'
 import type {
@@ -23,7 +23,7 @@ import { consistencyWarning, brewsUntilPersonal } from '@/engine/learn'
 import { suitability, SUITABILITY_LABEL, bestMethodFor } from '@/engine/suitability'
 import { ratioTone, ratioLabel, RATIO_ANCHOR } from '@/engine/ratio'
 import { grindPlausibility, formatSetting, vendorRange } from '@/engine/grinder'
-import { MethodIcon } from '@/components/methodicons'
+import { MethodIcon, BrewButton } from '@/components/methodicons'
 import {
   GRINDER_CATALOG,
   getMethod,
@@ -36,7 +36,7 @@ import {
 } from '@/kb'
 import { METHODS, METHOD_LABEL, METHOD_SHORT, DEFECT_LABEL, COMMON_DEFECTS, CHARACTER_LABEL, COMMON_CHARACTERS, FLOW_LABEL, FLOW_CHOICES, PUCK_LABEL, PUCK_CHOICES, BLOOM_LABEL, BLOOM_CHOICES, SPEED_CHOICES, speedLabel, speedQuestion } from '@/labels'
 import {
-  Screen, Header, Section, Card, Button, Chip, SegmentedControl, Stepper, Field,
+  Screen, Header, Section, Card, Button, Chip, SegmentedControl, Stepper, Field, Sheet,
   InfoDot, Triad, MetaRow, fmtClock, num
 } from '@/components/ui'
 
@@ -166,6 +166,19 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
   const [characters, setCharacters] = useState<Character[]>([])
   const [result, setResult] = useState<Diagnosis | null>(null)
   const [showTweak, setShowTweak] = useState(false)
+  /**
+   * Der Weg zum Anpassen — von überall her derselbe.
+   *
+   * Vorher war es ein Knopf „Werte anpassen" weit unter dem Vorschlag:
+   * Man musste an der Mühlengrafik vorbeiscrollen, um überhaupt zu
+   * erfahren, dass sich etwas ändern lässt. Jetzt hängt er an den Zahlen
+   * selbst, und die Felder kommen als Blatt über den Bildschirm statt als
+   * weiterer Abschnitt darunter. Das spart die Höhe, die der Startknopf
+   * braucht, um ohne Scrollen erreichbar zu bleiben.
+   */
+  const anpassen = () => setShowTweak(true)
+  /** Ziel für „Grind antippen" — das Rad steht weiter unten. */
+  const mahlwerkRef = useRef<HTMLDivElement | null>(null)
 
   // Vorschlag in die Ist-Felder übernehmen
   useEffect(() => {
@@ -366,8 +379,10 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
         <>
           {/* Die Methode steht über dem Vorschlag, weil sie ihn bestimmt:
               Dose, Ratio, Temperatur und Zielzeit wandern beim Umschalten
-              sichtbar mit. */}
-          <Section title="Methode">
+              sichtbar mit. Ohne Überschrift — fünf beschriftete Symbole in
+              einem Umschalter sagen selbst, was sie sind, und „METHODE"
+              darüber wäre eine Zeile, die nichts hinzufügt. */}
+          <Section>
             {/* Nur die Methoden aus der Hausauswahl — plus die gerade
                 gewählte, auch wenn sie nicht dazugehört.
 
@@ -388,27 +403,46 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
             />
           </Section>
 
-          <Section title={sp.headline}>
+          <Section>
             <Card tone="accent">
+              {/* Woher der Vorschlag kommt, gehört in die Karte und nicht
+                  darüber: „Von einer ähnlichen Bohne" ist eine Aussage
+                  ÜBER diese Zahlen, keine Abschnittsüberschrift. Außerhalb
+                  gelesen wirkte sie wie ein eigener Bereich. */}
+              <p className="mb-3 text-[12px] font-medium tracking-wider text-crema uppercase">
+                {sp.headline}
+              </p>
+
               {/* In, Time und Out sind das Rezept — sie stehen groß und
                   nebeneinander, in der Reihenfolge, in der sie an der
                   Maschine anfallen. Dieselben drei Begriffe wie im
                   Erfassungsschritt, damit man nicht zweimal umdenkt. */}
+              {/* Antippbar, wo es etwas einzustellen gibt. Die Zielzeit
+                  nicht: Sie ist ein Ergebnis der übrigen Werte, keine
+                  Einstellung — eine gepunktete Linie darunter würde das
+                  Gegenteil behaupten. */}
               <Triad
                 items={[
-                  { label: 'In', value: num(doseG), unit: 'g', term: 'dose' },
+                  { label: 'In', value: num(doseG), unit: 'g', term: 'dose', onEdit: anpassen },
                   {
                     label: 'Time',
                     ...(targetT ? zielZeit(targetT) : { value: '—' }),
                     term: 'time-is-result',
                   },
                   isEspresso
-                    ? { label: 'Out', value: num(yieldG), unit: 'g', term: 'yield' }
+                    ? {
+                        label: 'Out',
+                        value: num(yieldG),
+                        unit: 'g',
+                        term: 'yield',
+                        onEdit: anpassen,
+                      }
                     : {
                         label: 'Out',
                         value: String(waterG),
                         unit: 'g',
                         hint: `≈ ${beverageYield(method, doseG, waterG)} g Tasse`,
+                        onEdit: anpassen,
                       },
                 ]}
               />
@@ -431,9 +465,21 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
                         ? `${tempC} °C`
                         : `${tempSpanne.min}–${tempSpanne.max} °C`,
                       hint: tempFrei ? undefined : 'geräteseitig',
+                      // Geräteseitig heißt: nichts zum Antippen.
+                      onEdit: tempFrei ? anpassen : undefined,
                     },
                     ...(grinder
-                      ? [{ label: 'Grind', value: formatSetting(grindVal, grinder), term: 'grind' }]
+                      ? [
+                          {
+                            label: 'Grind',
+                            value: formatSetting(grindVal, grinder),
+                            term: 'grind',
+                            // Der Mahlgrad hat sein eigenes Rad weiter unten —
+                            // ein Tippen bringt einen dorthin, statt ihn in
+                            // zwei Bedienelemente zu spalten.
+                            onEdit: () => mahlwerkRef.current?.scrollIntoView({ block: 'center' }),
+                          },
+                        ]
                       : []),
                   ]}
                 />
@@ -528,20 +574,35 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
               </Card>
             )}
 
-            {untilPersonal > 0 && sp.source !== 'personal' && (
-              <p className="mt-3 px-1 text-[13px] text-faint">
-                {brewCount > 0 && `${brewCount}× gebrüht. `}
-                Noch{' '}
-                {untilPersonal === 1
-                  ? 'ein gut bewerteter Brew'
-                  : `${untilPersonal} gut bewertete Brews`}
-                , dann kenne ich deinen Geschmack für diese Bohne.
-              </p>
-            )}
           </Section>
 
+          {/* Der Start steht direkt unter dem Vorschlag und nicht am
+              Seitenende: Er muss ohne Scrollen erreichbar sein. Dafür ist
+              der Abschnitt „Anpassen" von hier in ein Blatt gewandert und
+              die Mühlengrafik unter den Knopf gerückt. */}
+          <Section>
+            <BrewButton
+              icon={getMethod(method).icon ?? method}
+              onClick={() => {
+                // Zeit mit der Zielmitte vorbelegen — ein Startwert, der in
+                // der Größenordnung stimmt und beim Eintragen überschrieben wird.
+                if (elapsed === 0 && targetT) {
+                  setElapsed(Math.round((targetT[0] + targetT[1]) / 2))
+                  setElapsedTouched(false)
+                }
+                setPhase('record')
+              }}
+            />
+          </Section>
+
+          {/* Ohne Überschrift „Grind": Der Wert steht schon in der
+              Kennzeilen-Zeile der Karte, und das Rad darunter ist als
+              Mahlwerk unverwechselbar. Eine Überschrift, eine große Zahl,
+              ein Empfehlungstext, das Rad und darunter noch eine
+              Übersichtsskala waren fünf Elemente für einen einzigen Wert. */}
           {grinder && (
-            <Section title="Grind">
+            <Section>
+              <div ref={mahlwerkRef} className="scroll-mt-20">
               {/* Der Umschalter erscheint nur, wo es wirklich zwei Mühlen
                   gibt — beim Siebträger mit verbautem Mahlwerk. */}
               {grinderChoices.length > 1 && (
@@ -589,65 +650,59 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
                   })()}
                 />
               )}
+              </div>
             </Section>
           )}
 
-          {isPro || showTweak ? (
-            <Section title="Anpassen">
-            <div className="space-y-4">
-              <Field label="Dose" term="dose">
-                <Stepper value={doseG} onChange={changeDose} step={0.1} min={5} max={30} unit="g" decimals={1} label="Dose" />
-              </Field>
-              {isEspresso ? (
-                <Field label="Ziel-Yield" term="yield">
-                  <Stepper value={yieldG} onChange={setYieldG} step={0.1} min={10} max={90} unit="g" decimals={1} label="Ziel-Yield" />
-                </Field>
-              ) : (
-                <Field label="Wasser" hint={`Verhältnis 1:${num(waterG / doseG)}`}>
-                  <Stepper value={waterG} onChange={setWaterG} step={1} min={80} max={900} unit="g" label="Wasser" />
-                </Field>
-              )}
-              {tempFrei ? (
-                <Field label="Temp">
-                  <Stepper value={tempC} onChange={setTempC} step={1} min={70} max={100} unit="°C" label="Temp" />
-                </Field>
-              ) : (
-                <Field label="Temp" hint={`${tempSpanne.min}–${tempSpanne.max} °C, geräteseitig`}>
-                  <p className="text-[15px] leading-snug text-mute">
-                    Die Maschine brüht mit ihrer eigenen Temperatur. Wenn der Kaffee bitter wird,
-                    hilft hier nicht kühler, sondern gröber oder eine weitere Ratio.
-                  </p>
-                </Field>
-              )}
-            </div>
-            </Section>
-          ) : (
-            <Section>
-              <Button variant="secondary" className="w-full" onClick={() => setShowTweak(true)}>
-                Werte anpassen
-              </Button>
-            </Section>
+          {/* Der Lernhinweis stand zwischen Vorschlag und Startknopf und
+              hat ihn um zwei Zeilen nach unten gedrückt. Er ist eine
+              Auskunft über die Zukunft, keine über diesen Durchgang — und
+              gehört deshalb ans Ende. */}
+          {untilPersonal > 0 && sp.source !== 'personal' && (
+            <p className="px-5 pt-6 text-[13px] leading-snug text-faint">
+              {brewCount > 0 && `${brewCount}× gebrüht. `}
+              Noch{' '}
+              {untilPersonal === 1
+                ? 'ein gut bewerteter Brew'
+                : `${untilPersonal} gut bewertete Brews`}
+              , dann kenne ich deinen Geschmack für diese Bohne.
+            </p>
           )}
 
-          <Section>
-            {/* Getimt wird an der Waage. Die App nimmt hinterher entgegen,
-                was dabei herausgekommen ist. */}
-            <Button
-              size="lg"
-              className="w-full"
-              onClick={() => {
-                // Zeit mit der Zielmitte vorbelegen — ein Startwert, der in
-                // der Größenordnung stimmt und beim Eintragen überschrieben wird.
-                if (elapsed === 0 && targetT) {
-                  setElapsed(Math.round((targetT[0] + targetT[1]) / 2))
-                  setElapsedTouched(false)
-                }
-                setPhase('record')
-              }}
-            >
-              Brew eintragen
-            </Button>
-          </Section>
+          {showTweak && (
+            <Sheet title="Werte anpassen" onClose={() => setShowTweak(false)}>
+              <div className="space-y-4">
+                <Field label="Dose" term="dose">
+                  <Stepper value={doseG} onChange={changeDose} step={0.1} min={5} max={30} unit="g" decimals={1} label="Dose" />
+                </Field>
+                {isEspresso ? (
+                  <Field label="Ziel-Yield" term="yield">
+                    <Stepper value={yieldG} onChange={setYieldG} step={0.1} min={10} max={90} unit="g" decimals={1} label="Ziel-Yield" />
+                  </Field>
+                ) : (
+                  <Field label="Wasser" hint={`Verhältnis 1:${num(waterG / doseG)}`}>
+                    <Stepper value={waterG} onChange={setWaterG} step={1} min={80} max={900} unit="g" label="Wasser" />
+                  </Field>
+                )}
+                {tempFrei ? (
+                  <Field label="Temp">
+                    <Stepper value={tempC} onChange={setTempC} step={1} min={70} max={100} unit="°C" label="Temp" />
+                  </Field>
+                ) : (
+                  <Field label="Temp" hint={`${tempSpanne.min}–${tempSpanne.max} °C, geräteseitig`}>
+                    <p className="text-[15px] leading-snug text-mute">
+                      Die Maschine brüht mit ihrer eigenen Temperatur. Wenn der Kaffee bitter wird,
+                      hilft hier nicht kühler, sondern gröber oder eine weitere Ratio.
+                    </p>
+                  </Field>
+                )}
+                <p className="border-t border-line pt-3 text-[13px] leading-snug text-faint">
+                  Der Mahlgrad hat sein eigenes Rad auf der Seite darunter — dort sieht man, wo er
+                  in der Skala der Mühle liegt.
+                </p>
+              </div>
+            </Sheet>
+          )}
         </>
       )}
 
