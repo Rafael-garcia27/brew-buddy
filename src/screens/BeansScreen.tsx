@@ -16,8 +16,9 @@
 import { lazy, Suspense, useMemo, useState } from 'react'
 import type { Route } from '@/router'
 import { useStore } from '@/store'
-import type { Bean, RoastLevel, Process, BrewMethod } from '@domain'
+import type { Bag, Bean, RoastLevel, Process, BrewMethod } from '@domain'
 import type { BeanTrash } from '@/domain'
+import type { Freshness } from '@/engine/freshness'
 import {
   suitability,
   bestMethodFor,
@@ -322,8 +323,26 @@ export default function BeansScreen({ route, navigate, onDeleted }: Props) {
             <div className="space-y-2">
               {ranked.map(({ bean, fresh, count, best, bag }) => {
                 const aktiv = bean.id === selected
+                /**
+                 * Die gewählte Karte tritt vor, die übrigen zurück.
+                 *
+                 * Vorher hingen die drei Aktionen als eigene Knopfreihe
+                 * UNTER der Karte — sie gehörten sichtbar zu nichts, und
+                 * bei vier Bohnen stand die Reihe irgendwo mitten in der
+                 * Liste. Jetzt sitzen sie in der Karte, die Karte wächst,
+                 * und alles andere verblasst: Damit ist ohne ein einziges
+                 * Wort klar, worauf sich „Brühen" bezieht.
+                 */
+                const zurueckgesetzt = !!selected && !aktiv
                 return (
-                  <div key={bean.id}>
+                  <div
+                    key={bean.id}
+                    className="transition-[opacity,transform] duration-200"
+                    style={{
+                      opacity: zurueckgesetzt ? 0.38 : 1,
+                      transform: zurueckgesetzt ? 'scale(0.97)' : 'scale(1)',
+                    }}
+                  >
                     {/* Wischen legt Bearbeiten frei, weiter ziehen deutet
                         Löschen an, ganz hinausschieben löscht. Die
                         Aktionsflächen sind so hoch wie die Zeile —
@@ -337,89 +356,19 @@ export default function BeansScreen({ route, navigate, onDeleted }: Props) {
                       onSwipeAway={() => loeschen(bean)}
                       swipeAwayLabel="Loslassen zum Löschen"
                     >
-                    <Card
-                      tone={aktiv ? 'accent' : 'default'}
-                      onClick={() => waehle(aktiv ? undefined : bean.id)}
-                    >
-                      <div className="flex items-center gap-3">
-                        {/* Drei Angaben statt einer: Ring = Frische,
-                            Füllung = Röstgrad, Zahl = Tage. Die Zeile
-                            bleibt eine Zeile — eine Liste aus lauter
-                            Bohnenschaltflächen ohne Namen wäre ein
-                            Ratespiel (docs/05 §4.5). */}
-                        <BeanRing
-                          bean={bean}
-                          score={fresh.score}
-                          label={fresh.days !== null ? String(fresh.days) : '?'}
-                        />
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-[17px] leading-tight font-semibold">{bean.name}</p>
-                          <p className="mt-0.5 truncate text-[13px] text-mute">
-                            {bean.roaster ? `${bean.roaster} · ` : ''}
-                            {ROAST_LABEL[bean.roastLevel]} · {PROCESS_LABEL[bean.process]}
-                          </p>
-                          {/* Eine Aussage je Bohne, und zwar die dringendere:
-                              „überaltert" neben „am besten als V60" würde
-                              sich für den Leser widersprechen. */}
-                          {fresh.state === 'stale' ? (
-                            <p className="mt-1 truncate text-[12px] text-bad">
-                              {fresh.short} — die Bag gibt nichts mehr her
-                            </p>
-                          ) : bag?.remainingGrams !== undefined && bag.remainingGrams < 20 ? (
-                            <p className="mt-1 truncate text-[12px] text-warn">
-                              Nur noch {num(bag.remainingGrams, 0)} g in der Bag
-                            </p>
-                          ) : (
-                            <>
-                              {/* `short` statt `label`: Die Tageszahl steht
-                                  einen Zentimeter weiter links im Ring, und
-                                  zweimal dieselbe Zahl in einer Zeile liest
-                                  sich wie zwei verschiedene Angaben. */}
-                              <p className="mt-1 truncate text-[12px] text-faint">
-                                {fresh.short}
-                                {count > 0 && ` · ${count}× gebrüht`}
-                              </p>
-                              <p className="mt-0.5 truncate text-[12px] text-crema">
-                                Am besten als {METHOD_LABEL[best.method]}
-                              </p>
-                            </>
-                          )}
-                        </div>
-                        <span className={aktiv ? 'text-crema' : 'text-faint'}>{aktiv ? '✓' : '›'}</span>
-                      </div>
-                    </Card>
+                      <BohnenKarte
+                        bean={bean}
+                        fresh={fresh}
+                        bag={bag}
+                        count={count}
+                        best={best.method}
+                        aktiv={aktiv}
+                        onToggle={() => waehle(aktiv ? undefined : bean.id)}
+                        onBruehen={() => navigate({ tab: 'brew', detail: bean.id })}
+                        onProfil={() => navigate({ tab: 'profile', id: bean.id })}
+                        onLog={() => navigate({ tab: 'log', id: bean.id })}
+                      />
                     </SwipeReveal>
-
-                    {/* Die Aktionen erscheinen erst nach der Vorauswahl —
-                        sonst stünden sie dreifach je Bohne in der Liste und
-                        keine davon wüsste, worauf sie sich bezieht. */}
-                    {aktiv && (
-                      <div className="mt-2 grid grid-cols-3 gap-2">
-                        {/* Ohne Methode: Der nächste Bildschirm empfiehlt
-                            sie für genau diese Bohne. Das ist die
-                            Coffee-Richtung — Bohne zuerst, Methode danach. */}
-                        <Button
-                          className="w-full"
-                          onClick={() => navigate({ tab: 'brew', detail: bean.id })}
-                        >
-                          Brühen
-                        </Button>
-                        <Button
-                          variant="secondary"
-                          className="w-full"
-                          onClick={() => navigate({ tab: 'profile', id: bean.id })}
-                        >
-                          Profil
-                        </Button>
-                        <Button
-                          variant="secondary"
-                          className="w-full"
-                          onClick={() => navigate({ tab: 'log', id: bean.id })}
-                        >
-                          Log
-                        </Button>
-                      </div>
-                    )}
                   </div>
                 )
               })}
@@ -467,6 +416,176 @@ export default function BeansScreen({ route, navigate, onDeleted }: Props) {
         />
       )}
     </Screen>
+  )
+}
+
+/**
+ * Eine Bohne im Regal — geschlossen eine Zeile, gewählt eine Karte.
+ *
+ * Der Unterschied ist nicht nur Größe. Geschlossen beantwortet sie „ist
+ * das die richtige Bohne?" (Name, Röstung, Frische, beste Methode).
+ * Gewählt beantwortet sie „und was mache ich jetzt damit?" — dafür
+ * kommen ein paar Angaben aus dem Profil dazu und die drei Wege, die von
+ * hier wegführen.
+ *
+ * Warum die Aktionen IN der Karte liegen: Als eigene Knopfreihe darunter
+ * gehörten sie sichtbar zu nichts. „Brühen" mitten in einer Liste aus
+ * vier Bohnen sagt nicht, welche gemeint ist; in der Karte sagt es sich
+ * von selbst.
+ *
+ * Die Karte ist deshalb im gewählten Zustand kein Knopf mehr, sondern
+ * ein Behälter: Knöpfe in Knöpfen sind ungültiges HTML, und der Browser
+ * baut die Verschachtelung stillschweigend auseinander. Das Aufklappen
+ * übernimmt dann die Kopfzeile.
+ */
+function BohnenKarte({
+  bean,
+  fresh,
+  bag,
+  count,
+  best,
+  aktiv,
+  onToggle,
+  onBruehen,
+  onProfil,
+  onLog,
+}: {
+  bean: Bean
+  fresh: Freshness
+  bag?: Bag
+  count: number
+  best: BrewMethod
+  aktiv: boolean
+  onToggle: () => void
+  onBruehen: () => void
+  onProfil: () => void
+  onLog: () => void
+}) {
+  const kopf = (
+    <div className="flex items-center gap-3">
+      {/* Drei Angaben statt einer: Ring = Frische, Füllung = Röstgrad,
+          Zahl = Tage. Die Zeile bleibt eine Zeile — eine Liste aus lauter
+          Bohnenschaltflächen ohne Namen wäre ein Ratespiel
+          (docs/05 §4.5). */}
+      <BeanRing
+        bean={bean}
+        score={fresh.score}
+        label={fresh.days !== null ? String(fresh.days) : '?'}
+        size={aktiv ? 48 : 40}
+      />
+      <div className="min-w-0 flex-1">
+        <p
+          className={`truncate leading-tight font-semibold ${
+            aktiv ? 'text-[19px]' : 'text-[17px]'
+          }`}
+        >
+          {bean.name}
+        </p>
+        <p className="mt-0.5 truncate text-[13px] text-mute">
+          {bean.roaster ? `${bean.roaster} · ` : ''}
+          {ROAST_LABEL[bean.roastLevel]} · {PROCESS_LABEL[bean.process]}
+        </p>
+        {/* Eine Aussage je Bohne, und zwar die dringendere: „überaltert"
+            neben „am besten als V60" würde sich für den Leser
+            widersprechen. */}
+        {fresh.state === 'stale' ? (
+          <p className="mt-1 truncate text-[12px] text-bad">
+            {fresh.short} — die Bag gibt nichts mehr her
+          </p>
+        ) : bag?.remainingGrams !== undefined && bag.remainingGrams < 20 ? (
+          <p className="mt-1 truncate text-[12px] text-warn">
+            Nur noch {num(bag.remainingGrams, 0)} g in der Bag
+          </p>
+        ) : (
+          <>
+            {/* `short` statt `label`: Die Tageszahl steht einen Zentimeter
+                weiter links im Ring, und zweimal dieselbe Zahl in einer
+                Zeile liest sich wie zwei verschiedene Angaben. */}
+            <p className="mt-1 truncate text-[12px] text-faint">
+              {fresh.short}
+              {count > 0 && ` · ${count}× gebrüht`}
+            </p>
+            <p className="mt-0.5 truncate text-[12px] text-crema">
+              Am besten als {METHOD_LABEL[best]}
+            </p>
+          </>
+        )}
+      </div>
+      <span className={aktiv ? 'text-crema' : 'text-faint'}>{aktiv ? '✕' : '›'}</span>
+    </div>
+  )
+
+  if (!aktiv) {
+    return (
+      <Card onClick={onToggle}>
+        {kopf}
+      </Card>
+    )
+  }
+
+  /**
+   * Die Vorschau aus dem Profil.
+   *
+   * Vier Angaben, keine zwanzig: Was beim Auswählen hilft, ist Herkunft,
+   * Höhe, Varietät und was der Röster geschmeckt hat. Röstgrad und
+   * Aufbereitung stehen schon in der Kopfzeile, Frische im Ring. Für
+   * alles Weitere gibt es das Profil, und dorthin führt ein Knopf
+   * darunter.
+   */
+  const vorschau: Fact[] = [
+    {
+      label: 'Herkunft',
+      value: bean.origins.some((o) => o.country === BLEND)
+        ? bean.origins.filter((o) => o.country !== BLEND).length
+          ? `Blend aus ${bean.origins.filter((o) => o.country !== BLEND).map((o) => o.country).join(', ')}`
+          : 'Blend'
+        : bean.origins.map((o) => [o.country, o.region].filter(Boolean).join(' · ')).join(', ') ||
+          '—',
+    },
+    {
+      label: 'Höhe',
+      value: bean.altitudeMasl ? `${bean.altitudeMasl[0]}–${bean.altitudeMasl[1]} m` : '',
+    },
+    { label: 'Varietät', value: bean.varieties?.join(', ') ?? '' },
+    { label: 'Notizen', value: bean.flavorNotes?.join(', ') ?? '' },
+    {
+      label: 'Vorrat',
+      value:
+        bag?.remainingGrams !== undefined && !bag.depleted ? `${num(bag.remainingGrams, 0)} g` : '',
+    },
+  ].filter((f) => f.value)
+
+  return (
+    // Der Schatten hebt die Karte über die verblassten Nachbarn. Ohne ihn
+    // liegt alles in derselben Ebene und der Unterschied ist nur Helligkeit.
+    <Card tone="accent" className="shadow-[0_10px_30px_-14px_rgba(0,0,0,0.4)]">
+      {/* Die Kopfzeile klappt wieder zu — dieselbe Fläche, die sie
+          aufgeklappt hat. */}
+      <button type="button" onClick={onToggle} className="w-full text-left">
+        {kopf}
+      </button>
+
+      {vorschau.length > 0 && (
+        <div className="mt-3 border-t border-line pt-3">
+          <FactTable facts={vorschau} />
+        </div>
+      )}
+
+      <div className="mt-4 grid grid-cols-3 gap-2">
+        {/* Ohne Methode: Der nächste Bildschirm empfiehlt sie für genau
+            diese Bohne. Das ist die Coffee-Richtung — Bohne zuerst,
+            Methode danach. */}
+        <Button className="w-full" onClick={onBruehen}>
+          Brühen
+        </Button>
+        <Button variant="secondary" className="w-full" onClick={onProfil}>
+          Profil
+        </Button>
+        <Button variant="secondary" className="w-full" onClick={onLog}>
+          Log
+        </Button>
+      </div>
+    </Card>
   )
 }
 
@@ -519,6 +638,27 @@ export function BeanDetail({
   }
   const addBag = useStore((s) => s.addBag)
   const updateBag = useStore((s) => s.updateBag)
+  const deleteBag = useStore((s) => s.deleteBag)
+  /**
+   * Eine Tüte entfernen — mit Rückfrage, sobald sie Protokolle mitnimmt.
+   *
+   * `deleteBag` löscht auch die Brews, die auf diese Tüte gebucht sind;
+   * das ist richtig, weil ein Protokoll ohne seine Tüte keine Frische
+   * mehr kennt. Ohne Rückfrage wäre es aber ein stiller Datenverlust.
+   * Eine versehentlich angelegte Tüte hat noch keine Protokolle und geht
+   * deshalb ohne Nachfrage.
+   */
+  const bagLoeschen = (b: Bag) => {
+    const daran = brews.filter((x) => x.bagId === b.id).length
+    if (daran > 0) {
+      const frage =
+        daran === 1
+          ? 'Diese Bag und das eine Protokoll dazu löschen?'
+          : `Diese Bag und die ${daran} Protokolle dazu löschen?`
+      if (!confirm(frage)) return
+    }
+    deleteBag(b.id)
+  }
   const [showBag, setShowBag] = useState(false)
 
   /**
@@ -737,28 +877,44 @@ export function BeanDetail({
               // hätte.
               const f = freshnessFor(bean, bag)
               return (
-                <Card key={bag.id}>
-                  <div className="flex items-center gap-3">
-                    <FreshnessRing score={bag.depleted ? 0 : f.score} label={f.days !== null ? String(f.days) : '?'} />
-                    <div className="flex-1">
-                      <p className="text-[15px]">
-                        {bag.roastDate
-                          ? `Geröstet ${new Date(bag.roastDate).toLocaleDateString('de-DE')}`
-                          : 'Röstdatum fehlt'}
-                      </p>
-                      <p className="text-[13px] text-mute">
-                        {bag.remainingGrams !== undefined ? `${bag.remainingGrams} g übrig` : ''}
-                        {bag.storage === 'frozen' ? ' · eingefroren' : ''}
-                        {bag.depleted ? ' · leer' : ''}
-                      </p>
+                /**
+                 * Leeren und Löschen sind zwei verschiedene Dinge.
+                 *
+                 * „Leer" ist eine Tatsache über eine Tüte, die es gab —
+                 * ihre Protokolle bleiben und zählen weiter fürs Lernen.
+                 * „Löschen" ist für die Tüte, die es nie gab: falsch
+                 * angelegt, Datum vertippt. Sie nimmt ihre Protokolle mit,
+                 * und deshalb fragt sie nach, sobald welche daran hängen.
+                 */
+                <SwipeReveal
+                  key={bag.id}
+                  actions={[{ label: 'Löschen', tone: 'bad', onClick: () => bagLoeschen(bag) }]}
+                  onSwipeAway={() => bagLoeschen(bag)}
+                  swipeAwayLabel="Loslassen zum Löschen"
+                >
+                  <Card>
+                    <div className="flex items-center gap-3">
+                      <FreshnessRing score={bag.depleted ? 0 : f.score} label={f.days !== null ? String(f.days) : '?'} />
+                      <div className="flex-1">
+                        <p className="text-[15px]">
+                          {bag.roastDate
+                            ? `Geröstet ${new Date(bag.roastDate).toLocaleDateString('de-DE')}`
+                            : 'Röstdatum fehlt'}
+                        </p>
+                        <p className="text-[13px] text-mute">
+                          {bag.remainingGrams !== undefined ? `${bag.remainingGrams} g übrig` : ''}
+                          {bag.storage === 'frozen' ? ' · eingefroren' : ''}
+                          {bag.depleted ? ' · leer' : ''}
+                        </p>
+                      </div>
+                      {!bag.depleted && (
+                        <Button size="sm" variant="ghost" onClick={() => updateBag(bag.id, { depleted: true })}>
+                          leer
+                        </Button>
+                      )}
                     </div>
-                    {!bag.depleted && (
-                      <Button size="sm" variant="ghost" onClick={() => updateBag(bag.id, { depleted: true })}>
-                        leer
-                      </Button>
-                    )}
-                  </div>
-                </Card>
+                  </Card>
+                </SwipeReveal>
               )
             })}
           </div>

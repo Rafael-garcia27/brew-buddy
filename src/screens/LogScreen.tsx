@@ -9,7 +9,39 @@ import type { Route } from '@/router'
 import { useStore } from '@/store'
 import type { BrewMethod } from '@domain'
 import { METHODS, METHOD_LABEL, METHOD_SHORT, DEFECT_LABEL, CHARACTER_LABEL, FLOW_LABEL } from '@/labels'
-import { Screen, Header, Section, Card, Empty, Chip, FilterRow, Stat, Button, num } from '@/components/ui'
+import {
+  Screen,
+  Header,
+  Section,
+  Card,
+  Empty,
+  Chip,
+  Field,
+  Select,
+  SegmentedControl,
+  Stat,
+  Button,
+  num,
+} from '@/components/ui'
+import { MethodIcon } from '@/components/methodicons'
+import { getMethod } from '@/kb'
+
+/**
+ * „Alle" braucht auch ein Zeichen, sonst steht ein leerer Platz neben
+ * fünf Symbolen und der Umschalter sieht kaputt aus. Drei Punkte im
+ * Strichstil der übrigen Icons.
+ */
+function AlleIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-[22px] w-[22px]" aria-hidden>
+      <g fill="currentColor">
+        <circle cx="6" cy="12" r="1.8" />
+        <circle cx="12" cy="12" r="1.8" />
+        <circle cx="18" cy="12" r="1.8" />
+      </g>
+    </svg>
+  )
+}
 // Dieselbe Schreibweise wie in den Empfehlungen: „25 s“, nicht „25s“.
 import { fmtDauer } from '@/engine/text'
 import { formatSetting } from '@/engine/grinder'
@@ -53,7 +85,8 @@ export default function LogScreen({ route, navigate, back }: Props) {
    *
    * Die gerade gewählte Bohne bleibt in jedem Fall in der Liste: Sie kann
    * aus der Route kommen (`#/log/<bohne>`), auch wenn zu ihr noch kein
-   * Brew existiert. Ohne sie stünde ein aktiver Filter ohne seinen Chip da.
+   * Brew existiert. Ohne sie zeigte das Auswahlfeld einen Wert an, den
+   * es in seiner eigenen Liste nicht gibt.
    */
   const gebrauchteMethoden = METHODS.filter((m) => brews.some((b) => b.method === m))
   const gebrauchteBohnen = beans.filter(
@@ -92,54 +125,56 @@ export default function LogScreen({ route, navigate, back }: Props) {
         />
       ) : (
         <>
-          {/* Angeboten wird nur, was im Logbuch auch vorkommt.
-              Vorher standen hier alle Methoden und alle Bohnen — mit der
-              fünften Methode brach die Zeile dreifach um, und die Hälfte
-              der Chips führte garantiert auf „Für diesen Filter gibt es
-              noch keinen Brew". Ein Filter, dessen Ergebnis man vorher
-              kennt, ist keine Auswahl.
+          {/* Dieselbe Sprache wie unter Brew: Die Methode wählt man am
+              Symbolumschalter, nicht an einer Chipzeile. Zwei Bildschirme,
+              die dieselbe Frage stellen, sollen sie auch gleich stellen.
 
-              Die Zeilen scrollen waagerecht statt umzubrechen: Bei zwölf
-              Bohnen wären es sonst vier Zeilen Chips über zwei Zeilen
-              Inhalt. */}
+              Die Bohne dagegen bleibt eine Liste ohne feste Länge — bei
+              zwölf Bohnen wären zwölf Chips vier Zeilen, und ein
+              Umschalter ginge gar nicht. Dafür ist ein Auswahlfeld da.
+
+              Angeboten wird in beiden Fällen nur, was im Logbuch
+              vorkommt: Ein Filter, dessen Ergebnis man vorher kennt, ist
+              keine Auswahl. */}
           {(gebrauchteMethoden.length > 1 || gebrauchteBohnen.length > 1) && (
             <Section title="Filter">
-              <div className="space-y-2">
-                {gebrauchteMethoden.length > 1 && (
-                  <FilterRow label="Methode">
-                    <Chip
-                      label="Alle"
-                      active={filterMethod === 'all'}
-                      onClick={() => setFilterMethod('all')}
-                    />
-                    {gebrauchteMethoden.map((m) => (
-                      <Chip
-                        key={m}
-                        label={METHOD_SHORT[m]}
-                        active={filterMethod === m}
-                        onClick={() => setFilterMethod(filterMethod === m ? 'all' : m)}
+              <Card>
+                <div className="space-y-4">
+                  {gebrauchteMethoden.length > 1 && (
+                    <Field label="Methode">
+                      <SegmentedControl<BrewMethod | 'all'>
+                        value={filterMethod}
+                        onChange={setFilterMethod}
+                        options={[
+                          { value: 'all' as const, label: 'Alle', icon: <AlleIcon /> },
+                          ...gebrauchteMethoden.map((m) => ({
+                            value: m,
+                            label: METHOD_SHORT[m],
+                            icon: (
+                              <MethodIcon
+                                icon={getMethod(m).icon ?? m}
+                                className="h-[22px] w-[22px]"
+                              />
+                            ),
+                          })),
+                        ]}
                       />
-                    ))}
-                  </FilterRow>
-                )}
-                {gebrauchteBohnen.length > 1 && (
-                  <FilterRow label="Bohne">
-                    <Chip
-                      label="Alle"
-                      active={filterBean === 'all'}
-                      onClick={() => setFilterBean('all')}
-                    />
-                    {gebrauchteBohnen.map((b) => (
-                      <Chip
-                        key={b.id}
-                        label={b.name}
-                        active={filterBean === b.id}
-                        onClick={() => setFilterBean(filterBean === b.id ? 'all' : b.id)}
+                    </Field>
+                  )}
+                  {gebrauchteBohnen.length > 1 && (
+                    <Field label="Bohne">
+                      <Select
+                        value={filterBean}
+                        onChange={setFilterBean}
+                        options={[
+                          { value: 'all', label: 'Alle Bohnen' },
+                          ...gebrauchteBohnen.map((b) => ({ value: b.id, label: b.name })),
+                        ]}
                       />
-                    ))}
-                  </FilterRow>
-                )}
-              </div>
+                    </Field>
+                  )}
+                </div>
+              </Card>
             </Section>
           )}
 
@@ -158,6 +193,14 @@ export default function LogScreen({ route, navigate, back }: Props) {
                   onClick={() => navigate({ tab: 'log', detail: b.id, id: route.id })}
                 >
                   <div className="flex items-start gap-3">
+                    {/* Das Methodenzeichen wie im Katalog und im
+                        Umschalter. Eine Liste aus lauter gleich
+                        aussehenden Textzeilen ist beim Durchsehen
+                        mühsam; das Symbol trägt die Sortierung, die man
+                        beim Blättern sucht. */}
+                    <span className="mt-0.5 shrink-0 text-mute">
+                      <MethodIcon icon={getMethod(b.method).icon ?? b.method} className="h-6 w-6" />
+                    </span>
                     <div className="min-w-0 flex-1">
                       {/* Auf eine Bohne gefiltert steht ihr Name schon im
                           Kopf — in jeder Zeile noch einmal verdrängt er
