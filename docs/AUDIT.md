@@ -209,15 +209,32 @@ Texte liegt im Sitzungsverlauf; die vier Zustände je Bildschirm:
 
 | Bildschirm | Leer | Lädt | Fehler | Voll |
 | ---------- | ---- | ---- | ------ | ---- |
-| Coffee | ✓ mit Handlung | ✓ global (`App.tsx:86`) | **fehlt** | ✓ |
-| Brew (Katalog) | entfällt | entfällt | **fehlt** | ✓ |
-| Brew (Bohnenwahl) | ✓ mit Handlung | entfällt | **fehlt** | ✓ |
-| Brew (Durchgang) | entfällt | entfällt | **fehlt** | ✓ |
-| Profil | Bohne weg → zurück zur Liste | ✓ Karte lazy (`BeansScreen.tsx:751`) | **fehlt** | ✓ |
-| Log | ✓ mit Handlung | entfällt | **fehlt** | ✓ |
-| Setup | entfällt | entfällt | **fehlt** | ✓ |
+| Coffee | ✓ mit Handlung | ✓ global (`App.tsx:86`) | ✓ örtlich | ✓ |
+| Brew (Katalog) | entfällt | entfällt | ✓ örtlich | ✓ |
+| Brew (Bohnenwahl) | ✓ mit Handlung | entfällt | ✓ örtlich | ✓ |
+| Brew (Durchgang) | entfällt | entfällt | ✓ örtlich | ✓ |
+| Profil | Bohne weg → zurück zur Liste | ✓ Karte lazy (`BeanDetail.tsx:198`) | ✓ örtlich + Karte einzeln | ✓ |
+| Log | ✓ mit Handlung | entfällt | ✓ örtlich | ✓ |
+| Setup | entfällt | entfällt | ✓ örtlich | ✓ |
 
-Der Fehlerzustand fehlt überall — das ist F-03.
+**Stand vor der Umsetzung:** Der Fehlerzustand fehlte überall — das war
+F-03.
+
+**Stand nach P2 und P13:** Drei Ebenen statt keiner.
+
+1. **Global** (`ErrorBoundary`, P2): Satz, „Neu starten", „Daten retten".
+   Greift, wenn alles andere versagt hat.
+2. **Je Bildschirm** (`Bereichsgrenze` in `App.tsx`, P13): Der Inhalt wird
+   ersetzt, die Reiterleiste bleibt bedienbar — man kann den kaputten
+   Bildschirm verlassen, statt die App neu zu starten.
+3. **Je Ausschnitt** (P13): Bisher nur um die nachgeladene Weltkarte. Sie
+   ist Beiwerk und wird über das Netz geholt; ohne eigene Grenze nähme sie
+   das ganze Profil mit.
+
+Belegt am 12.09.2026 mit zwei absichtlichen Abstürzen: Ein Wurf im
+Logbuch ersetzte den Inhalt, ließ aber Brew und Coffee anklickbar und
+erholte sich beim Wechsel. Ein Wurf in der Karte hinterließ den Hinweis
+im Herkunft-Abschnitt — Charakter, Fit, Fakten und Bags blieben stehen.
 
 ### 6.5 PWA
 

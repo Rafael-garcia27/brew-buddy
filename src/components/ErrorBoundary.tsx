@@ -158,3 +158,78 @@ function Fehlerbildschirm({ error, anzahl }: { error: unknown; anzahl: number })
     </div>
   )
 }
+
+// ── Örtliche Grenzen ──────────────────────────────────────────────────
+
+/**
+ * Eine Fehlergrenze für einen Ausschnitt, nicht für die ganze App.
+ *
+ * Die Grenze um `<App/>` fängt alles — und nimmt auch alles mit. Fällt
+ * die nachgeladene Weltkarte aus, weil der Brocken nach einer
+ * Aktualisierung nicht mehr im Cache liegt, verschwindet damit das ganze
+ * Bohnenprofil. Das ist unverhältnismäßig: Die Karte ist Beiwerk, die
+ * Fakten darunter sind es nicht.
+ *
+ * Deshalb hier eine Grenze, die nur ihren Ausschnitt ersetzt. Sie hat
+ * einen Weg zurück (`Nochmal`), weil die häufigste Ursache — ein
+ * Nachladen, das schiefging — beim zweiten Versuch oft klappt.
+ *
+ * `neustartBei` setzt die Grenze zurück, wenn sich der Wert ändert. Ohne
+ * das bliebe eine einmal ausgelöste Grenze für den Rest der Sitzung
+ * stehen, auch wenn man längst auf einem anderen Bildschirm ist.
+ */
+interface GrenzProps {
+  children: ReactNode
+  was: string
+  neustartBei?: string
+}
+
+interface GrenzState {
+  error: unknown
+  /** Der zuletzt gesehene Wert von `neustartBei`. */
+  schluessel: string | undefined
+}
+
+export class Bereichsgrenze extends Component<GrenzProps, GrenzState> {
+  state: GrenzState = { error: null, schluessel: undefined }
+
+  static getDerivedStateFromError(error: unknown): Partial<GrenzState> {
+    return { error }
+  }
+
+  /**
+   * Zurücksetzen, wenn sich der Schlüssel geändert hat.
+   *
+   * Nicht über `key` von außen: Das würde bei jedem Routenwechsel den
+   * ganzen Unterbaum neu einhängen und dabei den Zustand des Bildschirms
+   * verlieren — im Brühbildschirm wären das die eingetragenen Werte.
+   * Nicht über `componentDidUpdate`: Ein `setState` dort erzwingt einen
+   * zweiten Renderdurchlauf.
+   */
+  static getDerivedStateFromProps(p: GrenzProps, s: GrenzState): Partial<GrenzState> | null {
+    if (p.neustartBei === s.schluessel) return null
+    return { schluessel: p.neustartBei, error: null }
+  }
+
+  componentDidCatch(error: unknown, info: ErrorInfo): void {
+    console.error(`[Bereichsgrenze: ${this.props.was}]`, error, info.componentStack)
+  }
+
+  render(): ReactNode {
+    if (this.state.error === null) return this.props.children
+    return (
+      <div className="rounded-2xl border border-line bg-raised px-4 py-3">
+        <p className="text-base leading-snug text-mute">
+          {this.props.was} ließ sich nicht anzeigen. Der Rest der Seite funktioniert.
+        </p>
+        <button
+          type="button"
+          onClick={() => this.setState({ error: null })}
+          className="mt-2 text-base font-medium text-crema"
+        >
+          Nochmal versuchen
+        </button>
+      </div>
+    )
+  }
+}

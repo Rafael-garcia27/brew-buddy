@@ -31,6 +31,7 @@ import {
  */
 const OriginMap = lazy(() => import('@/components/OriginMap'))
 import SwipeReveal from '@/components/SwipeReveal'
+import { Bereichsgrenze } from '@/components/ErrorBoundary'
 import { RoastScale, ProcessMark, FactTable, type Fact } from '@/components/beanviz'
 
 
@@ -195,6 +196,11 @@ export function BeanDetail({
           den man ohne Lesen erfasst, steht deshalb zuerst. */}
       <Section title="Herkunft">
         <Card>
+          {/* Beiwerk mit eigenem Netz: Der Kartenbrocken wird nachgeladen
+              und kann nach einer Aktualisierung fehlen. Ohne diese Grenze
+              nähme er das ganze Profil mit — die Fakten darunter sind
+              aber das Eigentliche. */}
+          <Bereichsgrenze was="Die Karte" neustartBei={bean.id}>
           <Suspense
             fallback={
               <div>
@@ -205,6 +211,7 @@ export function BeanDetail({
           >
             <OriginMap origins={bean.origins} />
           </Suspense>
+          </Bereichsgrenze>
         </Card>
       </Section>
 

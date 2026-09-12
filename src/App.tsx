@@ -21,6 +21,7 @@ import type { BeanTrash } from './domain'
 import type { BrewMethod } from '@domain'
 import { METHOD_IDS } from './kb'
 import { UndoBar, StorageErrorBar, UpdateToast } from './components/system'
+import { Bereichsgrenze } from './components/ErrorBoundary'
 import BrewScreen from './screens/BrewScreen'
 import MethodPicker from './screens/MethodPicker'
 import BeanPicker from './screens/BeanPicker'
@@ -133,7 +134,18 @@ export default function App() {
         />
       )}
 
+      {/* Eine Grenze zwischen Bildschirm und Gerüst.
+          Die Grenze um `<App/>` fängt jeden Fehler, nimmt aber auch alles
+          mit — auch die Reiterleiste, mit der man den kaputten Bildschirm
+          verlassen könnte. Diese hier ersetzt nur den Inhalt; Reiter und
+          Speicherwarnung bleiben bedienbar.
+          `neustartBei` an der Route: Sonst bliebe die Grenze stehen,
+          nachdem man längst woanders ist. */}
       <main className="scroll-area flex-1 overflow-y-auto">
+        <Bereichsgrenze
+          was="Dieser Bildschirm"
+          neustartBei={`${route.tab}/${route.id ?? ''}/${route.detail ?? ''}`}
+        >
         {route.tab === 'coffee' && coffee}
 
         {/* Drei Stufen, in der Reihenfolge, in der man wählt: Methode,
@@ -163,6 +175,7 @@ export default function App() {
 
         {route.tab === 'log' && <LogScreen route={route} navigate={navigate} back={heim} />}
         {route.tab === 'setup' && <SetupScreen route={route} navigate={navigate} back={heim} />}
+        </Bereichsgrenze>
       </main>
 
       {papierkorb && (
