@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "lint": "oxlint",
+    "kontrast": "node scripts/kontrast.mjs",
     "test:watch": "vitest",
     "typecheck": "tsc -b --noEmit",
     "deploy:direct": "bash scripts/deploy-direct.sh",

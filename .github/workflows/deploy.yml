@@ -26,6 +26,8 @@ jobs:
       - run: npm ci
       - name: Linter
         run: npm run lint
+      - name: Kontraste (WCAG AA)
+        run: npm run kontrast
       - name: Typprüfung
         run: npx tsc --noEmit
       - name: Tests (Abnahmeszenarien G1-G12)
