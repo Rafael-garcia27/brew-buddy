@@ -116,8 +116,13 @@ export default function SetupScreen({ route, back }: Props) {
               </Button>
             </div>
 
+            {/* Nur die Methoden, für die diese Mühle überhaupt gilt.
+                Dieselbe Regel wie in `grindersForMethod()` und damit im
+                Brühbildschirm — nur von der anderen Seite gelesen. Vorher
+                rechnete das Setup fünf Mahlgrade für die Barista Express,
+                obwohl sie laut Katalog nur Espresso mahlt (F-13). */}
             <div className="mt-4 grid grid-cols-3 gap-3 border-t border-line pt-3">
-              {METHODS.map((m) => (
+              {METHODS.filter((m) => !grinder.methods || grinder.methods.includes(m)).map((m) => (
                 <Stat
                   key={m}
                   label={METHOD_LABEL[m]}

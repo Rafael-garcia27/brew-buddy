@@ -83,3 +83,25 @@ hundert Verwendungsstellen, und der richtige Moment dafür ist P12
 lässt sich sagen, welche Stufe welche Farbe braucht.
 
 ---
+## Die Wischaktionen stehen vor der Karte, die sie betreffen (aus P11)
+
+Im Baum liest sich jede Zeile so:
+
+```
+button "Edit"
+button "Löschen"
+generic "Loslassen zum Löschen"   ← mit P11 aria-hidden
+button  [Kontrollbohne, Medium · Washed, …]
+```
+
+Die Aktionen kommen also **vor** der Bohne, auf die sie sich beziehen —
+zwangsläufig, weil sie in der Wischmechanik darunterliegen und die Karte
+sich über sie schiebt. Wer sich vorlesen lässt, hört „Edit, Löschen" und
+erfährt erst danach, wovon die Rede war.
+
+Der Fix wäre, den Aktionen den Bohnennamen mitzugeben
+(`aria-label="Kontrollbohne bearbeiten"`) statt die Reihenfolge zu
+ändern — die hängt an der Optik. Kleine Sache, gehört aber zu einem
+Durchgang, in dem die Liste ohnehin angefasst wird.
+
+---

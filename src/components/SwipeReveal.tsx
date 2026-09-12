@@ -256,6 +256,13 @@ export default function SwipeReveal({
       {onSwipeAway && (
         <div
           ref={hinweis}
+          /* Reine Rückmeldung zur Geste: Er wird nur sichtbar, während der
+             Finger zieht, und sagt jemandem, der nicht zieht, nichts. Ohne
+             `aria-hidden` liest der Screenreader ihn in JEDER Zeile mit —
+             bei zwölf Bohnen zwölfmal „Loslassen zum Löschen" (F-19).
+             Die Aktionen darunter behalten ihre Beschriftung: Sie sind der
+             Weg für alle, die nicht wischen können. */
+          aria-hidden="true"
           style={{ opacity: 0 }}
           className={`pointer-events-none absolute inset-0 flex items-center justify-end bg-bad pr-5 text-[14px] font-semibold text-white transition-opacity duration-150 ${className}`}
         >
