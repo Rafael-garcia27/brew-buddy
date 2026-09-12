@@ -9,11 +9,10 @@ import { create } from 'zustand'
 import type { AppState, Settings, AppMode, BeanTrash } from '@/domain'
 import type { Bean, Bag, Brew, Grinder, Water, BrewMethod } from '@domain'
 import { emptyState } from '@/domain'
-import { SCHEMA_VERSION, INTEGRATED_GRINDER_ID } from '@/config'
+import { SCHEMA_VERSION } from '@/config'
 import { loadState, saveState, flush } from './persist'
+import { startzustand } from './startup'
 import { recompute } from '@/engine/learn'
-import { grinderFromCatalog } from '@/engine/grinder'
-import { defaultGrinderEntry } from '@/kb'
 
 /**
  * Hell ist der Standard (:root), dunkel wird über die Klasse `dark`
@@ -90,28 +89,12 @@ export const useStore = create<Store>((set, get) => ({
   ready: false,
 
   hydrate: async () => {
-    let s = await loadState()
-
-    // Erststart: die Mühle des Nutzers ist voreingestellt, damit Empfehlungen
-    // sofort in echten Klicks kommen statt in Prozent.
-    if (s.grinders.length === 0) {
-      const hand = grinderFromCatalog(defaultGrinderEntry().id, uid())
-      // Die verbaute Mühle des Siebträgers steht von Anfang an bereit,
-      // aber sie wird NICHT vorausgewählt — welche von beiden für Espresso
-      // benutzt wird, entscheidet der Nutzer im Brühen-Menü.
-      const integriert = grinderFromCatalog(INTEGRATED_GRINDER_ID, `gr-${INTEGRATED_GRINDER_ID}`)
-      if (hand) {
-        s = {
-          ...s,
-          grinders: [hand, ...(integriert ? [integriert] : [])],
-          settings: { ...s.settings, activeGrinderId: hand.id },
-        }
-        saveState(s)
-      }
-    }
-
-    set({ ...s, ready: true })
-    applyTheme(s.settings.theme)
+    // Die Entscheidung, was übernommen und was zurückgeschrieben wird,
+    // liegt in `startup.ts` — dort ist sie ohne IndexedDB prüfbar.
+    const { state, persist } = startzustand(await loadState(), uid)
+    if (persist) saveState(state)
+    set({ ...state, ready: true })
+    applyTheme(state.settings.theme)
   },
 
   // ── Bohnen ──

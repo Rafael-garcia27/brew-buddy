@@ -11,11 +11,9 @@
  */
 import { openDB, type IDBPDatabase } from 'idb'
 import type { AppState } from '@/domain'
-import { emptyState } from '@/domain'
 import { migrate, buildBackup, backupFilename, parseBackup } from './migrate'
 export { migrate, buildBackup, backupFilename, parseBackup }
 export type { BackupFile } from './migrate'
-import { SCHEMA_VERSION } from '@/config'
 
 // ACHTUNG: Der Datenbankname bleibt 'dialed', obwohl die App inzwischen
 // Café heißt. Eine Umbenennung würde eine NEUE, leere Datenbank anlegen und
@@ -39,15 +37,28 @@ function db() {
   return dbPromise
 }
 
-export async function loadState(): Promise<AppState> {
+/**
+ * Was beim Laden herausgekommen ist — drei Fälle, nicht zwei.
+ *
+ * „Nichts gespeichert" und „Speicher nicht lesbar" sahen vorher gleich
+ * aus: Beide lieferten einen leeren Zustand. Der Aufrufer konnte sie
+ * deshalb nicht unterscheiden und hat den leeren Zustand in beiden Fällen
+ * zurückgeschrieben — im zweiten über echte Daten drüber.
+ */
+export type LoadResult =
+  | { kind: 'ok'; state: AppState }
+  | { kind: 'empty' }
+  | { kind: 'failed'; error: unknown }
+
+export async function loadState(): Promise<LoadResult> {
   try {
     const d = await db()
     const raw = (await d.get(STORE, KEY)) as AppState | undefined
-    if (!raw) return emptyState(SCHEMA_VERSION)
-    return migrate(raw)
+    if (!raw) return { kind: 'empty' }
+    return { kind: 'ok', state: migrate(raw) }
   } catch (e) {
     console.error('[persist] Laden fehlgeschlagen', e)
-    return emptyState(SCHEMA_VERSION)
+    return { kind: 'failed', error: e }
   }
 }
 
