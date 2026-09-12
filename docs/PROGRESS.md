@@ -4,9 +4,19 @@ Gedächtnis für diesen Auftrag. Wird nach **jedem** Teilschritt aktualisiert,
 nicht erst am Phasenende.
 
 ## Aktuelle Phase
-Phase 3 — Umsetzung. **Woche 1 vollständig** (P1–P7). Als Nächstes Woche 2.
+Phase 3 — Umsetzung. **Woche 1 und 2 vollständig** (P1–P11). Als Nächstes Woche 3.
 
 ## Zuletzt geprüft
+**Woche 2 fertig.** P10 (18 Tests für `hydrate()`, den Kernpfad und den
+Sicherungs-Rundlauf, ohne DOM-Umgebung; per Mutation gegengeprüft),
+P11 (F-13, F-19), P8 (`BeansScreen` 1429 → 572 + 417 + 490),
+P9 (`BrewScreen` 1304 → 838 + 488 + 297).
+
+**P9 erfüllt sein Abnahmekriterium nicht** (838 statt < 600) — bewusst.
+Startpunkt und Erfassen hängen an 40 bzw. 34 Namen aus der Komponente;
+sie als Komponenten herauszuziehen hieße, vierzig Werte durchzureichen.
+Begründung im Commit `aef5171`.
+
 **Woche 1 fertig.** P5 (`fast-uri` 3.1.5 → 3.1.7, 0 Schwachstellen),
 P3 (Version `0.1.0 · <commit> · <datum>` im Setup, `UpdateToast`
 eingehängt und gegen einen echten Service-Worker-Wechsel geprüft),
@@ -40,9 +50,8 @@ gegengeprüft: Der Bestand überlebt, die Warnung erscheint.
 Linter ist zugesagt (P7) und auf Woche 1 vorgezogen.
 
 ## Nächster Schritt
-**Woche 2 — Aufräumen.** P8 (`BeansScreen.tsx` zerlegen), P9
-(`BrewScreen.tsx` zerlegen), P10 (Tests für den Kernpfad), P11
-(Kleinkram F-13, F-19).
+**Woche 3 — Erlebnis.** P12 (Schriftskala, F-11), P13 (Fehlerzustände je
+Ansicht), P14 (README + CHANGELOG, F-16).
 
 ## Phasen
 - [x] **Phase 0 — Recon** (nur lesen) → Lagebild + `docs/ARCHITECTURE.md`
@@ -90,10 +99,10 @@ Linter ist zugesagt (P7) und auf Woche 1 vorgezogen.
 
 ### Woche 2 — Aufräumen (16,5 h)
 - [x] **P7** Linter (F-10) — P2 · erledigt (oxlint statt ESLint, siehe ROADMAP § P7)
-- [ ] **P8** `BeansScreen.tsx` zerlegen (F-09) — P2, 4 h
-- [ ] **P9** `BrewScreen.tsx` zerlegen (F-09) — P2, 4 h
-- [ ] **P10** Tests für den Kernpfad (F-14) — P2, 5 h
-- [ ] **P11** Kleinkram (F-13, F-19) — P3, 1,5 h
+- [x] **P8** `BeansScreen.tsx` zerlegen (F-09) — P2 · erledigt, 1429 → 572
+- [x] **P9** `BrewScreen.tsx` zerlegen (F-09) — P2 · erledigt, 1304 → 838 (Kriterium < 600 verfehlt, begründet)
+- [x] **P10** Tests für den Kernpfad (F-14) — P2 · erledigt, +18 Tests
+- [x] **P11** Kleinkram (F-13, F-19) — P3 · erledigt
 
 ### Woche 3 — Erlebnis (9 h)
 - [ ] **P12** Schriftskala (F-11) — P2, 4 h

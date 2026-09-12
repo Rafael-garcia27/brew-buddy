@@ -55,7 +55,19 @@ der Git-Historie.
 - **Die letzte gelöschte Mühle bleibt gelöscht.** Sie wurde beim nächsten
   Start wortlos wieder angelegt.
 
+### Behoben (klein)
+- **Das Setup zeigt für die Barista Express nur noch Espresso.** Vorher
+  standen dort fünf Mahlgrade für Methoden, die diese Mühle gar nicht
+  bedient. (F-13)
+- **Screenreader lesen den Wischhinweis nicht mehr vor.** „Loslassen zum
+  Löschen" stand in jeder Zeile im Textfluss. (F-19)
+
 ### Unter der Haube
+- **Die beiden größten Dateien sind zerlegt.** `BeansScreen` 1429 → 572
+  Zeilen, `BrewScreen` 1304 → 838, verteilt auf fünf Dateien statt zwei.
+  Reines Verschieben, kein Verhalten geändert. (F-09)
+- **18 neue Tests** für den Start, den Kernpfad „Bohne anlegen → brühen →
+  protokollieren" und den Rundlauf durch eine Sicherungsdatei. (F-14)
 - **Eine Sicherheitslücke in einer Bau-Abhängigkeit geschlossen**
   (`fast-uri`). Sie lief nie im Browser. (F-12)
 - **Kontraste sind jetzt prüfbar** (`npm run kontrast`, auch in der CI).
