@@ -4,7 +4,20 @@ Gedächtnis für diesen Auftrag. Wird nach **jedem** Teilschritt aktualisiert,
 nicht erst am Phasenende.
 
 ## Aktuelle Phase
-Phase 3 — Umsetzung. **Alle 14 Pakete erledigt** (P1–P14).
+**Abgeschlossen.** Alle 14 Pakete (P1–P14), 27 Commits, ausgeliefert.
+
+Schlussmessung gegen `https://cafe.garciahub.de/`, gleicher Weg wie die
+Baseline (`docs/lighthouse-after.json`):
+
+| Kategorie | vorher | nachher |
+| --------- | -----: | ------: |
+| Performance | 98 | 97 |
+| Accessibility | **86** | **100** |
+| Best Practices | 100 | 100 |
+| SEO | 100 | 100 |
+
+Tests 379 → 432. Bundle 512,77 → 522,88 kB (gzip 163,95 → 167,35).
+Größte Datei 1429 → 995 Zeilen (`ui.tsx`, unangetastet).
 
 ## Zuletzt geprüft
 **Woche 3 fertig.** P12 (Schriftskala: 229 Stellen, neun Stufen, Zeilen­
