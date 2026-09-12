@@ -195,6 +195,27 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
     setElapsedTouched(false)
   }, [sp])
 
+  /**
+   * Die Methoden, zwischen denen der Kopf umschalten darf.
+   *
+   * Dieselbe Auswahl wie im Katalog: Was nicht im Haus ist, gehört auch
+   * hier nicht angeboten. Die gerade gewählte Methode bleibt in jedem
+   * Fall enthalten — sie steht sonst als leerer Zustand im Umschalter.
+   *
+   * Steht VOR dem Frühausstieg darunter, und das ist keine Kosmetik:
+   * Standen die beiden Hooks dahinter, rief die Komponente bei `sp === null`
+   * zwei Hooks weniger auf als sonst. React zählt sie pro Durchlauf — beim
+   * Wechsel zwischen beiden Fällen bricht es mit „Rendered fewer hooks than
+   * expected" ab und entlädt den Baum. Gefunden vom Linter
+   * (`react-hooks(rules-of-hooks)`), siehe P7.
+   */
+  const favRoh = useStore((s) => s.settings.favoriteMethods)
+  const umschalter = useMemo(() => {
+    const gesetzt = (favRoh ?? []).filter((m) => (METHODS as string[]).includes(m))
+    const basis = gesetzt.length ? gesetzt : METHODS
+    return METHODS.filter((m) => basis.includes(m) || m === method)
+  }, [favRoh, method])
+
   // Ohne Bohne wird dieser Screen nicht geöffnet (siehe App) — der Rest
   // ist Absicherung gegen eine Route, die auf eine gelöschte Bohne zeigt.
   if (!bean || !ctx || !sp) return null
@@ -213,19 +234,6 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
    */
   const tempFrei = tempAdjustable(method)
 
-  /**
-   * Die Methoden, zwischen denen der Kopf umschalten darf.
-   *
-   * Dieselbe Auswahl wie im Katalog: Was nicht im Haus ist, gehört auch
-   * hier nicht angeboten. Die gerade gewählte Methode bleibt in jedem
-   * Fall enthalten — sie steht sonst als leerer Zustand im Umschalter.
-   */
-  const favRoh = useStore((s) => s.settings.favoriteMethods)
-  const umschalter = useMemo(() => {
-    const gesetzt = (favRoh ?? []).filter((m) => (METHODS as string[]).includes(m))
-    const basis = gesetzt.length ? gesetzt : METHODS
-    return METHODS.filter((m) => basis.includes(m) || m === method)
-  }, [favRoh, method])
   const tempSpanne = tempRange(method)
   // Am Handfilter und an der AeroPress läuft die Uhr in Minuten:Sekunden,
   // beim Espresso in nackten Sekunden — ein Shot dauert nie eine Minute.
