@@ -72,8 +72,21 @@ export default function SwipeReveal({
   const [zieht, setZieht] = useState(false)
 
   const offenBreite = actions.length * AKTION_PX
-  const breite = box.current?.offsetWidth ?? 0
-  const hinausAb = breite * HINAUS_ANTEIL
+
+  /**
+   * Kartenbreite, gemessen wenn der Finger aufsetzt — nicht beim Rendern.
+   *
+   * Vorher stand hier `box.current?.offsetWidth ?? 0` mitten im Render.
+   * Beim ersten Durchlauf ist `box.current` aber noch leer, weil React das
+   * Element erst danach einhängt: Die erste Bewegung auf einer frisch
+   * eingehängten Karte rechnete deshalb mit Breite 0 und schob sie um
+   * nichts. Gefunden vom Linter (`react(refs)`), siehe P7.
+   *
+   * Beim Aufsetzen zu messen ist ohnehin richtiger: Dann stimmt der Wert
+   * auch nach einer Drehung des Geräts, ohne dass etwas neu rendern muss.
+   */
+  const breiteRef = useRef(0)
+  const hinausAb = () => breiteRef.current * HINAUS_ANTEIL
 
   /**
    * Den Stand zeichnen, ohne React zu bemühen.
@@ -98,13 +111,13 @@ export default function SwipeReveal({
        * Ankerpunkt rechts: Sonst liefe die Karte durch das Verkleinern
        * von ihrer eigenen Kante weg und gäbe rechts einen Spalt frei.
        */
-      const anteil = breite > 0 ? Math.min(1, wert / breite) : 0
+      const anteil = breiteRef.current > 0 ? Math.min(1, wert / breiteRef.current) : 0
       k.style.transform = `translateX(${-wert}px) scale(${1 - 0.015 * anteil})`
       k.style.opacity = String(1 - 0.1 * anteil)
     }
     box.current?.style.setProperty('--ab', String(wert))
     if (hinweis.current) {
-      hinweis.current.style.opacity = onSwipeAway && wert >= hinausAb ? '1' : '0'
+      hinweis.current.style.opacity = onSwipeAway && wert >= hinausAb() ? '1' : '0'
     }
   }
 
@@ -124,6 +137,7 @@ export default function SwipeReveal({
   const onDown = (e: React.PointerEvent) => {
     // Maustaste rechts oder Mitte ignorieren.
     if (e.pointerType === 'mouse' && e.button !== 0) return
+    breiteRef.current = box.current?.offsetWidth ?? 0
     zug.current = { x0: e.clientX, y0: e.clientY, ab: abJetzt.current, achse: 'offen' }
   }
 
@@ -160,7 +174,7 @@ export default function SwipeReveal({
     const rohe = z.ab - dx
     // Nach rechts über die Ruhelage hinaus gibt es nichts zu zeigen.
     // Nach links höchstens bis zum Rand, sonst verschwindet die Karte.
-    const grenze = onSwipeAway ? breite : offenBreite
+    const grenze = onSwipeAway ? breiteRef.current : offenBreite
     zeichnen(Math.max(0, Math.min(grenze, rohe)))
   }
 
@@ -172,7 +186,7 @@ export default function SwipeReveal({
     setZieht(false)
 
     const wert = abJetzt.current
-    if (onSwipeAway && wert >= hinausAb) {
+    if (onSwipeAway && wert >= hinausAb()) {
       onSwipeAway()
       rasten(0)
       return
