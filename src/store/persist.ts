@@ -62,6 +62,19 @@ export async function loadState(): Promise<LoadResult> {
   }
 }
 
+/**
+ * Der Blob, wie er in der Datenbank liegt — ohne `migrate()`.
+ *
+ * Nur für den Fehlerbildschirm: Wenn `migrate()` die Ursache des Absturzes
+ * ist, darf der Rettungsweg nicht darüber führen. Wirft absichtlich weiter,
+ * statt `undefined` zurückzugeben — „nichts gespeichert" und „nicht lesbar"
+ * auseinanderzuhalten ist die Lehre aus F-01.
+ */
+export async function loadRaw(): Promise<unknown> {
+  const d = await db()
+  return await d.get(STORE, KEY)
+}
+
 let writeTimer: ReturnType<typeof setTimeout> | null = null
 let pending: AppState | null = null
 
@@ -155,10 +168,21 @@ export async function storageEstimate(): Promise<{ usedKb: number; quotaMb: numb
  * unzuverlässig — die Share-API ist der verlässliche Weg, mit
  * Zwischenablage als Rückfallebene.
  */
-export async function shareBackup(state: AppState): Promise<'shared' | 'copied' | 'downloaded'> {
-  const json = JSON.stringify(buildBackup(state, new Date()), null, 2)
-  const name = backupFilename(new Date())
+export async function shareBackup(state: AppState): Promise<Auslieferung> {
+  const now = new Date()
+  return liefere(JSON.stringify(buildBackup(state, now), null, 2), backupFilename(now))
+}
 
+export type Auslieferung = 'shared' | 'copied' | 'downloaded'
+
+/**
+ * JSON beim Nutzer abliefern — drei Ebenen, absteigend nach Verlässlichkeit.
+ *
+ * Herausgezogen, damit der Fehlerbildschirm denselben Weg nimmt wie der
+ * normale Sicherungsknopf. Auf genau diesen Weg kommt es dort am meisten
+ * an, und zwei Umsetzungen davon wären eine zu viel.
+ */
+export async function liefere(json: string, name: string): Promise<Auslieferung> {
   const file = new File([json], name, { type: 'application/json' })
   if (navigator.canShare?.({ files: [file] })) {
     try {
