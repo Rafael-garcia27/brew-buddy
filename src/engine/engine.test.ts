@@ -660,7 +660,12 @@ describe('Iteration 3 — Konsistenz der Ausgabe', () => {
         tasting: { rating: 2, defects: [...c.defects], characters: [], wouldRepeat: false },
         targetTimeS: [26, 30],
       })
-      if (d.suggestions[0]) expect(d.suggestions[0].alternative).toBeTruthy()
+      // Erst die Voraussetzung prüfen, dann die Zusage. Vorher stand hier
+      // `if (d.suggestions[0]) expect(...)` — ohne Empfehlung lief der Test
+      // durch, ohne irgendetwas festzustellen. Vom Linter gefunden
+      // (`vitest(expect-expect)`), siehe P7.
+      expect(d.suggestions[0], JSON.stringify(c.defects)).toBeTruthy()
+      expect(d.suggestions[0]!.alternative).toBeTruthy()
     }
   })
 

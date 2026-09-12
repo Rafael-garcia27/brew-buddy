@@ -692,7 +692,16 @@ export function Sheet({
 
   return createPortal(
     <div className="fixed inset-0 z-[100] flex flex-col justify-end" role="dialog" aria-modal="true">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      {/* `aria-hidden`: Die Fläche trägt keine Information und ist auch
+          kein eigener Weg hinaus — Escape und die Schaltfläche „Schließen"
+          leisten dasselbe und sind mit der Tastatur erreichbar. Ohne die
+          Auszeichnung kündigt der Screenreader ein anonymes Element an,
+          das er nicht bedienen kann. */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+      />
       <div className="scroll-area relative max-h-[88dvh] overflow-y-auto rounded-t-3xl border-t border-line bg-card">
         <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-line bg-card px-4 py-3">
           <h3 className="text-[17px] font-semibold">{title}</h3>
