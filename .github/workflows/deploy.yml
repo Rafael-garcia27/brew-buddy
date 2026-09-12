@@ -24,6 +24,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Linter
+        run: npm run lint
       - name: Typprüfung
         run: npx tsc --noEmit
       - name: Tests (Abnahmeszenarien G1-G12)

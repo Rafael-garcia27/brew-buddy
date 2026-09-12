@@ -11,6 +11,15 @@ der Git-Historie.
 ## Unveröffentlicht
 
 ### Behoben
+- **Ein seltener Absturz im Brühen-Bildschirm.** Unter bestimmten
+  Bedingungen rief der Bildschirm zwei React-Hooks weniger auf als sonst;
+  beim Wechsel zwischen beiden Fällen bricht React ab und entlädt die
+  Oberfläche. Vom neuen Linter gefunden. (F-10)
+- **Die erste Wischbewegung auf einer Kaffeekarte greift sofort.** Vorher
+  rechnete sie mit Breite 0 und schob die Karte um nichts — spürbar war
+  ein kurzes Hängen zu Beginn der Geste.
+- **Der Hintergrund eines Blattes wird nicht mehr vorgelesen.** Er ist
+  Dekoration; Escape und „Schließen" führen ohnehin hinaus.
 - **Ein Absturz endet nicht mehr in einer weißen Seite.** Ging beim
   Zeichnen des Bildschirms etwas schief, blieb nichts übrig — in der
   installierten App ohne Adresszeile eine Sackgasse. Jetzt erscheint ein
@@ -27,3 +36,10 @@ der Git-Historie.
   Warnung mit dem Weg zur Sicherung. (F-02)
 - **Die letzte gelöschte Mühle bleibt gelöscht.** Sie wurde beim nächsten
   Start wortlos wieder angelegt.
+
+### Unter der Haube
+- **Linter eingerichtet** (`npm run lint`, auch in der CI). Nicht ESLint
+  wie geplant — `typescript-eslint` läuft nicht auf TypeScript 7, dessen
+  Paket die alte Compiler-Schnittstelle nicht mehr hat. Stattdessen
+  oxlint mit eigenem Parser. Nur Fehlerklassen, keine Stilregeln.
+  Begründung in `docs/ROADMAP.md`, § P7.

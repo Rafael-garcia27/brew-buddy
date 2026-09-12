@@ -172,18 +172,52 @@ Dazu die Kontrastmatrix aus `docs/AUDIT.md` §6.2 erneut rechnen: kein
 > Ziel: Der Code bleibt in sechs Monaten änderbar, ohne dass jede
 > Änderung ein Risiko ist.
 
-### P7 — Linter (F-10) · P2 · ~2 h · **Entscheidung offen**
+### P7 — Linter (F-10) · P2 · **erledigt am 12.09.2026**
 
-Siehe Erklärung unten (§ „Was ist ein Linter?"). Ich setze das **nicht**
-um, bevor du zustimmst — es wäre eine neue Abhängigkeit.
+**Nicht wie geplant umgesetzt.** ESLint ist an diesem Projekt derzeit nicht
+möglich, und das ist belegbar:
 
-**Umfang bei Zustimmung.** ESLint mit `typescript-eslint` und
-`eslint-plugin-react-hooks`, als Skript und als CI-Schritt.
-Nur dev-Abhängigkeiten, kein Byte im Bundle.
+```
+$ npm install -D typescript-eslint
+npm error Could not resolve dependency:
+npm error peer typescript@">=4.8.4 <6.1.0" from typescript-eslint@8.70.0
+npm error   dev typescript@"^7.0.2" from the root project
+
+$ node -e "const ts=require('typescript'); console.log(Object.keys(ts))"
+[ 'version', 'versionMajorMinor' ]
+```
+
+Die zweite Zeile ist der eigentliche Grund. TypeScript 7 ist der neu in Go
+geschriebene Compiler; sein npm-Paket exportiert die alte Schnittstelle
+nicht mehr, auf der `typescript-eslint` aufsetzt (`createSourceFile`,
+`createProgram`, `SyntaxKind` — alle weg). Auch die neueste Vorabversion
+(`8.70.1-alpha.0`) trägt denselben Peer-Bereich. Mit `--force` ließe sich
+installieren, aber jeder Lauf würde scheitern.
+
+**Stattdessen: oxlint.** Ein Linter mit eigenem Parser, der das
+`typescript`-Paket gar nicht anfasst. Eine Entwicklungsabhängigkeit
+(`oxlint`), dazu 19 Einträge für Plattform-Binärdateien, von denen je
+Rechner genau eine installiert wird — lokal 2,3 MB, **im Bundle null Byte**.
+Er bringt `react-hooks/rules-of-hooks` und `exhaustive-deps` mit, also
+genau das, wofür der Linter gekauft wurde.
+
+Konfiguration in `.oxlintrc.json`, jede Abweichung von der Grundeinstellung
+dort mit Begründung kommentiert.
+
+**Was er beim ersten Lauf gefunden hat.** Zwei echte Fehler, kein Stilkram:
+1. `BrewScreen.tsx` rief zwei Hooks **nach** einem Frühausstieg auf. Bei
+   `sp === null` waren es zwei weniger als sonst — der Wechsel zwischen
+   beiden Fällen bricht React mit „Rendered fewer hooks than expected" ab.
+2. `SwipeReveal.tsx` las die Kartenbreite beim Rendern, wo sie noch 0 ist.
+   Die erste Wischbewegung auf einer frisch eingehängten Karte schob sie
+   deshalb um nichts.
+
+Dazu ein dritter, kleinerer: ein Test, der bei ausbleibender Empfehlung
+durchlief, ohne etwas festzustellen.
 
 **Abnahme.**
 ```bash
-npm run lint       # 0 Fehler
+npm run lint       # exit 0, 14 Warnungen, 0 Fehler
 ```
 
 ---
@@ -347,15 +381,22 @@ Der Unterschied zu dem, was du schon hast:
 | Vitest (`npm test`) | Verhalten | „Die Funktion gibt das Falsche zurück" |
 | **Linter** | Muster | „Dieser `useMemo` hängt von etwas ab, das du nicht aufgeführt hast" |
 
-Das konkrete Beispiel aus **dieser** Codebasis: Diese App hatte
-mindestens zweimal das Problem, dass ein Zustand-Selektor bei jedem
-Rendern ein neues Array zurückgab und die App in eine Endlosschleife
-schickte. TypeScript sieht das nicht (die Typen stimmen). Tests sehen es
-nicht (es gibt keine Oberflächentests). `eslint-plugin-react-hooks` sieht
-genau das und sagt es beim Tippen.
+**Korrektur zu einer Behauptung von oben.** Ich hatte hier geschrieben,
+`eslint-plugin-react-hooks` finde den Zustand-Selektor, der bei jedem
+Rendern ein neues Array zurückgibt. Das stimmt nicht — die Hook-Regeln
+kennen Zustand nicht. Die Aussage war zu gefällig, und sie ist jetzt
+eingelöst durch etwas Besseres: Der Linter hat beim ersten Lauf zwei
+andere echte Fehler gefunden (siehe P7), darunter einen, der die App zum
+Absturz bringen kann.
 
-**Kosten:** drei bis vier Pakete, alle nur `devDependencies` — sie landen
-nie im Bundle, der Nutzer lädt kein Byte mehr. Die Einrichtung ist etwa
+Was er **wirklich** sieht: Hooks hinter Bedingungen oder Frühausstiegen,
+vergessene Abhängigkeiten in `useEffect`/`useMemo`, Refs, die beim Rendern
+gelesen werden. TypeScript sieht davon nichts (die Typen stimmen), Tests
+auch nicht (es gibt keine Oberflächentests).
+
+**Kosten (tatsächlich):** ein Paket plus Plattform-Binärdateien, alles
+`devDependencies` — sie landen nie im Bundle, der Nutzer lädt kein Byte
+mehr. Die Einrichtung ist etwa
 zwei Stunden, davon eine für das Abarbeiten der Meldungen, die er beim
 ersten Lauf über 17.753 Zeilen ausspuckt.
 
@@ -365,9 +406,6 @@ Team. Sein Hauptnutzen — allen dasselbe beibringen, ohne es zu
 diskutieren — entfällt. Was bleibt, ist die Hook-Prüfung, und die ist bei
 einer React-App mit 24 Komponenten trotzdem ihr Geld wert.
 
-**Meine Empfehlung:** ja, aber nur mit `react-hooks` und
-`typescript-eslint` in der empfohlenen Grundeinstellung. Keine
-Stilregeln, kein Prettier — deine Formatierung ist durchgehend
-einheitlich, dafür braucht es kein Werkzeug.
-
-Sag einfach ja oder nein; ohne ein Ja lasse ich P7 aus.
+**Umgesetzt:** nur die Fehlerklassen, keine Stilregeln, kein Prettier —
+deine Formatierung ist durchgehend einheitlich, dafür braucht es kein
+Werkzeug.

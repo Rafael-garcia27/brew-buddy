@@ -1,0 +1,58 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+
+  // Warum oxlint und nicht ESLint: Das Projekt liegt auf TypeScript 7, und
+  // dessen Paket exportiert nur noch `version` — die klassische Compiler-
+  // Schnittstelle, auf der `typescript-eslint` aufsetzt, gibt es dort nicht
+  // mehr. oxlint bringt seinen eigenen Parser mit und braucht sie nicht.
+  // Ausführlich in docs/ROADMAP.md, § P7.
+
+  "plugins": ["typescript", "unicorn", "oxc", "react", "jsx-a11y", "vitest"],
+
+  // Nur „correctness" bricht den Lauf: Code, der nachweislich falsch ist.
+  // Bewusst KEINE Stilregeln — die Formatierung ist einheitlich, dafür
+  // braucht es kein Werkzeug (Antwort auf O-5).
+  "categories": {
+    "correctness": "error"
+  },
+
+  "rules": {
+    // Die eigentliche Begründung für den Linter: Hooks in falscher
+    // Reihenfolge und vergessene Abhängigkeiten sieht weder TypeScript
+    // noch ein Test.
+    "react-hooks/rules-of-hooks": "error",
+    "react-hooks/exhaustive-deps": "warn",
+
+    // Falsch für diese App: Ein `<svg role="img">` lässt sich nicht durch
+    // ein `<img>` ersetzen, und die Mahlgradräder sind eigene Widgets mit
+    // `role="slider"` — ein `<input type="range">` kann das Zahlenrad der
+    // Barista Express nicht zeichnen.
+    "jsx-a11y/prefer-tag-over-role": "off",
+
+    // Die Regelfamilie des React Compilers. Sie zeigt auf echte Stellen,
+    // aber keine davon ist heute ein Fehler: Die App übersetzt nicht mit
+    // dem Compiler. Als Warnung bleiben sie sichtbar, ohne den Lauf zu
+    // brechen — `react(refs)` hat auf diesem Weg die Wischgeste gefunden.
+    "react/purity": "warn",
+    "react/refs": "warn",
+    "react/set-state-in-effect": "warn",
+    "react/exhaustive-effect-dependencies": "warn",
+
+    // Kennt nur Jest: Dort nimmt `expect` genau ein Argument, in Vitest
+    // ist das zweite die Meldung, die bei Fehlschlag danebensteht.
+    "vitest/valid-expect": "off",
+    // Erzeugte Testnamen sind Absicht — `it(stringify(fall), …)` schreibt
+    // die Tabelle in die Ausgabe, statt sie zu wiederholen.
+    "vitest/valid-title": "off",
+    // Echter Geruch, aber ein Aufräumauftrag für sich (P10): Ein `expect`
+    // hinter einer Bedingung prüft nichts, wenn die Bedingung falsch ist.
+    "vitest/no-conditional-expect": "warn"
+  },
+
+  "env": {
+    "builtin": true,
+    "browser": true
+  },
+
+  "ignorePatterns": ["dist", "dev-dist", "scripts"]
+}

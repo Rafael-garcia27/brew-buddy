@@ -4,9 +4,17 @@ Gedächtnis für diesen Auftrag. Wird nach **jedem** Teilschritt aktualisiert,
 nicht erst am Phasenende.
 
 ## Aktuelle Phase
-Phase 3 — Umsetzung. P1 und P2 erledigt.
+Phase 3 — Umsetzung. P1, P2 und P7 erledigt.
 
 ## Zuletzt geprüft
+**P7 erledigt — aber anders als geplant.** ESLint ist an TypeScript 7
+nicht möglich (`typescript` exportiert nur noch `version`), belegt in
+`docs/ROADMAP.md` § P7. Stattdessen oxlint, eine dev-Abhängigkeit, null
+Byte im Bundle. Erster Lauf: zwei echte Fehler (Hooks nach Frühausstieg
+in `BrewScreen`, Ref beim Rendern in `SwipeReveal`) plus ein Test, der
+nichts prüfte. Alle drei behoben. `npm run lint` → 0 Fehler, 14
+Warnungen, auch als CI-Schritt.
+
 **P2 erledigt.** F-03 zuerst im Browser belegt (`root.innerHTML.length
 === 0`, null Knöpfe), dann Fehlergrenze um `<App/>`. Rettungsweg geht
 bewusst am Store und an `migrate()` vorbei — beide können die Ursache
@@ -20,8 +28,8 @@ gegengeprüft: Der Bestand überlebt, die Warnung erscheint.
 Linter ist zugesagt (P7) und auf Woche 1 vorgezogen.
 
 ## Nächster Schritt
-**P7 — Linter** (~2 h, vom Auftraggeber zugesagt und vorgezogen).
-Danach P6 (Kontrast + Zoom), dann P3 (Version + Update-Hinweis).
+**P6 — Kontrast + Zoom** (F-05, F-06, ~2 h). Danach P3 (Version +
+Update-Hinweis), P4 (Sicherung vor Import), P5 (`npm audit fix`).
 
 ## Phasen
 - [x] **Phase 0 — Recon** (nur lesen) → Lagebild + `docs/ARCHITECTURE.md`
@@ -54,7 +62,8 @@ Danach P6 (Kontrast + Zoom), dann P3 (Version + Update-Hinweis).
 - **O-3 ein iPhone** → F-08 (Sicherung vor Import) bleibt P1, eigenes Paket
 - **O-4 `drinks.json`** → beantwortet in `IDEAS.md`: 35 fertige Getränke­
   rezepturen, nicht im Bundle, bleibt liegen
-- **O-5 Linter** → erklärt in `docs/ROADMAP.md`; **zugesagt am 12.09.**
+- **O-5 Linter** → zugesagt und umgesetzt; ESLint war nicht möglich,
+  Ersatz und Begründung in `docs/ROADMAP.md` § P7
 
 ## Arbeitspakete (Phase 3+)
 
@@ -67,7 +76,7 @@ Danach P6 (Kontrast + Zoom), dann P3 (Version + Update-Hinweis).
 - [ ] **P6** Kontrast + Zoom (F-05, F-06) — P1, 2 h
 
 ### Woche 2 — Aufräumen (16,5 h)
-- [ ] **P7** Linter (F-10) — P2, 2 h · **zugesagt am 12.09.**, vorgezogen auf Woche 1
+- [x] **P7** Linter (F-10) — P2 · erledigt (oxlint statt ESLint, siehe ROADMAP § P7)
 - [ ] **P8** `BeansScreen.tsx` zerlegen (F-09) — P2, 4 h
 - [ ] **P9** `BrewScreen.tsx` zerlegen (F-09) — P2, 4 h
 - [ ] **P10** Tests für den Kernpfad (F-14) — P2, 5 h
