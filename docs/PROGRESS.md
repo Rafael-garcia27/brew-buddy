@@ -4,9 +4,14 @@ Gedächtnis für diesen Auftrag. Wird nach **jedem** Teilschritt aktualisiert,
 nicht erst am Phasenende.
 
 ## Aktuelle Phase
-Phase 3 — Umsetzung. P1, P2, P7 und P6 erledigt.
+Phase 3 — Umsetzung. **Woche 1 vollständig** (P1–P7). Als Nächstes Woche 2.
 
 ## Zuletzt geprüft
+**Woche 1 fertig.** P5 (`fast-uri` 3.1.5 → 3.1.7, 0 Schwachstellen),
+P3 (Version `0.1.0 · <commit> · <datum>` im Setup, `UpdateToast`
+eingehängt und gegen einen echten Service-Worker-Wechsel geprüft),
+P4 (Import in zwei Schritten mit Zahlen und Sicherung vorweg, 10 Tests).
+
 **P6 erledigt.** Sechs Tokens nachgezogen (OKLCH, Farbton und Buntheit
 unangetastet), `maximum-scale` gestrichen. Gemessen mit demselben Weg
 vorher und nachher gegen den Produktions-Build: Accessibility **86 → 100**,
@@ -35,8 +40,9 @@ gegengeprüft: Der Bestand überlebt, die Warnung erscheint.
 Linter ist zugesagt (P7) und auf Woche 1 vorgezogen.
 
 ## Nächster Schritt
-**P3 — Version + Update-Hinweis** (F-04, F-07, ~1,5 h). Danach P4
-(Sicherung vor Import) und P5 (`npm audit fix`) — damit ist Woche 1 fertig.
+**Woche 2 — Aufräumen.** P8 (`BeansScreen.tsx` zerlegen), P9
+(`BrewScreen.tsx` zerlegen), P10 (Tests für den Kernpfad), P11
+(Kleinkram F-13, F-19).
 
 ## Phasen
 - [x] **Phase 0 — Recon** (nur lesen) → Lagebild + `docs/ARCHITECTURE.md`
@@ -77,9 +83,9 @@ Linter ist zugesagt (P7) und auf Woche 1 vorgezogen.
 ### Woche 1 — Stabilisieren (11 h)
 - [x] **P1** Datenverlust-Pfad (F-01, F-02) — **P0** · erledigt, 391 Tests grün
 - [x] **P2** ErrorBoundary (F-03) — **P0** · erledigt, 404 Tests grün
-- [ ] **P3** Version + Update-Hinweis (F-04, F-07) — P1, 1,5 h
-- [ ] **P4** Sicherung vor Import (F-08) — P1, 2 h
-- [ ] **P5** `npm audit fix` (F-12) — P2, 15 min
+- [x] **P3** Version + Update-Hinweis (F-04, F-07) — P1 · erledigt
+- [x] **P4** Sicherung vor Import (F-08) — P1 · erledigt, 10 Tests
+- [x] **P5** `npm audit fix` (F-12) — P2 · erledigt, 0 Schwachstellen
 - [x] **P6** Kontrast + Zoom (F-05, F-06) — P1 · erledigt, Accessibility 86 → 100
 
 ### Woche 2 — Aufräumen (16,5 h)

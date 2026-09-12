@@ -10,6 +10,17 @@ der Git-Historie.
 
 ## Unveröffentlicht
 
+### Neu
+- **Der Import sagt vorher, was er ersetzt.** „1 Bohne, 1 Bag, 0 Brews
+  wird ersetzt durch 12 Bohnen, 3 Bags, 40 Brews" — und warnt, wenn die
+  gewählte Sicherung leer oder älter ist als der Bestand. Der
+  naheliegende Knopf sichert vorher. (F-08)
+- **Im Setup steht, welcher Stand läuft** — Version, Commit und
+  Baudatum. (F-04)
+- **Eine neue Version meldet sich.** Vorher tauschte der Service Worker
+  still aus, und wer die App offen liegen ließ, lief auf einem Stand,
+  den es nicht mehr gab. (F-07)
+
 ### Behoben
 - **Die App lässt sich wieder vergrößern.** Zwei Finger auseinander tun
   jetzt, was sie sollen — vorher war das gesperrt. Der Auto-Zoom beim
@@ -45,6 +56,8 @@ der Git-Historie.
   Start wortlos wieder angelegt.
 
 ### Unter der Haube
+- **Eine Sicherheitslücke in einer Bau-Abhängigkeit geschlossen**
+  (`fast-uri`). Sie lief nie im Browser. (F-12)
 - **Kontraste sind jetzt prüfbar** (`npm run kontrast`, auch in der CI).
   Rechnet jede Textfarbe gegen jeden Untergrund und bricht ab, wenn eine
   Kombination unter 4,5:1 fällt. Sonst hält der Fix nur bis zum nächsten
