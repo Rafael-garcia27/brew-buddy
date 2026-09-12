@@ -20,7 +20,7 @@ import { useStore } from './store'
 import type { BeanTrash } from './domain'
 import type { BrewMethod } from '@domain'
 import { METHOD_IDS } from './kb'
-import { UndoBar } from './components/system'
+import { UndoBar, StorageErrorBar } from './components/system'
 import BrewScreen from './screens/BrewScreen'
 import MethodPicker from './screens/MethodPicker'
 import BeanPicker from './screens/BeanPicker'
@@ -62,6 +62,8 @@ export default function App() {
   const hydrate = useStore((s) => s.hydrate)
   const beans = useStore((s) => s.beans)
   const restoreBean = useStore((s) => s.restoreBean)
+  const storageError = useStore((s) => s.storageError)
+  const dismissStorageError = useStore((s) => s.dismissStorageError)
 
   /**
    * Was gerade gelöscht wurde, für „Rückgängig“.
@@ -117,6 +119,19 @@ export default function App() {
 
   return (
     <div className="flex h-[100dvh] flex-col">
+      {/* Ganz oben und über allem: Wenn der Speicher nicht funktioniert,
+          ist jede andere Nachricht auf diesem Bildschirm zweitrangig. */}
+      {storageError && (
+        <StorageErrorBar
+          text={storageError}
+          onBackup={() => {
+            dismissStorageError()
+            navigate({ tab: 'setup' })
+          }}
+          onDismiss={dismissStorageError}
+        />
+      )}
+
       <main className="scroll-area flex-1 overflow-y-auto">
         {route.tab === 'coffee' && coffee}
 

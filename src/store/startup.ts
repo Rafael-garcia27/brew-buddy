@@ -47,9 +47,39 @@ function mitVorgabemuehlen(s: AppState, id: () => string): AppState {
 }
 
 export function startzustand(r: LoadResult, id: () => string): Startzustand {
-  const s = r.kind === 'ok' ? r.state : emptyState(SCHEMA_VERSION)
-  if (s.grinders.length === 0) {
-    return { state: mitVorgabemuehlen(s, id), persist: true }
+  /**
+   * Ein Lesefehler ist kein Erststart.
+   *
+   * Das war der Fehler: Beide Fälle lieferten einen leeren Zustand, beide
+   * bekamen Vorgabemühlen, und weil der Zustand dadurch verändert war,
+   * wurde er zurückgeschrieben — über echte Daten drüber. Ein einziger
+   * fehlgeschlagener Lesevorgang, und die Historie war endgültig weg.
+   *
+   * Hier wird deshalb NICHTS verändert und NICHTS geschrieben. Die App
+   * startet leer, sagt es, und der Weg zurück führt über die Sicherung
+   * im Setup. Ein Fehlerbildschirm ohne Ausweg wäre schlimmer.
+   */
+  if (r.kind === 'failed') {
+    return {
+      state: emptyState(SCHEMA_VERSION),
+      persist: false,
+      error:
+        'Der gespeicherte Bestand ließ sich nicht lesen. Es wird nichts überschrieben — ' +
+        'schließ die App und öffne sie erneut. Bleibt es dabei, spiel deine letzte Sicherung ein.',
+    }
   }
-  return { state: s, persist: false }
+
+  /**
+   * Nur beim echten Erststart Mühlen anlegen.
+   *
+   * Vorher lautete die Prüfung `grinders.length === 0` und traf damit
+   * auch den, der seine letzte Mühle absichtlich gelöscht hat: Der
+   * nächste Start legte sie wortlos wieder an. Ohne Mühle kommt die App
+   * zurecht — der Brühbildschirm sagt es und bietet den Weg ins Setup an.
+   */
+  if (r.kind === 'empty') {
+    return { state: mitVorgabemuehlen(emptyState(SCHEMA_VERSION), id), persist: true }
+  }
+
+  return { state: r.state, persist: false }
 }

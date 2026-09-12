@@ -189,6 +189,44 @@ export function UndoBar({
   )
 }
 
+/**
+ * Der Speicher hat nicht funktioniert — und das darf nicht untergehen.
+ *
+ * Anders als die Rückgängig-Leiste verschwindet diese hier NICHT von
+ * selbst. Sie steht oben statt unten, weil sie keine Handlung anbietet,
+ * die man gerade eben noch machen könnte, sondern eine Lage beschreibt,
+ * die den Rest der Sitzung betrifft: Alles, was ab jetzt eingetragen
+ * wird, ist womöglich beim nächsten Start weg.
+ *
+ * Der Knopf führt ins Setup zur Sicherung — das ist in dieser Lage das
+ * einzig Sinnvolle, was man tun kann.
+ */
+export function StorageErrorBar({
+  text,
+  onBackup,
+  onDismiss,
+}: {
+  text: string
+  onBackup: () => void
+  onDismiss: () => void
+}) {
+  return (
+    <div className="pt-safe sticky top-0 z-50 px-4 pt-2 pb-2">
+      <div className="rounded-2xl border border-bad/50 bg-bad/15 px-4 py-3 shadow-lg">
+        <p className="text-[14px] leading-snug">{text}</p>
+        <div className="mt-2 flex gap-2">
+          <Button size="sm" onClick={onBackup}>
+            Jetzt sichern
+          </Button>
+          <Button size="sm" variant="ghost" onClick={onDismiss}>
+            Später
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /** Aktualisierung des Service Workers sichtbar machen */
 export function UpdateToast() {
   const [ready, setReady] = useState(false)

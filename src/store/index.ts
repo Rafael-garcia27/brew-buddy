@@ -10,7 +10,7 @@ import type { AppState, Settings, AppMode, BeanTrash } from '@/domain'
 import type { Bean, Bag, Brew, Grinder, Water, BrewMethod } from '@domain'
 import { emptyState } from '@/domain'
 import { SCHEMA_VERSION } from '@/config'
-import { loadState, saveState, flush } from './persist'
+import { loadState, saveState, flush, onPersistError } from './persist'
 import { startzustand } from './startup'
 import { recompute } from '@/engine/learn'
 
@@ -58,9 +58,21 @@ interface StoreActions {
 
   replaceState: (s: AppState) => void
   resetAll: () => void
+  /** Warnung wegklicken — sie kommt beim nächsten Fehler wieder. */
+  dismissStorageError: () => void
 }
 
-export type Store = AppState & { ready: boolean } & StoreActions
+export type Store = AppState & {
+  ready: boolean
+  /**
+   * Gesetzt, wenn Lesen oder Schreiben des Bestands fehlgeschlagen ist.
+   *
+   * Kein Teil von `AppState` — dieser Zustand gehört zur Laufzeit und
+   * darf auf keinen Fall mitgespeichert werden. Er verschwindet, sobald
+   * ein Schreibvorgang wieder gelingt.
+   */
+  storageError: string | null
+} & StoreActions
 
 /** Nach jeder Datenänderung die Lernmodelle neu rechnen und persistieren. */
 function commit(set: (fn: (s: Store) => Partial<Store>) => void, relearn = true) {
@@ -87,15 +99,30 @@ function commit(set: (fn: (s: Store) => Partial<Store>) => void, relearn = true)
 export const useStore = create<Store>((set, get) => ({
   ...emptyState(SCHEMA_VERSION),
   ready: false,
+  storageError: null,
 
   hydrate: async () => {
+    // Schreibfehler erreichen die Oberfläche über diesen Rückruf. Er wird
+    // hier gesetzt und nicht beim Modulstart, damit `persist.ts` nichts
+    // über den Store weiß.
+    onPersistError(() =>
+      set({
+        storageError:
+          'Deine letzte Änderung konnte nicht gespeichert werden. ' +
+          'Wahrscheinlich ist der Speicher voll oder der private Modus aktiv. ' +
+          'Sichere deine Daten, bevor du weitermachst.',
+      }),
+    )
+
     // Die Entscheidung, was übernommen und was zurückgeschrieben wird,
     // liegt in `startup.ts` — dort ist sie ohne IndexedDB prüfbar.
-    const { state, persist } = startzustand(await loadState(), uid)
+    const { state, persist, error } = startzustand(await loadState(), uid)
     if (persist) saveState(state)
-    set({ ...state, ready: true })
+    set({ ...state, ready: true, storageError: error ?? null })
     applyTheme(state.settings.theme)
   },
+
+  dismissStorageError: () => set({ storageError: null }),
 
   // ── Bohnen ──
   addBean: (b) => {

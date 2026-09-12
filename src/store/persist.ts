@@ -65,6 +65,23 @@ export async function loadState(): Promise<LoadResult> {
 let writeTimer: ReturnType<typeof setTimeout> | null = null
 let pending: AppState | null = null
 
+/**
+ * Wer erfahren will, dass das Schreiben fehlschlug.
+ *
+ * Vorher landete so ein Fehler in `console.error` und sonst nirgends: Die
+ * App tat weiter so, als sei gespeichert — bei vollem Speicher, im
+ * privaten Modus oder mit beschädigter Datenbank. Wer es merkt, merkt es
+ * erst, wenn die Daten fehlen.
+ *
+ * Bewusst ein Rückruf und kein Import des Stores: `persist.ts` darf nichts
+ * über den Store wissen, sonst zeigen beide Module aufeinander.
+ */
+let meldeFehler: ((e: unknown) => void) | null = null
+
+export function onPersistError(fn: (e: unknown) => void): void {
+  meldeFehler = fn
+}
+
 /** Gebündeltes Schreiben — die UI soll nie auf die Platte warten. */
 export function saveState(state: AppState): void {
   pending = state
@@ -81,6 +98,10 @@ export async function flush(): Promise<void> {
     await d.put(STORE, snapshot, KEY)
   } catch (e) {
     console.error('[persist] Speichern fehlgeschlagen', e)
+    // Zurücklegen: Beim nächsten Versuch soll derselbe Stand noch einmal
+    // geschrieben werden, statt verloren zu sein.
+    if (!pending) pending = snapshot
+    meldeFehler?.(e)
   }
 }
 
