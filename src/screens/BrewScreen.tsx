@@ -17,12 +17,10 @@ import { diagnose, type Diagnosis } from '@/engine/diagnose'
 import { checkRun, type RunCheck } from '@/engine/runcheck'
 import { fmtSpanne } from '@/engine/text'
 import { assessFreshness } from '@/engine/freshness'
-import GrinderDial from '@/components/GrinderDial'
-import SageGrindDial from '@/components/SageGrindDial'
 import { consistencyWarning, brewsUntilPersonal } from '@/engine/learn'
 import { suitability, SUITABILITY_LABEL, bestMethodFor } from '@/engine/suitability'
 import { ratioTone, ratioLabel, RATIO_ANCHOR } from '@/engine/ratio'
-import { grindPlausibility, formatSetting, vendorRange } from '@/engine/grinder'
+import { grindPlausibility, formatSetting } from '@/engine/grinder'
 import { MethodIcon, BrewButton } from '@/components/methodicons'
 import {
   GRINDER_CATALOG,
@@ -30,15 +28,15 @@ import {
   grindersForMethod,
   targetTimeRange,
   beverageYield,
-  isImmersion,
   tempAdjustable,
   tempRange,
 } from '@/kb'
-import { METHODS, METHOD_LABEL, METHOD_SHORT, DEFECT_LABEL, COMMON_DEFECTS, CHARACTER_LABEL, COMMON_CHARACTERS, FLOW_LABEL, FLOW_CHOICES, PUCK_LABEL, PUCK_CHOICES, BLOOM_LABEL, BLOOM_CHOICES, SPEED_CHOICES, speedLabel, speedQuestion } from '@/labels'
+import { METHODS, METHOD_LABEL, METHOD_SHORT } from '@/labels'
 import {
-  Screen, Header, Section, Card, Button, Chip, SegmentedControl, Stepper, Field, Sheet,
-  InfoDot, Triad, MetaRow, fmtClock, num
+  Screen, Header, Section, Card, Button, SegmentedControl, Stepper, Field, InfoDot, Triad, MetaRow, fmtClock, num
 } from '@/components/ui'
+import { PhaseLaufkontrolle, PhaseVerkosten, PhaseErgebnis } from './brewphases'
+import { Mahlwerk, WerteAnpassen, Beobachtungen } from './brewinputs'
 
 /**
  * Der Kernloop ist zweistufig geworden.
@@ -238,9 +236,6 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
   // Am Handfilter und an der AeroPress läuft die Uhr in Minuten:Sekunden,
   // beim Espresso in nackten Sekunden — ein Shot dauert nie eine Minute.
   const alsUhr = !isEspresso
-  // Bei Immersion ist die Zeit gewählt, nicht Ergebnis (kb/10b §1). Das
-  // ändert die Frage, die im Auswertungsschritt gestellt wird.
-  const immersion = isImmersion(method)
   const isPro = s.settings.mode === 'pro'
   const catalogEntry = GRINDER_CATALOG.find(
     (g) => g.id === grinder?.catalogId || g.name === grinder?.name,
@@ -609,57 +604,16 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
               ein Empfehlungstext, das Rad und darunter noch eine
               Übersichtsskala waren fünf Elemente für einen einzigen Wert. */}
           {grinder && (
-            <Section>
-              <div ref={mahlwerkRef} className="scroll-mt-20">
-              {/* Der Umschalter erscheint nur, wo es wirklich zwei Mühlen
-                  gibt — beim Siebträger mit verbautem Mahlwerk. */}
-              {grinderChoices.length > 1 && (
-                <div className="mb-3">
-                  <SegmentedControl
-                    value={grinder.id}
-                    onChange={(id) => setGrinderId(method, id)}
-                    options={grinderChoices.map((g) => ({
-                      value: g.id,
-                      label:
-                        GRINDER_CATALOG.find((c) => c.id === g.catalogId)?.shortName ?? g.name,
-                    }))}
-                  />
-                </div>
-              )}
-
-              {grinder.scaleType === 'stepless' ? (
-                <SageGrindDial
-                  value={grindVal}
-                  onChange={setGrindVal}
-                  max={grinder.usableRange?.[1] ?? 18}
-                  step={grinder.step ?? 0.5}
-                  highlight={(() => {
-                    const v = vendorRange(grinder, method)
-                    return v
-                      ? { range: v.clicks as [number, number], label: METHOD_LABEL[method] }
-                      : undefined
-                  })()}
-                />
-              ) : (
-                <GrinderDial
-                  clicks={grindVal}
-                  onChange={setGrindVal}
-                  clicksPerNumber={grinder.clicksPerNumber ?? 10}
-                  maxNumber={Math.round(
-                    (grinder.usableRange?.[1] ?? 100) / (grinder.clicksPerNumber ?? 10),
-                  )}
-                  ringLabels={catalogEntry?.ringLabels}
-                  wordmark={catalogEntry?.wordmark}
-                  highlight={(() => {
-                    const v = vendorRange(grinder, method)
-                    return v
-                      ? { range: v.clicks, label: METHOD_LABEL[method], derived: v.isDerived }
-                      : undefined
-                  })()}
-                />
-              )}
-              </div>
-            </Section>
+            <Mahlwerk
+              method={method}
+              grinder={grinder}
+              grinderChoices={grinderChoices}
+              setGrinderId={setGrinderId}
+              grindVal={grindVal}
+              setGrindVal={setGrindVal}
+              catalogEntry={catalogEntry}
+              mahlwerkRef={mahlwerkRef}
+            />
           )}
 
           {/* Der Lernhinweis stand zwischen Vorschlag und Startknopf und
@@ -678,38 +632,20 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
           )}
 
           {showTweak && (
-            <Sheet title="Werte anpassen" onClose={() => setShowTweak(false)}>
-              <div className="space-y-4">
-                <Field label="Dose" term="dose">
-                  <Stepper value={doseG} onChange={changeDose} step={0.1} min={5} max={30} unit="g" decimals={1} label="Dose" />
-                </Field>
-                {isEspresso ? (
-                  <Field label="Ziel-Yield" term="yield">
-                    <Stepper value={yieldG} onChange={setYieldG} step={0.1} min={10} max={90} unit="g" decimals={1} label="Ziel-Yield" />
-                  </Field>
-                ) : (
-                  <Field label="Wasser" hint={`Verhältnis 1:${num(waterG / doseG)}`}>
-                    <Stepper value={waterG} onChange={setWaterG} step={1} min={80} max={900} unit="g" label="Wasser" />
-                  </Field>
-                )}
-                {tempFrei ? (
-                  <Field label="Temp">
-                    <Stepper value={tempC} onChange={setTempC} step={1} min={70} max={100} unit="°C" label="Temp" />
-                  </Field>
-                ) : (
-                  <Field label="Temp" hint={`${tempSpanne.min}–${tempSpanne.max} °C, geräteseitig`}>
-                    <p className="text-[15px] leading-snug text-mute">
-                      Die Maschine brüht mit ihrer eigenen Temperatur. Wenn der Kaffee bitter wird,
-                      hilft hier nicht kühler, sondern gröber oder eine weitere Ratio.
-                    </p>
-                  </Field>
-                )}
-                <p className="border-t border-line pt-3 text-[13px] leading-snug text-faint">
-                  Der Mahlgrad hat sein eigenes Rad auf der Seite darunter — dort sieht man, wo er
-                  in der Skala der Mühle liegt.
-                </p>
-              </div>
-            </Sheet>
+            <WerteAnpassen
+              isEspresso={isEspresso}
+              doseG={doseG}
+              changeDose={changeDose}
+              yieldG={yieldG}
+              setYieldG={setYieldG}
+              waterG={waterG}
+              setWaterG={setWaterG}
+              tempC={tempC}
+              setTempC={setTempC}
+              tempFrei={tempFrei}
+              tempSpanne={tempSpanne}
+              setShowTweak={setShowTweak}
+            />
           )}
         </>
       )}
@@ -832,82 +768,21 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
             </Card>
           </Section>
 
-          {/* Die einzige Beobachtung, die bei der French Press zählt: Der
-              Fehler passiert nach dem Brühen, nicht währenddessen. */}
-          {method === 'frenchpress' && (
-            <Section title="Nach dem Pressen" action={<InfoDot termId="decant" />}>
-              <div className="flex flex-wrap gap-2">
-                <Chip
-                  label="Sofort umgefüllt"
-                  active={decanted === true}
-                  tone="good"
-                  onClick={() => setDecanted(decanted === true ? undefined : true)}
-                />
-                <Chip
-                  label="Stand in der Kanne"
-                  active={decanted === false}
-                  tone="bad"
-                  onClick={() => setDecanted(decanted === false ? undefined : false)}
-                />
-              </div>
-            </Section>
-          )}
-
-          {isEspresso && (
-            <>
-              <Section title="Flow" action={<InfoDot termId="flow-state" />}>
-                <div className="flex flex-wrap gap-2">
-                  {FLOW_CHOICES.map((f) => (
-                    <Chip
-                      key={f}
-                      label={FLOW_LABEL[f]}
-                      active={flow === f}
-                      tone={f === 'normal' ? 'good' : 'bad'}
-                      onClick={() => setFlow(flow === f ? undefined : f)}
-                    />
-                  ))}
-                </div>
-              </Section>
-              {isPro && (
-              <Section title="Puck" action={<InfoDot termId="puck" />}>
-                <div className="flex flex-wrap gap-2">
-                  {PUCK_CHOICES.map((p) => (
-                    <Chip
-                      key={p}
-                      label={PUCK_LABEL[p]}
-                      active={puck === p}
-                      tone={p === 'even' ? 'good' : 'bad'}
-                      onClick={() => setPuck(puck === p ? undefined : p)}
-                    />
-                  ))}
-                </div>
-              </Section>
-              )}
-            </>
-          )}
-
-          {method === 'v60' && (
-            <>
-              <Section title="Bloom" action={<InfoDot termId="bloom" />}>
-                <div className="flex flex-wrap gap-2">
-                  {BLOOM_CHOICES.map((b) => (
-                    <Chip
-                      key={b}
-                      label={BLOOM_LABEL[b]}
-                      active={bloom === b}
-                      tone={b === 'moderate' ? 'good' : 'bad'}
-                      onClick={() => setBloom(bloom === b ? undefined : b)}
-                    />
-                  ))}
-                </div>
-              </Section>
-              {isPro && (
-                <Section title="Drawdown" action={<InfoDot termId="drawdown" />}>
-                  <Stepper value={drawdown} onChange={setDrawdown} step={5} min={0} max={180} unit="s" />
-                </Section>
-              )}
-            </>
-          )}
+          <Beobachtungen
+            method={method}
+            isEspresso={isEspresso}
+            isPro={isPro}
+            decanted={decanted}
+            setDecanted={setDecanted}
+            flow={flow}
+            setFlow={setFlow}
+            puck={puck}
+            setPuck={setPuck}
+            bloom={bloom}
+            setBloom={setBloom}
+            drawdown={drawdown}
+            setDrawdown={setDrawdown}
+          />
 
           <Section>
             {!elapsedTouched && (
@@ -927,378 +802,37 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
           Stufe eins von zwei: Was die Uhr sagt, braucht keinen
           Geschmackseindruck. Erst danach das Tasting. */}
       {phase === 'check' && run && (
-        <>
-          <Section title="Der Durchlauf">
-            <Card>
-              <Triad
-                items={[
-                  {
-                    label: 'Zeit',
-                    value: alsUhr ? fmtClock(elapsed) : String(elapsed),
-                    unit: alsUhr ? 'min' : 's',
-                    tone:
-                      run.band === 'onTarget'
-                        ? 'ok'
-                        : run.band === 'fast' || run.band === 'slow'
-                          ? 'warn'
-                          : run.band === 'unknown'
-                            ? undefined
-                            : 'bad',
-                  },
-                  { label: 'Ziel', ...(run.targetS ? zielZeit(run.targetS) : { value: '—' }) },
-                  {
-                    label: 'Delta',
-                    // Dieselbe Einheit wie in den Spalten daneben: „+265 s"
-                    // neben „9:00 min" müsste man im Kopf umrechnen.
-                    // Echtes Minuszeichen, weil der Bindestrich in einer
-                    // Ziffernkolonne zu kurz ist und zu tief sitzt.
-                    value:
-                      run.deltaS === null
-                        ? '—'
-                        : `${run.deltaS > 0 ? '+' : run.deltaS < 0 ? '−' : ''}${
-                            alsUhr ? fmtClock(Math.abs(run.deltaS)) : Math.abs(run.deltaS)
-                          }`,
-                    unit: run.deltaS === null ? undefined : alsUhr ? 'min' : 's',
-                    tone: run.band === 'onTarget' ? 'ok' : run.deltaS === null ? undefined : 'warn',
-                  },
-                ]}
-              />
-
-              {/* Beim Espresso ist der Fluss die aussagekräftigere Größe:
-                  Er trennt „lange gelaufen" von „viel ausgebracht". */}
-              {isEspresso && run.flowRateGs !== null && run.targetFlowGs !== null && (
-                <div className="mt-4 border-t border-line pt-3">
-                  <MetaRow
-                    items={[
-                      { label: 'Fluss', value: `${num(run.flowRateGs, 2)} g/s`, term: 'flow-rate' },
-                      { label: 'Ziel', value: `${num(run.targetFlowGs, 2)} g/s` },
-                      { label: 'Ratio', value: `1:${num(ratioLive)}`, tone: ratioTon, term: 'ratio' },
-                    ]}
-                  />
-                </div>
-              )}
-            </Card>
-          </Section>
-
-          {/* Der eigene Eindruck ist das zweite, unabhängige Signal. Bei
-              Immersion fließt nichts durch ein Bett — dort ist die Frage
-              der Widerstand am Kolben, nicht die Geschwindigkeit. */}
-          <Section
-            title={speedQuestion(immersion)}
-            action={<span className="text-[12px] text-faint">optional</span>}
-          >
-            <div className="flex flex-wrap gap-2">
-              {SPEED_CHOICES.map((f) => (
-                <Chip
-                  key={f}
-                  label={speedLabel(f, immersion)}
-                  tone={f === 'onPoint' ? 'good' : 'bad'}
-                  active={speedFeel === f}
-                  onClick={() => setSpeedFeel(speedFeel === f ? undefined : f)}
-                />
-              ))}
-            </div>
-            <p className="mt-2 text-[13px] leading-snug text-faint">
-              Deckt sich dein Eindruck mit der Uhr, steigt die Konfidenz der Empfehlung.
-              Widerspricht er ihr, ist genau das der Befund.
-            </p>
-          </Section>
-
-          {/* Befund und Empfehlung in einer Karte: Getrennt stünde über
-              der Empfehlung eine Karte, die nur eine Überschrift enthält —
-              der Befund selbst steckt schon in der Begründung. */}
-          <Section title="Einschätzung">
-            {run.suggestion ? (
-              <SuggestionCard
-                s={run.suggestion}
-                kicker={run.headline}
-                notes={run.notes}
-                onApply={uebernehmen(run.suggestion)}
-              />
-            ) : (
-              <RunCard run={run} />
-            )}
-          </Section>
-
-          <Section>
-            <Button size="lg" className="w-full" onClick={() => setPhase('taste')}>
-              Weiter zum Tasting
-            </Button>
-            {/* Wer nur eingemessen hat, muss nicht verkosten, um die
-                Zeitkorrektur zu bekommen — Phase C vor Phase D. */}
-            <Button variant="secondary" className="mt-2 w-full" onClick={runDiagnosis}>
-              Ohne Tasting abschließen
-            </Button>
-          </Section>
-        </>
+        <PhaseLaufkontrolle
+          method={method}
+          run={run}
+          elapsed={elapsed}
+          ratioLive={ratioLive}
+          zielZeit={zielZeit}
+          speedFeel={speedFeel}
+          setSpeedFeel={setSpeedFeel}
+          uebernehmen={uebernehmen}
+          weiter={() => setPhase('taste')}
+          auswerten={runDiagnosis}
+        />
       )}
 
       {/* ══ VERKOSTEN ══ */}
       {phase === 'taste' && (
-        <>
-          <Section title="Rating">
-            <div className="flex justify-center gap-2 py-2">
-              {[1, 2, 3, 4, 5].map((n) => (
-                <button
-                  key={n}
-                  onClick={() => setRating(n)}
-                  aria-label={`${n} von 5`}
-                  className={`flex h-14 w-14 items-center justify-center rounded-2xl text-[28px] transition-colors ${
-                    n <= rating ? 'text-crema' : 'text-line'
-                  }`}
-                >
-                  ★
-                </button>
-              ))}
-            </div>
-          </Section>
-
-          <Section title="Defects" action={<span className="text-[12px] text-faint">löst Korrekturen aus</span>}>
-            <div className="flex flex-wrap gap-2">
-              {COMMON_DEFECTS.map((d) => (
-                <Chip
-                  key={d}
-                  label={DEFECT_LABEL[d]}
-                  tone="bad"
-                  active={defects.includes(d)}
-                  onClick={() =>
-                    setDefects((x) => (x.includes(d) ? x.filter((y) => y !== d) : [...x, d]))
-                  }
-                />
-              ))}
-            </div>
-            <p className="mt-2 text-[12px] text-faint">
-              Nichts angetippt ist der Normalfall bei einem guten Kaffee.
-            </p>
-          </Section>
-
-          <Section title="Notes" action={<span className="text-[12px] text-faint">nur beschreibend</span>}>
-            <div className="flex flex-wrap gap-2">
-              {COMMON_CHARACTERS.map((c) => (
-                <Chip
-                  key={c}
-                  label={CHARACTER_LABEL[c] ?? c}
-                  active={characters.includes(c)}
-                  onClick={() =>
-                    setCharacters((x) => (x.includes(c) ? x.filter((y) => y !== c) : [...x, c]))
-                  }
-                />
-              ))}
-            </div>
-          </Section>
-
-          <Section>
-            <Button size="lg" className="w-full" disabled={rating === 0} onClick={runDiagnosis}>
-              Auswerten
-            </Button>
-            {/* Ein Knopf, der nichts tut und nicht sagt warum, ist der
-                häufigste Grund, eine App wegzulegen. */}
-            {rating === 0 && (
-              <p className="mt-2 text-center text-[13px] text-faint">
-                Erst die Sterne — ohne Bewertung weiß die App nicht, ob eine Korrektur geholfen hat.
-              </p>
-            )}
-          </Section>
-        </>
+        <PhaseVerkosten
+          rating={rating}
+          setRating={setRating}
+          defects={defects}
+          setDefects={setDefects}
+          characters={characters}
+          setCharacters={setCharacters}
+          auswerten={runDiagnosis}
+        />
       )}
 
       {/* ══ ERGEBNIS ══ */}
       {phase === 'result' && result && (
-        <>
-          {/* Stufe eins bleibt sichtbar. Ohne sie stünde auf der
-              Ergebnisseite eine Empfehlung ohne die Zahl, aus der sie
-              entstanden ist — und der Nutzer müsste glauben statt prüfen. */}
-          {result.run && (
-            <Section title="Laufkontrolle">
-              {/* Gleiche Regel wie im Auswertungsschritt: Der Befund steht
-                  dort, wo er nicht doppelt steht — in der Karte, solange
-                  keine Empfehlung ihn ohnehin begründet. */}
-              <RunCard run={result.run} compact withSummary={!result.suggestions.length} />
-            </Section>
-          )}
-
-          {/* Mündet die Sensorik in eine Empfehlung, sagt diese Karte
-              nichts, was nicht unten in der Empfehlung steht — dann bleibt
-              sie weg. Eine Stufe, eine Karte. */}
-          {result.suggestions.length === 0 && (
-          <Section title={result.run ? 'Mit dem Geschmack' : undefined}>
-            <Card tone={result.blocked ? 'warn' : 'default'}>
-              <p className="text-[19px] leading-tight font-semibold">{result.headline}</p>
-              <p className="mt-2 text-[15px] leading-relaxed text-mute">{result.summary}</p>
-
-              {result.techniqueSteps && (
-                <ol className="mt-3 space-y-1.5 border-t border-line pt-3">
-                  {result.techniqueSteps.map((t, i) => (
-                    <li key={i} className="flex gap-2 text-[14px] leading-snug">
-                      <span className="text-crema">{i + 1}.</span>
-                      <span>{t}</span>
-                    </li>
-                  ))}
-                </ol>
-              )}
-              {result.checklist && (
-                <ul className="mt-3 space-y-1 border-t border-line pt-3">
-                  {result.checklist.map((t, i) => (
-                    <li key={i} className="text-[14px] text-mute">· {t}</li>
-                  ))}
-                </ul>
-              )}
-              {result.escalation && (
-                <ul className="mt-3 space-y-1 border-t border-line pt-3">
-                  {result.escalation.map((t, i) => (
-                    <li key={i} className="text-[14px] text-mute">→ {t}</li>
-                  ))}
-                </ul>
-              )}
-            </Card>
-          </Section>
-          )}
-
-          {result.suggestions.map((sg) => (
-            // „Empfehlung", nicht „Mit dem Geschmack": Bei einer gut
-            // bewerteten Tasse ohne Fehlertag stammt sie allein aus der
-            // Zeit — die Überschrift hätte dann das Falsche behauptet.
-            <Section key={sg.ruleId} title="Empfehlung">
-              <SuggestionCard s={sg} kicker={result.headline} onApply={uebernehmen(sg)} />
-            </Section>
-          ))}
-
-          {result.saveAsReference && (
-            <Section>
-              <Card tone="accent">
-                <p className="text-[15px]">Das war gut. Als Referenz für diese Bohne merken?</p>
-                <Button
-                  className="mt-3 w-full"
-                  onClick={() => {
-                    const latest = useStore.getState().brews[0]
-                    if (latest) useStore.getState().setBestBrew(latest.id)
-                    back()
-                  }}
-                >
-                  Als Referenz speichern
-                </Button>
-              </Card>
-            </Section>
-          )}
-
-          <Section>
-            {/* „Fertig" heißt fertig — zurück zu den Bohnen. Den nächsten
-                Durchgang startet „Übernehmen und nochmal" in der Empfehlung;
-                ein zweiter Wiederholen-Knopf hier wäre dieselbe Absicht an
-                zwei Orten. */}
-            <Button variant="secondary" size="lg" className="w-full" onClick={back}>
-              Fertig
-            </Button>
-          </Section>
-        </>
+        <PhaseErgebnis result={result} uebernehmen={uebernehmen} back={back} />
       )}
     </Screen>
-  )
-}
-
-/**
- * Die Laufkontrolle als Karte.
- *
- * Zwei Auftritte, ein Bauteil: ausführlich im Auswertungsschritt, knapp
- * auf der Ergebnisseite. Zweimal dasselbe zu formulieren hieße, dass die
- * beiden Ansichten irgendwann auseinanderlaufen.
- */
-function RunCard({
-  run,
-  compact,
-  withSummary = true,
-}: {
-  run: RunCheck
-  compact?: boolean
-  /** Aus, wenn darunter eine Empfehlung denselben Befund begründet. */
-  withSummary?: boolean
-}) {
-  return (
-    <Card tone={run.timeUsable ? (run.suggestion ? 'accent' : 'default') : 'warn'}>
-      <p className={`${compact ? 'text-[16px]' : 'text-[19px]'} leading-tight font-semibold`}>
-        {run.headline}
-      </p>
-      {withSummary && (
-        <p className={`mt-2 ${compact ? 'text-[13px]' : 'text-[15px]'} leading-relaxed text-mute`}>
-          {run.summary}
-        </p>
-      )}
-
-      {run.techniqueSteps && (
-        <ol className="mt-3 space-y-1.5 border-t border-line pt-3">
-          {run.techniqueSteps.map((t, i) => (
-            <li key={i} className="flex gap-2 text-[14px] leading-snug">
-              <span className="text-crema">{i + 1}.</span>
-              <span>{t}</span>
-            </li>
-          ))}
-        </ol>
-      )}
-
-      <RunNotes notes={run.notes} />
-    </Card>
-  )
-}
-
-/**
- * Die Nebenbefunde ändern die Empfehlung nicht, sie erklären sie — oder
- * warnen davor, die Ursache am falschen Ort zu suchen.
- */
-function RunNotes({ notes }: { notes: RunCheck['notes'] }) {
-  if (!notes.length) return null
-  return (
-    <ul className="mt-3 space-y-1.5 border-t border-line pt-3">
-      {notes.map((n, i) => (
-        <li
-          key={i}
-          className={`text-[13px] leading-snug ${
-            n.tone === 'warn' ? 'text-warn' : n.tone === 'good' ? 'text-ok' : 'text-mute'
-          }`}
-        >
-          {n.tone === 'good' ? '✓ ' : n.tone === 'warn' ? '! ' : '· '}
-          {n.text}
-        </li>
-      ))}
-    </ul>
-  )
-}
-
-/**
- * Eine Empfehlung, fünf Elemente (kb/14 §8): was, warum, Erwartung,
- * Konfidenz, Alternative. Die Erwartung ist der wichtigste Teil — sie
- * macht die App überprüfbar.
- */
-function SuggestionCard({
-  s,
-  kicker,
-  notes,
-  onApply,
-}: {
-  s: Diagnosis['suggestions'][number]
-  /** Der Befund über der Maßnahme — „Zu schnell durchgelaufen". */
-  kicker?: string
-  notes?: RunCheck['notes']
-  onApply?: () => void
-}) {
-  return (
-    <Card tone="accent">
-      {kicker && (
-        <p className="mb-1 text-[13px] font-medium tracking-wide text-mute uppercase">{kicker}</p>
-      )}
-      <p className="text-[22px] leading-tight font-semibold text-crema">{s.what}</p>
-      <p className="mt-2 text-[15px] leading-relaxed">{s.why}</p>
-      <div className="mt-3 rounded-xl border border-line bg-raised p-3">
-        <p className="text-[12px] font-medium tracking-wide text-mute uppercase">Erwartung</p>
-        <p className="mt-1 text-[14px] leading-snug">{s.expectation}</p>
-      </div>
-      <p className="mt-2 text-[12px] text-faint">Konfidenz: {s.confidence}</p>
-      {s.alternative && <p className="mt-2 text-[13px] text-mute">{s.alternative}</p>}
-      {notes && <RunNotes notes={notes} />}
-      {onApply && (
-        <Button className="mt-4 w-full" onClick={onApply}>
-          Übernehmen und nochmal
-        </Button>
-      )}
-    </Card>
   )
 }
