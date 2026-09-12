@@ -8,12 +8,13 @@ import { useEffect, useState } from 'react'
 import type { Route } from '@/router'
 import { useStore, selectActiveGrinder, selectSnapshot, uid } from '@/store'
 import type { BrewMethod } from '@domain'
-import type { AppMode } from '@/domain'
+import type { AppMode, AppState } from '@/domain'
 import { levelForMode, PRO_FEATURES } from '@/domain'
 import { GRINDER_CATALOG, GLOSSARY, termsForLevel } from '@/kb'
 import { grinderFromCatalog, calibrate, suggestedSetting, formatSetting } from '@/engine/grinder'
 import { METHODS, METHOD_LABEL } from '@/labels'
 import { shareBackup, parseBackup, storageEstimate, requestPersistence } from '@/store/persist'
+import { importplan, bestandssatz } from '@/store/importplan'
 import { APP_NAME, APP_BUILD, BACKUP_REMINDER_DAYS } from '@/config'
 import {
   Screen, Header, Section, Card, Button, Field, Select, Sheet, Stepper,
@@ -518,23 +519,90 @@ function GlossarySheet({ onClose }: { onClose: () => void }) {
 
 // ── Wiederherstellen ──────────────────────────────────────────────────
 
+/**
+ * Wiederherstellen in zwei Schritten.
+ *
+ * Vorher war es einer: Datei wählen, `confirm()`, ersetzt. Der Text darin
+ * lautete „Alle aktuellen Daten werden durch die Sicherung ersetzt." — und
+ * sagte damit nichts, woran jemand den falschen Griff bemerken könnte. Wer
+ * drei Sicherungen im Ordner hat, greift irgendwann daneben, und für eine
+ * App ohne Server ist das der zweite Weg, alles zu verlieren (F-08).
+ *
+ * Jetzt steht zwischen Datei und Ersetzen ein Bildschirm mit Zahlen, und
+ * der naheliegende Knopf sichert vorher. Der Weg ohne Sicherung bleibt —
+ * nur ist er nicht mehr der bequemste.
+ */
 function ImportSheet({ onClose }: { onClose: () => void }) {
   const replace = useStore((s) => s.replaceState)
   const [err, setErr] = useState<string | null>(null)
+  const [neu, setNeu] = useState<AppState | null>(null)
+  const [busy, setBusy] = useState(false)
 
   const onFile = async (file: File) => {
+    setErr(null)
     const parsed = parseBackup(await file.text())
     if ('error' in parsed) { setErr(parsed.error); return }
-    if (confirm('Alle aktuellen Daten werden durch die Sicherung ersetzt. Fortfahren?')) {
-      replace(parsed.state)
-      onClose()
+    setNeu(parsed.state)
+  }
+
+  const ersetzen = async (vorherSichern: boolean) => {
+    if (!neu) return
+    setBusy(true)
+    if (vorherSichern) {
+      try {
+        await shareBackup(selectSnapshot(useStore.getState()))
+      } catch {
+        // Abbrechen ist kein Fehler, aber „nicht gesichert" darf nicht
+        // heimlich zu „trotzdem ersetzt" werden.
+        setErr('Die Sicherung ist nicht durchgelaufen. Es wurde nichts ersetzt.')
+        setBusy(false)
+        return
+      }
     }
+    replace(neu)
+    onClose()
+  }
+
+  if (neu) {
+    const plan = importplan(selectSnapshot(useStore.getState()), neu)
+    return (
+      <Sheet title="Wirklich ersetzen?" onClose={onClose}>
+        <div className="rounded-2xl border border-line bg-raised px-4 py-3">
+          <p className="text-[13px] text-mute">Jetzt auf diesem Gerät</p>
+          <p className="mt-0.5 text-[16px]">{bestandssatz(plan.alt)}</p>
+          <p className="mt-3 text-[13px] text-mute">Wird ersetzt durch</p>
+          <p className="mt-0.5 text-[16px]">{bestandssatz(plan.neu)}</p>
+        </div>
+
+        {plan.warnung && (
+          <p className="mt-3 rounded-2xl border border-bad/40 bg-bad/10 px-4 py-3 text-[14px] leading-relaxed">
+            {plan.warnung}
+          </p>
+        )}
+
+        {err && <p className="mt-3 text-[14px] text-bad">{err}</p>}
+
+        <div className="mt-5 flex flex-col gap-2">
+          <Button disabled={busy} onClick={() => void ersetzen(true)}>
+            Erst sichern, dann ersetzen
+          </Button>
+          <Button variant="ghost" disabled={busy} onClick={() => void ersetzen(false)}>
+            Ohne Sicherung ersetzen
+          </Button>
+        </div>
+        <p className="mt-3 text-[13px] leading-relaxed text-faint">
+          Der Weg zurück führt nur über eine Sicherung. Es gibt keinen Server, von dem
+          sich etwas zurückholen ließe.
+        </p>
+      </Sheet>
+    )
   }
 
   return (
     <Sheet title="Wiederherstellen" onClose={onClose}>
       <p className="text-[15px] leading-relaxed text-mute">
-        Wähle eine zuvor gesicherte Datei. Der aktuelle Bestand wird dabei vollständig ersetzt.
+        Wähle eine zuvor gesicherte Datei. Bevor etwas ersetzt wird, siehst du, was geht
+        und was kommt.
       </p>
       <label className="mt-5 flex h-32 cursor-pointer items-center justify-center rounded-2xl border border-dashed border-line text-[15px] text-mute">
         Datei wählen
