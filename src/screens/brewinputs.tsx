@@ -163,13 +163,13 @@ export function WerteAnpassen({
                 </Field>
               ) : (
                 <Field label="Temp" hint={`${tempSpanne.min}–${tempSpanne.max} °C, geräteseitig`}>
-                  <p className="text-[15px] leading-snug text-mute">
+                  <p className="text-lg leading-snug text-mute">
                     Die Maschine brüht mit ihrer eigenen Temperatur. Wenn der Kaffee bitter wird,
                     hilft hier nicht kühler, sondern gröber oder eine weitere Ratio.
                   </p>
                 </Field>
               )}
-              <p className="border-t border-line pt-3 text-[13px] leading-snug text-faint">
+              <p className="border-t border-line pt-3 text-sm leading-snug text-faint">
                 Der Mahlgrad hat sein eigenes Rad auf der Seite darunter — dort sieht man, wo er
                 in der Skala der Mühle liegt.
               </p>

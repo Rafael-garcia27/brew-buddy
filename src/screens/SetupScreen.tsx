@@ -77,7 +77,7 @@ export default function SetupScreen({ route, back }: Props) {
               { value: 'pro', label: 'Pro' },
             ]}
           />
-          <p className="mt-3 text-[14px] leading-snug text-mute">
+          <p className="mt-3 text-base leading-snug text-mute">
             {isPro
               ? 'Alles sichtbar. Zurück auf Basis blendet die Zusätze wieder aus — deine Daten bleiben erhalten.'
               : 'Alles Nötige, nichts weiter. Pro schaltet zusätzlich frei:'}
@@ -85,7 +85,7 @@ export default function SetupScreen({ route, back }: Props) {
           {!isPro && (
             <ul className="mt-2 space-y-1.5">
               {PRO_FEATURES.map((f) => (
-                <li key={f.id} className="text-[14px] leading-snug">
+                <li key={f.id} className="text-base leading-snug">
                   <span className="text-crema">{f.label}</span>
                   <span className="text-mute"> — {f.hint}</span>
                 </li>
@@ -102,7 +102,7 @@ export default function SetupScreen({ route, back }: Props) {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="font-medium">{grinder.name}</p>
-                <p className="mt-0.5 text-[13px] text-mute">
+                <p className="mt-0.5 text-sm text-mute">
                   {num(grinder.micronPerStep)} µm pro Schritt ·{' '}
                   {grinder.confidence === 'measured'
                     ? 'selbst eingemessen'
@@ -140,8 +140,8 @@ export default function SetupScreen({ route, back }: Props) {
               .filter((g) => g.id !== grinder.id)
               .map((g) => (
                 <div key={g.id} className="mt-4 border-t border-line pt-3">
-                  <p className="text-[15px] font-medium">{g.name}</p>
-                  <p className="mt-0.5 text-[13px] text-mute">
+                  <p className="text-lg font-medium">{g.name}</p>
+                  <p className="mt-0.5 text-sm text-mute">
                     {g.methods?.length === 1
                       ? `Nur für ${METHOD_LABEL[g.methods[0]!]} — im Brühen-Menü umschaltbar.`
                       : 'Im Brühen-Menü umschaltbar.'}
@@ -152,7 +152,7 @@ export default function SetupScreen({ route, back }: Props) {
 
             {grinder.confidence !== 'measured' && (
               <div className="mt-4 rounded-xl border border-crema/30 bg-crema/5 p-3">
-                <p className="text-[14px] leading-snug">
+                <p className="text-base leading-snug">
                   Diese Schrittweite ist ein Startwert. Zwei Shots reichen, um sie für{' '}
                   <em>deine</em> Mühle exakt zu bestimmen — danach kommen alle Empfehlungen in
                   echten Klicks.
@@ -165,7 +165,7 @@ export default function SetupScreen({ route, back }: Props) {
           </Card>
         ) : (
           <Card tone="warn">
-            <p className="text-[15px] leading-snug">
+            <p className="text-lg leading-snug">
               Noch keine Mühle eingerichtet. Ohne sie kann ich nur sagen „12 % gröber“ statt
               „3 Klicks gröber“.
             </p>
@@ -183,11 +183,11 @@ export default function SetupScreen({ route, back }: Props) {
           {s.waters[0] ? (
             <>
               <p className="font-medium">{s.waters[0].label}</p>
-              <p className="mt-0.5 text-[13px] text-mute">
+              <p className="mt-0.5 text-sm text-mute">
                 GH {s.waters[0].ghMgL ?? '?'} · KH {s.waters[0].khMgL ?? '?'} mg/L
               </p>
               {(s.waters[0].khMgL ?? 0) > 80 && (
-                <p className="mt-2 text-[13px] text-warn">
+                <p className="mt-2 text-sm text-warn">
                   Hohe Karbonathärte — Kaffee schmeckt flach, auch wenn alles andere stimmt.
                 </p>
               )}
@@ -195,7 +195,7 @@ export default function SetupScreen({ route, back }: Props) {
           ) : (
             <>
               <p className="font-medium">Wasser eintragen</p>
-              <p className="mt-0.5 text-[13px] text-mute">
+              <p className="mt-0.5 text-sm text-mute">
                 Zwei Zahlen genügen. Sie erklären Fehler, die kein Mahlgrad behebt.
               </p>
             </>
@@ -207,7 +207,7 @@ export default function SetupScreen({ route, back }: Props) {
       {/* ── Datensicherung ── */}
       <Section title="Datensicherung">
         <Card tone={backupOverdue ? 'warn' : 'default'}>
-          <p className="text-[15px] leading-snug">
+          <p className="text-lg leading-snug">
             {backupOverdue
               ? 'Deine Historie ist ungesichert. iOS löscht die Daten einer PWA nach längerer Nichtnutzung — dann ist alles Gelernte weg.'
               : !hasData
@@ -220,7 +220,7 @@ export default function SetupScreen({ route, back }: Props) {
               Wiederherstellen
             </Button>
           </div>
-          <p className="mt-3 text-[12px] text-faint">
+          <p className="mt-3 text-xs text-faint">
             {s.brews.length === 1 ? '1 Brew' : `${s.brews.length} Brews`} ·{' '}
             {s.beans.length === 1 ? '1 Bohne' : `${s.beans.length} Bohnen`}
             {storage && ` · ${storage.usedKb} KB belegt`}
@@ -254,7 +254,7 @@ export default function SetupScreen({ route, back }: Props) {
                 onChange={(v) => s.setSettings({ showMeasurements: v })}
                 label="Refraktometer-Werte erfassen"
               />
-              <p className="mt-1 text-[12px] text-faint">
+              <p className="mt-1 text-xs text-faint">
                 Blendet TDS- und Extraktionsfelder beim Tasting ein.
               </p>
             </div>
@@ -269,8 +269,8 @@ export default function SetupScreen({ route, back }: Props) {
             {(Object.entries(s.learned.preference) as [BrewMethod, { statement?: string; sampleSize: number }][]).map(
               ([m, p]) => (
                 <Card key={m}>
-                  <p className="text-[13px] text-mute">{METHOD_LABEL[m]}</p>
-                  <p className="mt-1 text-[15px]">
+                  <p className="text-sm text-mute">{METHOD_LABEL[m]}</p>
+                  <p className="mt-1 text-lg">
                     {p.statement ??
                       `${p.sampleSize} gute ${p.sampleSize === 1 ? 'Tasse' : 'Tassen'} — noch zu wenig für ein Muster.`}
                   </p>
@@ -291,7 +291,7 @@ export default function SetupScreen({ route, back }: Props) {
       <Section title="Nachschlagen">
         <Card onClick={() => setSheet('glossary')}>
           <p className="font-medium">Glossar</p>
-          <p className="mt-0.5 text-[13px] text-mute">
+          <p className="mt-0.5 text-sm text-mute">
             {GLOSSARY.length} Begriffe, ohne Vorwissen erklärt
           </p>
         </Card>
@@ -299,19 +299,19 @@ export default function SetupScreen({ route, back }: Props) {
       )}
 
       <Section>
-        <p className="px-1 text-[12px] text-faint">
+        <p className="px-1 text-xs text-faint">
           {APP_NAME} · Alle Daten bleiben auf diesem Gerät. Keine Cloud, kein Konto, kein Tracking.
         </p>
         {/* Version, Commit und Baudatum: Ohne das lässt sich „bei mir tut
             X nicht" nicht auf einen Stand zurückführen — die Nummer allein
             steht seit dem ersten Tag auf 0.1.0. */}
-        <p className="mt-1 px-1 font-mono text-[11px] text-faint">
+        <p className="mt-1 px-1 font-mono text-2xs text-faint">
           {APP_BUILD.version} · {APP_BUILD.commit} · {APP_BUILD.built}
         </p>
       </Section>
 
       {toast && (
-        <div className="pb-safe fixed inset-x-4 bottom-24 z-40 rounded-2xl bg-raised px-4 py-3 text-center text-[15px] shadow-lg">
+        <div className="pb-safe fixed inset-x-4 bottom-24 z-40 rounded-2xl bg-raised px-4 py-3 text-center text-lg shadow-lg">
           {toast}
         </div>
       )}
@@ -365,7 +365,7 @@ function GrinderSheet({ onClose }: { onClose: () => void }) {
           }))}
         />
       </Field>
-      <p className="mt-4 text-[14px] leading-relaxed text-mute">
+      <p className="mt-4 text-base leading-relaxed text-mute">
         Die Schrittweiten im Katalog sind Startwerte. Fertigungstoleranzen und Verschleiß
         streuen erheblich — nach dem Einmessen rechnet die App mit deinen echten Werten.
       </p>
@@ -407,34 +407,34 @@ function CalibrateSheet({ onClose }: { onClose: () => void }) {
         )
       }
     >
-      <p className="text-[15px] leading-relaxed text-mute">
+      <p className="text-lg leading-relaxed text-mute">
         Zieh zwei Espressi mit derselben Bohne und derselben Dosis — einmal feiner, einmal
         gröber. Aus dem Zeitunterschied ergibt sich die tatsächliche Schrittweite deiner Mühle.
       </p>
-      <p className="mt-2 text-[13px] text-faint">
+      <p className="mt-2 text-sm text-faint">
         Wichtig: beide Shots ohne Channeling, Altersunterschied der Bohne unter drei Tagen.
       </p>
 
       <div className="mt-5 space-y-4">
         <div className="rounded-2xl border border-line p-3">
-          <p className="mb-3 text-[13px] font-semibold text-mute">Shot 1 — feiner</p>
+          <p className="mb-3 text-sm font-semibold text-mute">Shot 1 — feiner</p>
           <Field label="Grind-Einstellung"><Stepper value={s1} onChange={setS1} min={0} max={200} /></Field>
           <div className="mt-3"><Field label="Laufzeit"><Stepper value={t1} onChange={setT1} min={5} max={90} unit="s" /></Field></div>
         </div>
         <div className="rounded-2xl border border-line p-3">
-          <p className="mb-3 text-[13px] font-semibold text-mute">Shot 2 — gröber</p>
+          <p className="mb-3 text-sm font-semibold text-mute">Shot 2 — gröber</p>
           <Field label="Grind-Einstellung"><Stepper value={s2} onChange={setS2} min={0} max={200} /></Field>
           <div className="mt-3"><Field label="Laufzeit"><Stepper value={t2} onChange={setT2} min={5} max={90} unit="s" /></Field></div>
         </div>
       </div>
 
       {err && (
-        <div className="mt-4 rounded-xl border border-bad/40 bg-bad/10 p-3 text-[14px] text-bad">{err}</div>
+        <div className="mt-4 rounded-xl border border-bad/40 bg-bad/10 p-3 text-base text-bad">{err}</div>
       )}
       {res && (
         <div className="mt-4 rounded-xl border border-ok/40 bg-ok/10 p-3">
-          <p className="text-[14px] leading-snug">{res}</p>
-          <p className="mt-2 text-[13px] text-mute">
+          <p className="text-base leading-snug">{res}</p>
+          <p className="mt-2 text-sm text-mute">
             Ab jetzt kommen alle Empfehlungen in echten Klicks deiner Mühle.
           </p>
         </div>
@@ -470,7 +470,7 @@ function WaterSheet({ onClose }: { onClose: () => void }) {
         </Button>
       }
     >
-      <p className="text-[15px] leading-relaxed text-mute">
+      <p className="text-lg leading-relaxed text-mute">
         Zwei Werte genügen. Ein Tropfentest aus der Aquaristik kostet ein paar Euro und liefert
         beide in fünf Minuten. Ein TDS-Messgerät reicht dafür <em>nicht</em> — es misst
         Leitfähigkeit, keine Härte.
@@ -485,7 +485,7 @@ function WaterSheet({ onClose }: { onClose: () => void }) {
         </Field>
       </div>
       {kh > 80 && (
-        <div className="mt-4 rounded-xl border border-warn/40 bg-warn/10 p-3 text-[14px] text-warn">
+        <div className="mt-4 rounded-xl border border-warn/40 bg-warn/10 p-3 text-base text-warn">
           Bei dieser Karbonathärte schmeckt Kaffee flach, auch wenn Mahlgrad und Zeit stimmen.
           Das ist die häufigste unerkannte Fehlerursache überhaupt.
         </div>
@@ -510,13 +510,13 @@ function GlossarySheet({ onClose }: { onClose: () => void }) {
           <div key={t.id} className="border-b border-line pb-4 last:border-0">
             <p className="font-semibold">
               {t.term}
-              {t.unit && <span className="ml-1 text-[13px] font-normal text-mute">({t.unit})</span>}
+              {t.unit && <span className="ml-1 text-sm font-normal text-mute">({t.unit})</span>}
             </p>
-            <p className="mt-1 text-[15px] leading-snug">{t.short}</p>
-            <p className="mt-1.5 text-[14px] leading-relaxed text-mute">{t.long}</p>
+            <p className="mt-1 text-lg leading-snug">{t.short}</p>
+            <p className="mt-1.5 text-base leading-relaxed text-mute">{t.long}</p>
           </div>
         ))}
-        {terms.length === 0 && <p className="text-[15px] text-mute">Nichts gefunden.</p>}
+        {terms.length === 0 && <p className="text-lg text-mute">Nichts gefunden.</p>}
       </div>
     </Sheet>
   )
@@ -573,19 +573,19 @@ function ImportSheet({ onClose }: { onClose: () => void }) {
     return (
       <Sheet title="Wirklich ersetzen?" onClose={onClose}>
         <div className="rounded-2xl border border-line bg-raised px-4 py-3">
-          <p className="text-[13px] text-mute">Jetzt auf diesem Gerät</p>
-          <p className="mt-0.5 text-[16px]">{bestandssatz(plan.alt)}</p>
-          <p className="mt-3 text-[13px] text-mute">Wird ersetzt durch</p>
-          <p className="mt-0.5 text-[16px]">{bestandssatz(plan.neu)}</p>
+          <p className="text-sm text-mute">Jetzt auf diesem Gerät</p>
+          <p className="mt-0.5 text-xl">{bestandssatz(plan.alt)}</p>
+          <p className="mt-3 text-sm text-mute">Wird ersetzt durch</p>
+          <p className="mt-0.5 text-xl">{bestandssatz(plan.neu)}</p>
         </div>
 
         {plan.warnung && (
-          <p className="mt-3 rounded-2xl border border-bad/40 bg-bad/10 px-4 py-3 text-[14px] leading-relaxed">
+          <p className="mt-3 rounded-2xl border border-bad/40 bg-bad/10 px-4 py-3 text-base leading-relaxed">
             {plan.warnung}
           </p>
         )}
 
-        {err && <p className="mt-3 text-[14px] text-bad">{err}</p>}
+        {err && <p className="mt-3 text-base text-bad">{err}</p>}
 
         <div className="mt-5 flex flex-col gap-2">
           <Button disabled={busy} onClick={() => void ersetzen(true)}>
@@ -595,7 +595,7 @@ function ImportSheet({ onClose }: { onClose: () => void }) {
             Ohne Sicherung ersetzen
           </Button>
         </div>
-        <p className="mt-3 text-[13px] leading-relaxed text-faint">
+        <p className="mt-3 text-sm leading-relaxed text-faint">
           Der Weg zurück führt nur über eine Sicherung. Es gibt keinen Server, von dem
           sich etwas zurückholen ließe.
         </p>
@@ -605,11 +605,11 @@ function ImportSheet({ onClose }: { onClose: () => void }) {
 
   return (
     <Sheet title="Wiederherstellen" onClose={onClose}>
-      <p className="text-[15px] leading-relaxed text-mute">
+      <p className="text-lg leading-relaxed text-mute">
         Wähle eine zuvor gesicherte Datei. Bevor etwas ersetzt wird, siehst du, was geht
         und was kommt.
       </p>
-      <label className="mt-5 flex h-32 cursor-pointer items-center justify-center rounded-2xl border border-dashed border-line text-[15px] text-mute">
+      <label className="mt-5 flex h-32 cursor-pointer items-center justify-center rounded-2xl border border-dashed border-line text-lg text-mute">
         Datei wählen
         <input
           type="file"
@@ -618,7 +618,7 @@ function ImportSheet({ onClose }: { onClose: () => void }) {
           onChange={(e) => { const f = e.target.files?.[0]; if (f) void onFile(f) }}
         />
       </label>
-      {err && <p className="mt-3 text-[14px] text-bad">{err}</p>}
+      {err && <p className="mt-3 text-base text-bad">{err}</p>}
     </Sheet>
   )
 }

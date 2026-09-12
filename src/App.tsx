@@ -202,7 +202,7 @@ export default function App() {
                 <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden>
                   {t.icon}
                 </svg>
-                <span className="text-[10px] font-medium">{t.label}</span>
+                <span className="text-2xs font-medium">{t.label}</span>
               </button>
             )
           })}

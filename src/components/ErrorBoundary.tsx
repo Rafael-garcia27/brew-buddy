@@ -96,18 +96,18 @@ function Fehlerbildschirm({ error, anzahl }: { error: unknown; anzahl: number })
 
   return (
     <div className="flex min-h-[100dvh] flex-col justify-center px-6 py-10">
-      <h1 className="text-[26px] leading-tight font-semibold tracking-tight">
+      <h1 className="text-3xl leading-tight font-semibold tracking-tight">
         Café ist abgestürzt.
       </h1>
 
-      <p className="mt-3 text-[16px] leading-relaxed text-mute">
+      <p className="mt-3 text-xl leading-relaxed text-mute">
         Der Bildschirm ließ sich nicht mehr zeichnen. Gespeichert ist trotzdem alles, was bis
         eben eingetragen war — der Fehler betrifft die Anzeige, nicht die Daten.
       </p>
 
       {/* Ab dem zweiten Mal ist „Neu starten" keine ehrliche Empfehlung mehr. */}
       {anzahl >= 2 && (
-        <p className="mt-3 rounded-2xl border border-bad/40 bg-bad/10 px-4 py-3 text-[15px] leading-relaxed">
+        <p className="mt-3 rounded-2xl border border-bad/40 bg-bad/10 px-4 py-3 text-lg leading-relaxed">
           Das ist in dieser Sitzung schon der {anzahl}. Absturz. Dann liegt es vermutlich am
           gespeicherten Bestand, und ein Neustart führt an dieselbe Stelle. Rette zuerst die
           Daten.
@@ -118,7 +118,7 @@ function Fehlerbildschirm({ error, anzahl }: { error: unknown; anzahl: number })
         <button
           type="button"
           onClick={() => window.location.reload()}
-          className="inline-flex h-14 items-center justify-center rounded-2xl bg-crema px-6 text-[17px] font-semibold text-on-crema active:bg-crema/85"
+          className="inline-flex h-14 items-center justify-center rounded-2xl bg-crema px-6 text-xl font-semibold text-on-crema active:bg-crema/85"
         >
           Neu starten
         </button>
@@ -126,7 +126,7 @@ function Fehlerbildschirm({ error, anzahl }: { error: unknown; anzahl: number })
           type="button"
           onClick={() => void retten()}
           disabled={stand === 'laeuft'}
-          className="inline-flex h-14 items-center justify-center rounded-2xl border border-line bg-raised px-6 text-[17px] text-ink transition-colors active:bg-line disabled:opacity-40"
+          className="inline-flex h-14 items-center justify-center rounded-2xl border border-line bg-raised px-6 text-xl text-ink transition-colors active:bg-line disabled:opacity-40"
         >
           Daten retten
         </button>
@@ -135,7 +135,7 @@ function Fehlerbildschirm({ error, anzahl }: { error: unknown; anzahl: number })
       {stand !== 'bereit' && (
         <p
           role="status"
-          className={`mt-3 text-[14px] leading-snug ${
+          className={`mt-3 text-base leading-snug ${
             stand === 'fehler' ? 'text-bad' : 'text-mute'
           }`}
         >
@@ -143,15 +143,15 @@ function Fehlerbildschirm({ error, anzahl }: { error: unknown; anzahl: number })
         </p>
       )}
 
-      <p className="mt-6 text-[13px] leading-relaxed text-faint">
+      <p className="mt-6 text-sm leading-relaxed text-faint">
         Hilft der Neustart nicht, spiel im Setup deine letzte Sicherung ein.
       </p>
 
       {/* Zugeklappt: Der Aufrufstapel hilft beim Suchen und verunsichert
           beim Lesen. Wer ihn braucht, klappt ihn auf. */}
       <details className="mt-4">
-        <summary className="cursor-pointer text-[13px] text-faint">Technische Einzelheiten</summary>
-        <pre className="mt-2 overflow-x-auto rounded-xl bg-raised p-3 text-[11px] leading-relaxed whitespace-pre-wrap text-mute">
+        <summary className="cursor-pointer text-sm text-faint">Technische Einzelheiten</summary>
+        <pre className="mt-2 overflow-x-auto rounded-xl bg-raised p-3 text-2xs leading-relaxed whitespace-pre-wrap text-mute">
           {fehlerDetails(error)}
         </pre>
       </details>

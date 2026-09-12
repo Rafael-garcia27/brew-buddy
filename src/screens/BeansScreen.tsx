@@ -281,7 +281,7 @@ export default function BeansScreen({ route, navigate, onDeleted }: Props) {
           <Section
             action={
               <div className="flex items-baseline gap-3">
-                <span className="text-[12px] text-faint">
+                <span className="text-xs text-faint">
                   {gefiltert ? `${sichtbar.length} von ${beans.length}` : 'nach Frische'}
                 </span>
                 {filterOptionen && !filterOffen && (
@@ -357,7 +357,7 @@ export default function BeansScreen({ route, navigate, onDeleted }: Props) {
           {gefiltert && sichtbar.length === 0 && (
             <Section>
               <Card>
-                <p className="text-[15px] leading-snug">Keine Bohne passt zu dieser Auswahl.</p>
+                <p className="text-lg leading-snug">Keine Bohne passt zu dieser Auswahl.</p>
                 <Button
                   size="sm"
                   variant="ghost"
@@ -374,7 +374,7 @@ export default function BeansScreen({ route, navigate, onDeleted }: Props) {
           )}
 
           {!selected && sichtbar.length > 0 && (
-            <p className="px-4 pt-4 text-[13px] leading-snug text-faint">
+            <p className="px-4 pt-4 text-sm leading-snug text-faint">
               Bohne antippen — dann kannst du sie brühen, ihr Profil ansehen
               oder ihre Protokolle durchgehen.
             </p>
@@ -453,12 +453,12 @@ function BohnenKarte({
       <div className="min-w-0 flex-1">
         <p
           className={`truncate leading-tight font-semibold ${
-            aktiv ? 'text-[19px]' : 'text-[17px]'
+            aktiv ? 'text-2xl' : 'text-xl'
           }`}
         >
           {bean.name}
         </p>
-        <p className="mt-0.5 truncate text-[13px] text-mute">
+        <p className="mt-0.5 truncate text-sm text-mute">
           {bean.roaster ? `${bean.roaster} · ` : ''}
           {ROAST_LABEL[bean.roastLevel]} · {PROCESS_LABEL[bean.process]}
         </p>
@@ -466,11 +466,11 @@ function BohnenKarte({
             neben „am besten als V60" würde sich für den Leser
             widersprechen. */}
         {fresh.state === 'stale' ? (
-          <p className="mt-1 truncate text-[12px] text-bad">
+          <p className="mt-1 truncate text-xs text-bad">
             {fresh.short} — die Bag gibt nichts mehr her
           </p>
         ) : bag?.remainingGrams !== undefined && bag.remainingGrams < 20 ? (
-          <p className="mt-1 truncate text-[12px] text-warn">
+          <p className="mt-1 truncate text-xs text-warn">
             Nur noch {num(bag.remainingGrams, 0)} g in der Bag
           </p>
         ) : (
@@ -478,11 +478,11 @@ function BohnenKarte({
             {/* `short` statt `label`: Die Tageszahl steht einen Zentimeter
                 weiter links im Ring, und zweimal dieselbe Zahl in einer
                 Zeile liest sich wie zwei verschiedene Angaben. */}
-            <p className="mt-1 truncate text-[12px] text-faint">
+            <p className="mt-1 truncate text-xs text-faint">
               {fresh.short}
               {count > 0 && ` · ${count}× gebrüht`}
             </p>
-            <p className="mt-0.5 truncate text-[12px] text-crema">
+            <p className="mt-0.5 truncate text-xs text-crema">
               Am besten als {METHOD_LABEL[best]}
             </p>
           </>

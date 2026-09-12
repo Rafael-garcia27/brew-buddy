@@ -137,7 +137,7 @@ export default function MethodPicker({ bean, navigate, back }: Props) {
                 </div>
               ))}
             </div>
-            <p className="mt-2 border-t border-line pt-2.5 text-[12px] leading-snug text-faint">
+            <p className="mt-2 border-t border-line pt-2.5 text-xs leading-snug text-faint">
               Abgewählte Methoden verschwinden nicht — sie stehen nur eine Zeile weiter unten.
               Mindestens eine bleibt ausgewählt.
             </p>
@@ -147,7 +147,7 @@ export default function MethodPicker({ bean, navigate, back }: Props) {
         <>
           <Section
             action={
-              <span className="text-[12px] text-faint">
+              <span className="text-xs text-faint">
                 {bean ? 'nach Eignung für diese Bohne' : 'Methode wählen'}
               </span>
             }
@@ -209,7 +209,7 @@ export default function MethodPicker({ bean, navigate, back }: Props) {
           {ANNOUNCED_METHODS.length > 0 && (
             <Section
               title="Gibt es auch"
-              action={<span className="text-[12px] text-faint">noch nicht eingemessen</span>}
+              action={<span className="text-xs text-faint">noch nicht eingemessen</span>}
             >
               <div className="space-y-2">
                 {ANNOUNCED_METHODS.map((a) => (
@@ -219,8 +219,8 @@ export default function MethodPicker({ bean, navigate, back }: Props) {
                         <MethodIcon icon={a.icon} />
                       </span>
                       <div className="min-w-0 flex-1">
-                        <p className="text-[16px] leading-tight font-medium">{a.label}</p>
-                        <p className="mt-1 text-[13px] leading-snug text-mute">{a.teaser}</p>
+                        <p className="text-xl leading-tight font-medium">{a.label}</p>
+                        <p className="mt-1 text-sm leading-snug text-mute">{a.teaser}</p>
                       </div>
                     </div>
                   </Card>
@@ -237,13 +237,13 @@ export default function MethodPicker({ bean, navigate, back }: Props) {
             <span className="shrink-0 text-crema">
               <MethodIcon icon={erklaert.icon} className="h-10 w-10" />
             </span>
-            <p className="text-[15px] leading-snug">{erklaert.teaser}</p>
+            <p className="text-lg leading-snug">{erklaert.teaser}</p>
           </div>
           <div className="mt-4 border-t border-line pt-3">
-            <p className="text-[12px] text-mute">Warum noch nicht brühbar</p>
-            <p className="mt-1 text-[15px] leading-relaxed">{erklaert.why}</p>
+            <p className="text-xs text-mute">Warum noch nicht brühbar</p>
+            <p className="mt-1 text-lg leading-relaxed">{erklaert.why}</p>
           </div>
-          <p className="mt-4 text-[13px] leading-snug text-faint">
+          <p className="mt-4 text-sm leading-snug text-faint">
             Für jede brühbare Methode führt die App Zielkorridore, Frischefenster und
             Korrekturregeln. Solange die für dieses Gerät fehlen, gibt sie keinen Startpunkt aus —
             ein geratener wäre schlechter als keiner.
@@ -281,18 +281,18 @@ function MethodenZeile({
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-2">
-            <p className="text-[17px] leading-tight font-semibold">{METHOD_LABEL[eintrag.method]}</p>
-            {beste && <span className="shrink-0 text-[11px] text-crema">beste Wahl</span>}
-            {zuletzt && <span className="shrink-0 text-[11px] text-crema">zuletzt</span>}
+            <p className="text-xl leading-tight font-semibold">{METHOD_LABEL[eintrag.method]}</p>
+            {beste && <span className="shrink-0 text-2xs text-crema">beste Wahl</span>}
+            {zuletzt && <span className="shrink-0 text-2xs text-crema">zuletzt</span>}
           </div>
 
           {/* Mit Bohne trägt die Zeile das Urteil, ohne Bohne den Kurztext
               der Methode. Beides gleichzeitig wäre eine Zeile zu viel. */}
           {eignung ? (
             <>
-              <p className="mt-0.5 text-[13px] text-mute">{SUITABILITY_LABEL[eignung.level]}</p>
+              <p className="mt-0.5 text-sm text-mute">{SUITABILITY_LABEL[eignung.level]}</p>
               <p
-                className={`mt-1 text-[12px] leading-snug ${
+                className={`mt-1 text-xs leading-snug ${
                   eignung.isWarning ? 'text-warn' : 'text-faint'
                 }`}
               >
@@ -301,7 +301,7 @@ function MethodenZeile({
             </>
           ) : (
             profil.short && (
-              <p className="mt-1 text-[13px] leading-snug text-mute">{profil.short}</p>
+              <p className="mt-1 text-sm leading-snug text-mute">{profil.short}</p>
             )
           )}
         </div>

@@ -198,11 +198,11 @@ export default function SageGrindDial({ value, onChange, max, step, highlight, d
           −
         </button>
         <div className="min-w-0 flex-1 text-center">
-          <span ref={anzeige} className="tnum text-[34px] leading-none font-semibold">
+          <span ref={anzeige} className="tnum text-4xl leading-none font-semibold">
             {text(value)}
           </span>
           {highlight && (
-            <span className={`ml-2 text-[13px] ${imBereich ? 'text-ok' : 'text-mute'}`}>
+            <span className={`ml-2 text-sm ${imBereich ? 'text-ok' : 'text-mute'}`}>
               {highlight.label} {highlight.range[0]}–{highlight.range[1]}
             </span>
           )}
@@ -346,7 +346,7 @@ export default function SageGrindDial({ value, onChange, max, step, highlight, d
         <div className="pb-3" />
       </div>
 
-      <p className="mt-2 text-center text-[13px] text-faint">
+      <p className="mt-2 text-center text-sm text-faint">
         Rad waagerecht ziehen — die Skala läuft stufenlos.
       </p>
     </div>

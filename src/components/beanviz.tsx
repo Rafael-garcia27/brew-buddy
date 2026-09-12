@@ -102,10 +102,10 @@ export function RoastScale({ bean }: { bean: Pick<Bean, 'roastLevel' | 'agtron'>
     <div>
       <div className="flex items-baseline justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[12px] text-mute">Röstung</p>
-          <p className="text-[20px] leading-tight font-semibold">{begriff}</p>
+          <p className="text-xs text-mute">Röstung</p>
+          <p className="text-2xl leading-tight font-semibold">{begriff}</p>
         </div>
-        <p className="shrink-0 text-right text-[12px] leading-snug">
+        <p className="shrink-0 text-right text-xs leading-snug">
           {gemessen ? (
             <>
               <span className="tnum font-semibold text-crema">Agtron {lesung.agtron}</span>
@@ -253,12 +253,12 @@ export function RoastScale({ bean }: { bean: Pick<Bean, 'roastLevel' | 'agtron'>
         )}
       </svg>
 
-      <div className="flex items-baseline justify-between text-[11px] text-faint">
+      <div className="flex items-baseline justify-between text-2xs text-faint">
         <span>hell</span>
         <span>dunkel</span>
       </div>
 
-      <p className="mt-2 text-[12px] leading-snug text-mute">
+      <p className="mt-2 text-xs leading-snug text-mute">
         {gemessen
           ? lesung.band.context
           : 'Etikettenbezeichnungen sind nicht standardisiert und streuen zwischen Röstern um bis zu zwei Stufen — deshalb ein Bereich und kein Punkt. Ein gemessener Agtron-Wert wäre genauer.'}
@@ -343,11 +343,11 @@ export function ProcessMark({ process }: { process: Process }) {
           <ProcessSymbol symbol={familie.symbol} className="h-9 w-9" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-[12px] text-mute">Aufbereitung</p>
-          <p className="text-[20px] leading-tight font-semibold">{PROCESS_LABEL[process]}</p>
+          <p className="text-xs text-mute">Aufbereitung</p>
+          <p className="text-2xl leading-tight font-semibold">{PROCESS_LABEL[process]}</p>
           {/* Der Familienname nur, wenn er nicht schon dasteht: Bei
               „Washed" wäre „Washed · Washed" reine Wiederholung. */}
-          <p className="mt-0.5 text-[13px] leading-snug text-mute">
+          <p className="mt-0.5 text-sm leading-snug text-mute">
             {familie.label !== PROCESS_LABEL[process] && (
               <span className="text-faint">{familie.label} · </span>
             )}
@@ -358,7 +358,7 @@ export function ProcessMark({ process }: { process: Process }) {
 
       {pct !== null && spanne ? (
         <div className="mt-3">
-          <p className="text-[11px] text-faint">Fruchtkontakt beim Trocknen</p>
+          <p className="text-2xs text-faint">Fruchtkontakt beim Trocknen</p>
           {/* Der Punkt sitzt auf dem Wert, nicht daneben: Das Gleis wird
               um seinen Radius eingerückt, sonst hängt er bei 0 % und
               100 % zur Hälfte außerhalb. */}
@@ -381,7 +381,7 @@ export function ProcessMark({ process }: { process: Process }) {
               />
             </div>
           </div>
-          <div className="mt-1 flex justify-between text-[11px]">
+          <div className="mt-1 flex justify-between text-2xs">
             <span className={pct === 0 ? 'font-medium text-mute' : 'text-faint'}>gewaschen</span>
             {pct > 0 && pct < 100 && <span className="tnum text-mute">{pct} %</span>}
             <span className={pct === 100 ? 'font-medium text-mute' : 'text-faint'}>
@@ -390,13 +390,13 @@ export function ProcessMark({ process }: { process: Process }) {
           </div>
         </div>
       ) : (
-        <p className="mt-3 border-t border-line pt-2.5 text-[12px] leading-snug text-faint">
+        <p className="mt-3 border-t border-line pt-2.5 text-xs leading-snug text-faint">
           Liegt nicht auf der Fruchtkontakt-Achse von Washed bis Natural — hier entscheidet
           {familie.id === 'wet-hulled' ? ' der Zeitpunkt des Schälens' : ' die Fermentation'}.
         </p>
       )}
 
-      <p className="mt-2.5 text-[13px] leading-snug text-mute">{familie.brewNote}</p>
+      <p className="mt-2.5 text-sm leading-snug text-mute">{familie.brewNote}</p>
     </div>
   )
 }
@@ -422,8 +422,8 @@ export function FactTable({ facts }: { facts: Fact[] }) {
     <dl className="divide-y divide-line">
       {facts.map((f) => (
         <div key={f.label} className="flex items-baseline gap-4 py-2 first:pt-0 last:pb-0">
-          <dt className="w-28 shrink-0 text-[13px] text-mute">{f.label}</dt>
-          <dd className="min-w-0 flex-1 text-[14px] leading-snug">{f.value}</dd>
+          <dt className="w-28 shrink-0 text-sm text-mute">{f.label}</dt>
+          <dd className="min-w-0 flex-1 text-base leading-snug">{f.value}</dd>
         </div>
       ))}
     </dl>

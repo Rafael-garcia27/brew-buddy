@@ -412,7 +412,7 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
                   darüber: „Von einer ähnlichen Bohne" ist eine Aussage
                   ÜBER diese Zahlen, keine Abschnittsüberschrift. Außerhalb
                   gelesen wirkte sie wie ein eigener Bereich. */}
-              <p className="mb-3 text-[12px] font-medium tracking-wider text-crema uppercase">
+              <p className="mb-3 text-xs font-medium tracking-wider text-crema uppercase">
                 {sp.headline}
               </p>
 
@@ -492,7 +492,7 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
                 {sp.rationale.map((r, i) => (
                   <p
                     key={i}
-                    className={`text-[13px] leading-snug ${
+                    className={`text-sm leading-snug ${
                       r.kind === 'warning' ? 'text-warn' : r.kind === 'learning' ? 'text-crema' : 'text-mute'
                     }`}
                   >
@@ -505,7 +505,7 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
 
             {fit.isWarning && (
               <Card className="mt-3" tone="warn">
-                <p className="text-[14px] leading-snug">
+                <p className="text-base leading-snug">
                   <strong>
                     Diese Bohne ist für {METHOD_LABEL[method]} {SUITABILITY_LABEL[fit.level]}.
                   </strong>{' '}
@@ -526,7 +526,7 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
 
             {!plaus.ok && plaus.message && (
               <Card className="mt-3" tone="warn">
-                <p className="text-[14px] leading-snug">{plaus.message}</p>
+                <p className="text-base leading-snug">{plaus.message}</p>
                 {plaus.suggestion !== undefined && (
                   <Button size="sm" variant="ghost" className="mt-2 -ml-3" onClick={() => setGrindVal(plaus.suggestion!)}>
                     Auf {plaus.suggestion} setzen →
@@ -537,7 +537,7 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
 
             {!grinder && (
               <Card className="mt-3" tone="warn">
-                <p className="text-[14px] leading-snug">
+                <p className="text-base leading-snug">
                   <strong>Keine Mühle eingerichtet.</strong> Ohne sie kann ich Korrekturen nur in
                   Prozent angeben statt in Klicks.
                 </p>
@@ -551,7 +551,7 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
                 sonst erst mit der Bag in der Hand. */}
             {bag?.remainingGrams !== undefined && bag.remainingGrams < doseG && (
               <Card className="mt-3" tone="warn">
-                <p className="text-[14px] leading-snug">
+                <p className="text-base leading-snug">
                   In der Bag sind noch {num(bag.remainingGrams, 0)} g — der Vorschlag
                   braucht {num(doseG)} g.{' '}
                   {bag.remainingGrams >= 5
@@ -573,7 +573,7 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
 
             {consistency && (
               <Card className="mt-3" tone="warn">
-                <p className="text-[14px] leading-snug">{consistency}</p>
+                <p className="text-base leading-snug">{consistency}</p>
               </Card>
             )}
 
@@ -621,7 +621,7 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
               Auskunft über die Zukunft, keine über diesen Durchgang — und
               gehört deshalb ans Ende. */}
           {untilPersonal > 0 && sp.source !== 'personal' && (
-            <p className="px-5 pt-6 text-[13px] leading-snug text-faint">
+            <p className="px-5 pt-6 text-sm leading-snug text-faint">
               {brewCount > 0 && `${brewCount}× gebrüht. `}
               Noch{' '}
               {untilPersonal === 1
@@ -736,18 +736,18 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
                   Espresso ist. */}
               {isEspresso && (
                 <div className="mt-4 flex items-baseline gap-3 border-t border-line pt-3">
-                  <span className="flex items-center gap-1.5 text-[13px] text-mute">
+                  <span className="flex items-center gap-1.5 text-sm text-mute">
                     Ratio <InfoDot termId="ratio" />
                   </span>
                   <span
-                    className={`tnum text-[26px] leading-none font-semibold ${
+                    className={`tnum text-3xl leading-none font-semibold ${
                       ratioTon === 'ok' ? 'text-ok' : ratioTon === 'warn' ? 'text-warn' : 'text-bad'
                     }`}
                   >
                     1:{num(ratioLive)}
                   </span>
                   <span
-                    className={`text-[13px] ${
+                    className={`text-sm ${
                       ratioTon === 'ok' ? 'text-ok' : ratioTon === 'warn' ? 'text-warn' : 'text-bad'
                     }`}
                   >
@@ -760,7 +760,7 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
                   1:2. Ohne diesen Hinweis widerspräche die Ampel dem
                   eigenen Vorschlag. */}
               {isEspresso && Math.abs(sp.proposal.ratio - RATIO_ANCHOR) > 0.15 && (
-                <p className="mt-2 text-[13px] text-faint">
+                <p className="mt-2 text-sm text-faint">
                   Die Ampel misst gegen 1:2. Für diese Bohne empfiehlt die App
                   1:{num(sp.proposal.ratio)}.
                 </p>
@@ -786,7 +786,7 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
 
           <Section>
             {!elapsedTouched && (
-              <p className="mb-2 text-[13px] leading-snug text-warn">
+              <p className="mb-2 text-sm leading-snug text-warn">
                 Die Zeit ist mit der <strong>Zielzeit</strong> vorbelegt, nicht gemessen. Lief dein
                 Durchgang anders, trag ihn ein — sonst wertet die App ihre eigene Vorgabe aus.
               </p>

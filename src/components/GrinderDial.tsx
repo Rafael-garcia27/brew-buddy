@@ -133,9 +133,9 @@ export default function GrinderDial({
           −
         </button>
         <div className="min-w-0 flex-1 text-center">
-          <span className="tnum text-[34px] leading-none font-semibold">{value}</span>
+          <span className="tnum text-4xl leading-none font-semibold">{value}</span>
           {highlight && (
-            <span className={`ml-2 text-[13px] ${inRange ? 'text-ok' : 'text-mute'}`}>
+            <span className={`ml-2 text-sm ${inRange ? 'text-ok' : 'text-mute'}`}>
               {highlight.label} {(highlight.range[0] / clicksPerNumber).toFixed(0)}–
               {(highlight.range[1] / clicksPerNumber).toFixed(0)}
               {highlight.derived ? ' (abgeleitet)' : ''}

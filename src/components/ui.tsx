@@ -78,12 +78,12 @@ export function Header({
         <div className="min-w-0 flex-1">
           <h1
             className={`truncate leading-tight font-semibold tracking-tight ${
-              large ? 'text-[30px]' : 'text-[22px]'
+              large ? 'text-3xl' : 'text-2xl'
             }`}
           >
             {title}
           </h1>
-          {subtitle && <p className="mt-0.5 truncate text-[13px] text-mute">{subtitle}</p>}
+          {subtitle && <p className="mt-0.5 truncate text-sm text-mute">{subtitle}</p>}
         </div>
         {right}
       </div>
@@ -170,7 +170,7 @@ export function Section({
           }`}
         >
           {title && (
-            <h2 className="text-[13px] font-semibold tracking-wide text-mute uppercase">{title}</h2>
+            <h2 className="text-sm font-semibold tracking-wide text-mute uppercase">{title}</h2>
           )}
           {action}
         </div>
@@ -234,9 +234,9 @@ export function Button({
     danger: 'bg-bad/15 text-bad border border-bad/30 active:bg-bad/25',
   }
   const sizes = {
-    sm: 'h-11 px-3 text-[14px] rounded-xl',
-    md: 'h-12 px-5 text-[16px] rounded-2xl',
-    lg: 'h-14 px-6 text-[17px] rounded-2xl',
+    sm: 'h-11 px-3 text-base rounded-xl',
+    md: 'h-12 px-5 text-xl rounded-2xl',
+    lg: 'h-14 px-6 text-xl rounded-2xl',
   }
   return (
     <button
@@ -261,7 +261,7 @@ export function Chip({
   onClick?: () => void
   tone?: 'neutral' | 'bad' | 'good'
 }) {
-  const base = 'min-h-11 rounded-full px-3.5 text-[15px] transition-colors border'
+  const base = 'min-h-11 rounded-full px-3.5 text-lg transition-colors border'
   const off = 'bg-raised border-line text-mute active:bg-line'
   const on =
     tone === 'bad'
@@ -291,7 +291,7 @@ export function Chip({
 export function FilterRow({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex items-center gap-2">
-      <span className="w-[68px] shrink-0 text-[11px] leading-tight text-faint">{label}</span>
+      <span className="w-[68px] shrink-0 text-2xs leading-tight text-faint">{label}</span>
       <div className="scroll-area -mx-1 flex flex-1 gap-1.5 overflow-x-auto px-1 py-0.5">
         {children}
       </div>
@@ -329,12 +329,12 @@ export function SegmentedControl<T extends string>({
           aria-current={value === o.value ? 'true' : undefined}
           className={`min-w-0 flex-1 rounded-xl px-1 transition-colors ${
             mitSymbol ? 'flex h-[52px] flex-col items-center justify-center gap-0.5' : 'h-11 truncate'
-          } ${eng && !mitSymbol ? 'text-[13px]' : mitSymbol ? '' : 'text-[15px]'} ${
+          } ${eng && !mitSymbol ? 'text-sm' : mitSymbol ? '' : 'text-lg'} ${
             value === o.value ? 'bg-crema font-semibold text-on-crema' : 'text-mute active:bg-line'
           }`}
         >
           {o.icon}
-          <span className={`${mitSymbol ? 'w-full truncate text-[10px] leading-none' : ''}`}>
+          <span className={`${mitSymbol ? 'w-full truncate text-2xs leading-none' : ''}`}>
             {o.label}
           </span>
         </button>
@@ -359,11 +359,11 @@ export function Field({
   return (
     <label className="block">
       <div className="mb-1.5 flex items-center gap-1.5">
-        <span className="text-[13px] font-medium text-mute">{label}</span>
+        <span className="text-sm font-medium text-mute">{label}</span>
         {term && <InfoDot termId={term} />}
       </div>
       {children}
-      {hint && <p className="mt-1 text-[12px] text-faint">{hint}</p>}
+      {hint && <p className="mt-1 text-xs text-faint">{hint}</p>}
     </label>
   )
 }
@@ -555,7 +555,7 @@ export function Stepper({
           className="tnum w-full min-w-0 border-0 bg-transparent py-4 text-center font-semibold outline-none"
           style={{ fontSize: 22 }}
         />
-        {unit && <span className="pr-3 text-[14px] text-mute">{unit}</span>}
+        {unit && <span className="pr-3 text-base text-mute">{unit}</span>}
       </div>
 
       <button
@@ -589,7 +589,7 @@ export function Toggle({
       onClick={() => onChange(!checked)}
       className="flex min-h-12 w-full items-center justify-between gap-3 text-left"
     >
-      <span className="text-[16px]">{label}</span>
+      <span className="text-xl">{label}</span>
       <span
         className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${checked ? 'bg-crema' : 'bg-line'}`}
       >
@@ -630,7 +630,7 @@ export function InfoDot({ termId }: { termId: string }) {
         // hält das Layout unverändert.
         className="-m-3 flex h-11 w-11 shrink-0 items-center justify-center p-3"
       >
-        <span className="flex h-5 w-5 items-center justify-center rounded-full border border-line text-[11px] font-semibold text-mute">
+        <span className="flex h-5 w-5 items-center justify-center rounded-full border border-line text-2xs font-semibold text-mute">
           ?
         </span>
       </button>
@@ -638,11 +638,11 @@ export function InfoDot({ termId }: { termId: string }) {
         <Sheet onClose={() => setOpen(false)} title={term.term}>
           {/* Die Oberfläche zeigt den Fachbegriff, die Sätze der App
               benutzen oft das deutsche Wort. Beides gehört zusammen. */}
-          {term.aka && <p className="mb-2 text-[14px] text-faint">auch: {term.aka}</p>}
-          <p className="text-[17px] leading-snug">{term.short}</p>
-          <p className="mt-3 text-[15px] leading-relaxed text-mute">{term.long}</p>
+          {term.aka && <p className="mb-2 text-base text-faint">auch: {term.aka}</p>}
+          <p className="text-xl leading-snug">{term.short}</p>
+          <p className="mt-3 text-lg leading-relaxed text-mute">{term.long}</p>
           {term.warning && (
-            <p className="mt-3 rounded-xl border border-warn/40 bg-warn/10 p-3 text-[14px] text-warn">
+            <p className="mt-3 rounded-xl border border-warn/40 bg-warn/10 p-3 text-base text-warn">
               {term.warning}
             </p>
           )}
@@ -704,7 +704,7 @@ export function Sheet({
       />
       <div className="scroll-area relative max-h-[88dvh] overflow-y-auto rounded-t-3xl border-t border-line bg-card">
         <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-line bg-card px-4 py-3">
-          <h3 className="text-[17px] font-semibold">{title}</h3>
+          <h3 className="text-xl font-semibold">{title}</h3>
           <button
             type="button"
             onClick={onClose}
@@ -755,14 +755,14 @@ export function Stat({
   return (
     <div>
       <div className="flex items-center gap-1">
-        <span className="text-[12px] text-mute">{label}</span>
+        <span className="text-xs text-mute">{label}</span>
         {term && <InfoDot termId={term} />}
       </div>
-      <div className={`tnum text-[20px] leading-tight font-semibold ${c}`}>
+      <div className={`tnum text-2xl leading-tight font-semibold ${c}`}>
         {value}
-        {unit && <span className="ml-0.5 text-[13px] font-normal text-mute">{unit}</span>}
+        {unit && <span className="ml-0.5 text-sm font-normal text-mute">{unit}</span>}
       </div>
-      {hint && <div className="mt-0.5 text-[12px] text-faint">{hint}</div>}
+      {hint && <div className="mt-0.5 text-xs text-faint">{hint}</div>}
     </div>
   )
 }
@@ -814,22 +814,22 @@ export function Triad({ items }: { items: TriadItem[] }) {
         // 98, „2:30–3:00" bei 19 px genau 94 — deshalb für die langen
         // Uhrzeitspannen eine Stufe kleiner, sonst bricht die Zeile.
         const groesse =
-          it.value.length >= 9 ? 'text-[17px]' : it.value.length >= 5 ? 'text-[23px]' : 'text-[29px]'
+          it.value.length >= 9 ? 'text-xl' : it.value.length >= 5 ? 'text-2xl' : 'text-3xl'
 
         const zahl = (
           <>
             <div className={`tnum mt-1.5 leading-none font-semibold ${groesse} ${c}`}>
               {it.value}
-              {it.unit && <span className="ml-0.5 text-[12px] font-normal text-mute">{it.unit}</span>}
+              {it.unit && <span className="ml-0.5 text-xs font-normal text-mute">{it.unit}</span>}
             </div>
-            {it.hint && <div className="mt-1 text-[11px] leading-tight text-faint">{it.hint}</div>}
+            {it.hint && <div className="mt-1 text-2xs leading-tight text-faint">{it.hint}</div>}
           </>
         )
 
         return (
           <div key={it.label} className="min-w-0 px-0.5 text-center first:pl-0 last:pr-0">
             <div className="flex items-center justify-center gap-1">
-              <span className="text-[11px] font-medium tracking-wider text-mute uppercase">
+              <span className="text-2xs font-medium tracking-wider text-mute uppercase">
                 {it.label}
               </span>
               {it.term && <InfoDot termId={it.term} />}
@@ -901,7 +901,7 @@ export function MetaRow({
           </span>
         )
         return (
-          <span key={it.label} className="inline-flex items-baseline gap-1 text-[13px]">
+          <span key={it.label} className="inline-flex items-baseline gap-1 text-sm">
             <span className="text-faint">{it.label}</span>
             {it.onEdit ? (
               <button
@@ -915,7 +915,7 @@ export function MetaRow({
             ) : (
               wert
             )}
-            {it.hint && <span className="text-[11px] text-faint">{it.hint}</span>}
+            {it.hint && <span className="text-2xs text-faint">{it.hint}</span>}
             {it.term && <InfoDot termId={it.term} />}
           </span>
         )
@@ -935,8 +935,8 @@ export function Empty({
 }) {
   return (
     <div className="px-4 py-16 text-center">
-      <p className="text-[17px] font-medium">{title}</p>
-      <p className="mx-auto mt-2 max-w-[34ch] text-[15px] leading-relaxed text-mute">{body}</p>
+      <p className="text-xl font-medium">{title}</p>
+      <p className="mx-auto mt-2 max-w-[34ch] text-lg leading-relaxed text-mute">{body}</p>
       {action && <div className="mt-5 flex justify-center">{action}</div>}
     </div>
   )
@@ -973,7 +973,7 @@ export function FreshnessRing({
         />
       </svg>
       {label && (
-        <span className="tnum absolute inset-0 flex items-center justify-center text-[11px] font-semibold">
+        <span className="tnum absolute inset-0 flex items-center justify-center text-2xs font-semibold">
           {label}
         </span>
       )}

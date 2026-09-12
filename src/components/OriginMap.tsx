@@ -294,7 +294,7 @@ export default function OriginMap({
 function MapLegend({ state, legende }: { state: MapState; legende: LegendEntry[] }) {
   if (state === 'unknown') {
     return (
-      <p className="mt-2 text-[12px] leading-snug text-faint">
+      <p className="mt-2 text-xs leading-snug text-faint">
         Keine Herkunft angegeben. Sie ändert die Empfehlung — Herkunft, Röstgrad und Aufbereitung
         bestimmen gemeinsam, welche Methode passt.
       </p>
@@ -305,7 +305,7 @@ function MapLegend({ state, legende }: { state: MapState; legende: LegendEntry[]
     return (
       <div className="mt-2.5">
         <LegendRow color="var(--c-crema)" name="Kaffeegürtel" />
-        <p className="mt-1.5 text-[12px] leading-snug text-faint">
+        <p className="mt-1.5 text-xs leading-snug text-faint">
           Blend ohne benannte Herkunft — irgendwo zwischen den Wendekreisen. Wer die Bestandteile
           kennt, kann sie beim Bearbeiten nachtragen; die Karte zeigt sie dann einzeln.
         </p>
@@ -330,7 +330,7 @@ function MapLegend({ state, legende }: { state: MapState; legende: LegendEntry[]
       </div>
 
       {!legende[0]?.color && (
-        <p className="mt-1.5 text-[12px] leading-snug text-faint">
+        <p className="mt-1.5 text-xs leading-snug text-faint">
           Über {MAX_FARBEN} Herkünfte zeichnet die Karte einheitlich — mehr Farben wären nicht mehr
           zu unterscheiden.
         </p>
@@ -340,7 +340,7 @@ function MapLegend({ state, legende }: { state: MapState; legende: LegendEntry[]
           gültig als Eingabe, nur nicht zeichenbar. Das gehört gesagt,
           sonst sieht die Karte aus wie „Herkunft unbekannt". */}
       {ausserhalb.length > 0 && (
-        <p className="mt-1.5 text-[12px] leading-snug text-faint">
+        <p className="mt-1.5 text-xs leading-snug text-faint">
           {ausserhalb.map((l) => l.name).join(', ')}{' '}
           {ausserhalb.length === 1 ? 'liegt' : 'liegen'} außerhalb des gezeigten Ausschnitts — die
           Karte endet am 58. Breitengrad, wo kein Kaffee mehr wächst.
@@ -372,8 +372,8 @@ function LegendRow({
       ) : (
         <span className="mt-[3px] h-2.5 w-2.5 shrink-0 self-start" aria-hidden />
       )}
-      <span className={`text-[13px] font-medium ${muted ? 'text-faint' : ''}`}>{name}</span>
-      {detail && <span className="min-w-0 flex-1 truncate text-[12px] text-faint">{detail}</span>}
+      <span className={`text-sm font-medium ${muted ? 'text-faint' : ''}`}>{name}</span>
+      {detail && <span className="min-w-0 flex-1 truncate text-xs text-faint">{detail}</span>}
     </div>
   )
 }

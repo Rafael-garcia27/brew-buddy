@@ -105,3 +105,17 @@ Der Fix wäre, den Aktionen den Bohnennamen mitzugeben
 Durchgang, in dem die Liste ohnehin angefasst wird.
 
 ---
+## Zeilenhöhen an die Schriftstufen binden (aus P12)
+
+Die Skala aus P12 liefert nur Schriftgrößen; die Zeilenhöhen stehen auf
+`inherit`, damit die Umstellung nichts am Zeilenabstand ändert. Das war
+richtig für diesen Durchgang — es sollte ein Austausch sein, keine
+Neugestaltung.
+
+Der nächste Schritt wäre, jeder Stufe ihre Zeilenhöhe mitzugeben: kleine
+Schrift braucht relativ mehr Durchschuss als große, und die `leading-*`
+über die Oberfläche verstreuten Einzelangaben würden dann größtenteils
+überflüssig. Das ist aber ein Durchgang, bei dem man jeden Bildschirm
+ansieht, nicht einer, den man ausrechnet.
+
+---

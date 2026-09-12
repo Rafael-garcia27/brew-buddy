@@ -63,11 +63,11 @@ export default function BeanPicker({ method, navigate, back }: Props) {
       {nichtsPasst && (
         <Section>
           <Card tone="warn">
-            <p className="text-[15px] leading-snug">
+            <p className="text-lg leading-snug">
               <strong>Für {METHOD_LABEL[method]} passt gerade nichts richtig.</strong> Du kannst
               trotzdem brühen — es wird nur mehr Arbeit, als es sein müsste.
             </p>
-            <p className="mt-2 text-[13px] leading-snug text-mute">
+            <p className="mt-2 text-sm leading-snug text-mute">
               Das ist keine Fehlbedienung, sondern eine Materialeigenschaft: Manche Bohnen spielen
               in dieser Methode ihre Stärken nicht aus.
             </p>
@@ -78,7 +78,7 @@ export default function BeanPicker({ method, navigate, back }: Props) {
       {brauchbar.length > 0 && (
         <Section
           title={nichtsPasst ? 'Am ehesten' : 'Empfehlung'}
-          action={<span className="text-[12px] text-faint">nach Eignung und Frische</span>}
+          action={<span className="text-xs text-faint">nach Eignung und Frische</span>}
         >
           <div className="space-y-2">
             {brauchbar.map((r, i) => (
@@ -96,7 +96,7 @@ export default function BeanPicker({ method, navigate, back }: Props) {
       {nichtDa.length > 0 && (
         <Section
           title="Nicht im Haus"
-          action={<span className="text-[12px] text-faint">nicht brühbar</span>}
+          action={<span className="text-xs text-faint">nicht brühbar</span>}
         >
           <div className="space-y-2">
             {nichtDa.map((r) => (
@@ -133,26 +133,26 @@ function BohnenZeile({
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-2">
-            <p className="truncate text-[17px] leading-tight font-semibold">{bean.name}</p>
-            {erste && <span className="shrink-0 text-[11px] text-crema">beste Wahl</span>}
+            <p className="truncate text-xl leading-tight font-semibold">{bean.name}</p>
+            {erste && <span className="shrink-0 text-2xs text-crema">beste Wahl</span>}
           </div>
           {/* Nur die Identität der Bohne. Das Urteil steht eine Zeile
               tiefer und begründet sich dort auch — hier machte es die
               Zeile so lang, dass „gut geei…" übrig blieb. */}
-          <p className="mt-0.5 truncate text-[13px] text-mute">
+          <p className="mt-0.5 truncate text-sm text-mute">
             {ROAST_LABEL[bean.roastLevel]} · {PROCESS_LABEL[bean.process]}
           </p>
           {/* Der Satz, der die Platzierung erklärt. Bei „nicht im Haus"
               in Warnfarbe, weil es dann kein Geschmacksurteil ist. */}
           <p
-            className={`mt-1 text-[12px] leading-snug ${
+            className={`mt-1 text-xs leading-snug ${
               unavailable ? 'text-warn' : s.isWarning ? 'text-warn' : 'text-faint'
             }`}
           >
             {r.note}
           </p>
           {!unavailable && r.bag?.remainingGrams !== undefined && (
-            <p className="mt-0.5 text-[12px] text-faint">
+            <p className="mt-0.5 text-xs text-faint">
               {num(r.bag.remainingGrams, 0)} g übrig
             </p>
           )}

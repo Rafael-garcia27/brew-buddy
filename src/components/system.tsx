@@ -31,10 +31,10 @@ export function InstallGuide() {
   if (isStandalone()) {
     return (
       <Card>
-        <p className="text-[15px]">
+        <p className="text-lg">
           <span className="text-ok">✓</span> Als App installiert.
         </p>
-        <p className="mt-1 text-[13px] text-mute">
+        <p className="mt-1 text-sm text-mute">
           Läuft im Vollbild und funktioniert ohne Netz.
         </p>
       </Card>
@@ -45,7 +45,7 @@ export function InstallGuide() {
     <Card tone="accent">
       <p className="font-medium">Auf dem Home-Bildschirm ablegen</p>
       {isIOS() ? (
-        <ol className="mt-3 space-y-2 text-[14px] leading-snug">
+        <ol className="mt-3 space-y-2 text-base leading-snug">
           <li className="flex gap-2">
             <span className="text-crema">1.</span>
             <span>
@@ -66,11 +66,11 @@ export function InstallGuide() {
           </li>
         </ol>
       ) : (
-        <p className="mt-2 text-[14px] leading-snug text-mute">
+        <p className="mt-2 text-base leading-snug text-mute">
           Im Browsermenü „Zum Startbildschirm hinzufügen" oder „App installieren" wählen.
         </p>
       )}
-      <p className="mt-3 border-t border-line pt-3 text-[13px] leading-relaxed text-mute">
+      <p className="mt-3 border-t border-line pt-3 text-sm leading-relaxed text-mute">
         Danach startet {APP_NAME} im Vollbild, ohne Adressleiste, und funktioniert vollständig
         ohne Internet. Das ist nicht nur Kosmetik: Nur als installierte App bleiben die
         Daten zuverlässig erhalten.
@@ -100,7 +100,7 @@ export function BackupBanner() {
   return (
     <div className="px-4 pt-4">
       <Card tone="warn">
-        <p className="text-[15px] leading-snug">
+        <p className="text-lg leading-snug">
           {brews.length} Brews ungesichert. iOS löscht die Daten einer PWA nach
           längerer Nichtnutzung — dann ist alles Gelernte weg.
         </p>
@@ -137,7 +137,7 @@ export function SetupNudge({ onGrinder }: { onGrinder: () => void }) {
   return (
     <div className="px-4 pt-4">
       <Card tone="accent">
-        <p className="text-[15px] leading-snug">
+        <p className="text-lg leading-snug">
           <strong>Noch keine Mühle eingerichtet.</strong> Mit ihr werden aus Empfehlungen
           konkrete Klickzahlen statt Prozentangaben.
         </p>
@@ -178,8 +178,8 @@ export function UndoBar({
           „Hausmischung gelös…". Die Leiste geht von selbst. */}
       <div className="flex items-center gap-3 rounded-2xl border border-line bg-raised px-4 py-3 shadow-lg">
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[14px]">{text}</p>
-          {detail && <p className="truncate text-[13px] text-mute">{detail}</p>}
+          <p className="truncate text-base">{text}</p>
+          {detail && <p className="truncate text-sm text-mute">{detail}</p>}
         </div>
         <Button size="sm" onClick={onUndo}>
           Rückgängig
@@ -213,7 +213,7 @@ export function StorageErrorBar({
   return (
     <div className="pt-safe sticky top-0 z-50 px-4 pt-2 pb-2">
       <div className="rounded-2xl border border-bad/50 bg-bad/15 px-4 py-3 shadow-lg">
-        <p className="text-[14px] leading-snug">{text}</p>
+        <p className="text-base leading-snug">{text}</p>
         <div className="mt-2 flex gap-2">
           <Button size="sm" onClick={onBackup}>
             Jetzt sichern
@@ -259,7 +259,7 @@ export function UpdateToast() {
   if (!bereit) return null
   return (
     <div className="pb-safe fixed inset-x-4 bottom-24 z-40 flex items-center gap-3 rounded-2xl border border-line bg-raised px-4 py-3 shadow-lg">
-      <p className="min-w-0 flex-1 text-[14px] leading-snug">
+      <p className="min-w-0 flex-1 text-base leading-snug">
         Eine neue Version steht bereit.
       </p>
       <Button size="sm" onClick={() => window.location.reload()}>

@@ -192,7 +192,7 @@ export function BrewButton({
         className="flex h-[132px] w-[132px] flex-col items-center justify-center gap-1 rounded-full bg-crema text-on-crema shadow-[0_6px_20px_-8px_rgba(0,0,0,0.45)] transition-transform active:scale-95"
       >
         <MethodIcon icon={icon} className="h-12 w-12" />
-        <span className="text-[15px] leading-none font-semibold tracking-tight">{label}</span>
+        <span className="text-lg leading-none font-semibold tracking-tight">{label}</span>
       </button>
     </div>
   )

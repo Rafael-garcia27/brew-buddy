@@ -138,7 +138,7 @@ export function PhaseLaufkontrolle({
           der Widerstand am Kolben, nicht die Geschwindigkeit. */}
       <Section
         title={speedQuestion(immersion)}
-        action={<span className="text-[12px] text-faint">optional</span>}
+        action={<span className="text-xs text-faint">optional</span>}
       >
         <div className="flex flex-wrap gap-2">
           {SPEED_CHOICES.map((f) => (
@@ -151,7 +151,7 @@ export function PhaseLaufkontrolle({
             />
           ))}
         </div>
-        <p className="mt-2 text-[13px] leading-snug text-faint">
+        <p className="mt-2 text-sm leading-snug text-faint">
           Deckt sich dein Eindruck mit der Uhr, steigt die Konfidenz der Empfehlung.
           Widerspricht er ihr, ist genau das der Befund.
         </p>
@@ -214,7 +214,7 @@ export function PhaseVerkosten({
               key={n}
               onClick={() => setRating(n)}
               aria-label={`${n} von 5`}
-              className={`flex h-14 w-14 items-center justify-center rounded-2xl text-[28px] transition-colors ${
+              className={`flex h-14 w-14 items-center justify-center rounded-2xl text-3xl transition-colors ${
                 n <= rating ? 'text-crema' : 'text-line'
               }`}
             >
@@ -224,7 +224,7 @@ export function PhaseVerkosten({
         </div>
       </Section>
 
-      <Section title="Defects" action={<span className="text-[12px] text-faint">löst Korrekturen aus</span>}>
+      <Section title="Defects" action={<span className="text-xs text-faint">löst Korrekturen aus</span>}>
         <div className="flex flex-wrap gap-2">
           {COMMON_DEFECTS.map((d) => (
             <Chip
@@ -238,12 +238,12 @@ export function PhaseVerkosten({
             />
           ))}
         </div>
-        <p className="mt-2 text-[12px] text-faint">
+        <p className="mt-2 text-xs text-faint">
           Nichts angetippt ist der Normalfall bei einem guten Kaffee.
         </p>
       </Section>
 
-      <Section title="Notes" action={<span className="text-[12px] text-faint">nur beschreibend</span>}>
+      <Section title="Notes" action={<span className="text-xs text-faint">nur beschreibend</span>}>
         <div className="flex flex-wrap gap-2">
           {COMMON_CHARACTERS.map((c) => (
             <Chip
@@ -265,7 +265,7 @@ export function PhaseVerkosten({
         {/* Ein Knopf, der nichts tut und nicht sagt warum, ist der
             häufigste Grund, eine App wegzulegen. */}
         {rating === 0 && (
-          <p className="mt-2 text-center text-[13px] text-faint">
+          <p className="mt-2 text-center text-sm text-faint">
             Erst die Sterne — ohne Bewertung weiß die App nicht, ob eine Korrektur geholfen hat.
           </p>
         )}
@@ -305,13 +305,13 @@ export function PhaseErgebnis({
       {result.suggestions.length === 0 && (
       <Section title={result.run ? 'Mit dem Geschmack' : undefined}>
         <Card tone={result.blocked ? 'warn' : 'default'}>
-          <p className="text-[19px] leading-tight font-semibold">{result.headline}</p>
-          <p className="mt-2 text-[15px] leading-relaxed text-mute">{result.summary}</p>
+          <p className="text-2xl leading-tight font-semibold">{result.headline}</p>
+          <p className="mt-2 text-lg leading-relaxed text-mute">{result.summary}</p>
 
           {result.techniqueSteps && (
             <ol className="mt-3 space-y-1.5 border-t border-line pt-3">
               {result.techniqueSteps.map((t, i) => (
-                <li key={i} className="flex gap-2 text-[14px] leading-snug">
+                <li key={i} className="flex gap-2 text-base leading-snug">
                   <span className="text-crema">{i + 1}.</span>
                   <span>{t}</span>
                 </li>
@@ -321,14 +321,14 @@ export function PhaseErgebnis({
           {result.checklist && (
             <ul className="mt-3 space-y-1 border-t border-line pt-3">
               {result.checklist.map((t, i) => (
-                <li key={i} className="text-[14px] text-mute">· {t}</li>
+                <li key={i} className="text-base text-mute">· {t}</li>
               ))}
             </ul>
           )}
           {result.escalation && (
             <ul className="mt-3 space-y-1 border-t border-line pt-3">
               {result.escalation.map((t, i) => (
-                <li key={i} className="text-[14px] text-mute">→ {t}</li>
+                <li key={i} className="text-base text-mute">→ {t}</li>
               ))}
             </ul>
           )}
@@ -348,7 +348,7 @@ export function PhaseErgebnis({
       {result.saveAsReference && (
         <Section>
           <Card tone="accent">
-            <p className="text-[15px]">Das war gut. Als Referenz für diese Bohne merken?</p>
+            <p className="text-lg">Das war gut. Als Referenz für diese Bohne merken?</p>
             <Button
               className="mt-3 w-full"
               onClick={() => {
@@ -395,11 +395,11 @@ function RunCard({
 }) {
   return (
     <Card tone={run.timeUsable ? (run.suggestion ? 'accent' : 'default') : 'warn'}>
-      <p className={`${compact ? 'text-[16px]' : 'text-[19px]'} leading-tight font-semibold`}>
+      <p className={`${compact ? 'text-xl' : 'text-2xl'} leading-tight font-semibold`}>
         {run.headline}
       </p>
       {withSummary && (
-        <p className={`mt-2 ${compact ? 'text-[13px]' : 'text-[15px]'} leading-relaxed text-mute`}>
+        <p className={`mt-2 ${compact ? 'text-sm' : 'text-lg'} leading-relaxed text-mute`}>
           {run.summary}
         </p>
       )}
@@ -407,7 +407,7 @@ function RunCard({
       {run.techniqueSteps && (
         <ol className="mt-3 space-y-1.5 border-t border-line pt-3">
           {run.techniqueSteps.map((t, i) => (
-            <li key={i} className="flex gap-2 text-[14px] leading-snug">
+            <li key={i} className="flex gap-2 text-base leading-snug">
               <span className="text-crema">{i + 1}.</span>
               <span>{t}</span>
             </li>
@@ -431,7 +431,7 @@ function RunNotes({ notes }: { notes: RunCheck['notes'] }) {
       {notes.map((n, i) => (
         <li
           key={i}
-          className={`text-[13px] leading-snug ${
+          className={`text-sm leading-snug ${
             n.tone === 'warn' ? 'text-warn' : n.tone === 'good' ? 'text-ok' : 'text-mute'
           }`}
         >
@@ -463,16 +463,16 @@ function SuggestionCard({
   return (
     <Card tone="accent">
       {kicker && (
-        <p className="mb-1 text-[13px] font-medium tracking-wide text-mute uppercase">{kicker}</p>
+        <p className="mb-1 text-sm font-medium tracking-wide text-mute uppercase">{kicker}</p>
       )}
-      <p className="text-[22px] leading-tight font-semibold text-crema">{s.what}</p>
-      <p className="mt-2 text-[15px] leading-relaxed">{s.why}</p>
+      <p className="text-2xl leading-tight font-semibold text-crema">{s.what}</p>
+      <p className="mt-2 text-lg leading-relaxed">{s.why}</p>
       <div className="mt-3 rounded-xl border border-line bg-raised p-3">
-        <p className="text-[12px] font-medium tracking-wide text-mute uppercase">Erwartung</p>
-        <p className="mt-1 text-[14px] leading-snug">{s.expectation}</p>
+        <p className="text-xs font-medium tracking-wide text-mute uppercase">Erwartung</p>
+        <p className="mt-1 text-base leading-snug">{s.expectation}</p>
       </div>
-      <p className="mt-2 text-[12px] text-faint">Konfidenz: {s.confidence}</p>
-      {s.alternative && <p className="mt-2 text-[13px] text-mute">{s.alternative}</p>}
+      <p className="mt-2 text-xs text-faint">Konfidenz: {s.confidence}</p>
+      {s.alternative && <p className="mt-2 text-sm text-mute">{s.alternative}</p>}
       {notes && <RunNotes notes={notes} />}
       {onApply && (
         <Button className="mt-4 w-full" onClick={onApply}>

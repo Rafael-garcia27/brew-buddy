@@ -20,6 +20,51 @@
   --color-warn: var(--c-warn);
   --color-bad: var(--c-bad);
 
+  /* ── Schriftskala ───────────────────────────────────────────────────
+     Vorher standen 17 verschiedene Pixelwerte als Einzelangaben im Code
+     (`text-[13px]` 66×, `text-[26px]` 2×, `text-[23px]` 1×) — Befund
+     F-11. Der Kopf der Verteilung war eine brauchbare Leiter, der
+     Schwanz reiner Zufall.
+
+     Neun Stufen, in zwei Gruppen gedacht:
+
+       2xs…xl   11–17 px   Fließtext. Dichte Oberfläche auf 375 px; jede
+                           dieser sechs Stufen ist vielfach belegt und
+                           trägt eine eigene Bedeutung.
+       2xl…4xl  20–34 px   Anzeige. Zahlen und Überschriften, die man aus
+                           einem Meter Entfernung liest. Hier lagen vorher
+                           neun Größen für siebzehn Vorkommen.
+
+     Die Zeilenhöhen stehen auf `inherit`, und das ist der wichtige Teil.
+     `@theme` ERGÄNZT Tailwinds Vorgaben, es ersetzt sie nicht — und
+     Tailwind liefert zu jedem bekannten Größennamen eine eigene
+     Zeilenhöhe mit. Vorher stand im Code `text-[13px]`, ein Einzelwert
+     ohne Zeilenhöhe; die kam vom Elternelement. Nach der Umstellung auf
+     `text-sm` hätte Tailwinds Vorgabe 1,4286 gegriffen: gemessen
+     18,57 px statt 19,5 px — fünf Prozent enger, auf jedem Absatz der App.
+
+     `inherit` stellt genau den Zustand von vorher her. Zeilenhöhen an die
+     Stufen zu binden wäre der nächste, richtige Schritt — aber ein
+     eigener, siehe IDEAS.md. */
+  --text-2xs: 11px;
+  --text-2xs--line-height: inherit;
+  --text-xs: 12px;
+  --text-xs--line-height: inherit;
+  --text-sm: 13px;
+  --text-sm--line-height: inherit;
+  --text-base: 14px;
+  --text-base--line-height: inherit;
+  --text-lg: 15px;
+  --text-lg--line-height: inherit;
+  --text-xl: 17px;
+  --text-xl--line-height: inherit;
+  --text-2xl: 20px;
+  --text-2xl--line-height: inherit;
+  --text-3xl: 28px;
+  --text-3xl--line-height: inherit;
+  --text-4xl: 34px;
+  --text-4xl--line-height: inherit;
+
   --font-sans:
     -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui,
     sans-serif;

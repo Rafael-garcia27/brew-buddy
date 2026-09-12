@@ -181,7 +181,7 @@ export default function LogScreen({ route, navigate, back }: Props) {
           <Section title="Brews">
             {filtered.length === 0 && (
               <Card>
-                <p className="text-[14px] text-mute">
+                <p className="text-base text-mute">
                   Für diesen Filter gibt es noch keinen Brew.
                 </p>
               </Card>
@@ -209,15 +209,15 @@ export default function LogScreen({ route, navigate, back }: Props) {
                         <p className="truncate font-medium">
                           {gefilterteBohne ? METHOD_LABEL[b.method] : beanName(b.beanId)}
                         </p>
-                        {b.isBest && <span className="shrink-0 text-[11px] text-crema">REFERENZ</span>}
+                        {b.isBest && <span className="shrink-0 text-2xs text-crema">REFERENZ</span>}
                       </div>
-                      <p className="mt-0.5 text-[13px] text-mute">
+                      <p className="mt-0.5 text-sm text-mute">
                         {!gefilterteBohne && `${METHOD_LABEL[b.method]} · `}
                         {num(b.actual.doseG)} g →{' '}
                         {b.actual.yieldG ? `${num(b.actual.yieldG)} g` : `${b.actual.waterG} g`} ·{' '}
                         {fmtDauer(b.actual.timeS)}
                       </p>
-                      <p className="mt-1 text-[12px] text-faint">
+                      <p className="mt-1 text-xs text-faint">
                         {new Date(b.createdAt).toLocaleDateString('de-DE', {
                           day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
                         })}
@@ -226,7 +226,7 @@ export default function LogScreen({ route, navigate, back }: Props) {
                           : ''}
                       </p>
                     </div>
-                    <span className="shrink-0 text-[13px] text-crema">
+                    <span className="shrink-0 text-sm text-crema">
                       {'★'.repeat(b.tasting?.rating ?? 0)}
                     </span>
                   </div>
@@ -303,10 +303,10 @@ function BrewDetail({ brewId, onBack }: { brewId: string; onBack: () => void }) 
       {brew.tasting && (
         <Section title="Tasting">
           <Card>
-            <p className="text-[20px] text-crema">{'★'.repeat(brew.tasting.rating)}</p>
+            <p className="text-2xl text-crema">{'★'.repeat(brew.tasting.rating)}</p>
             {brew.tasting.defects.length > 0 && (
               <div className="mt-3">
-                <p className="text-[12px] text-mute">Was störte</p>
+                <p className="text-xs text-mute">Was störte</p>
                 <div className="mt-1.5 flex flex-wrap gap-2">
                   {brew.tasting.defects.map((d) => (
                     <Chip key={d} label={DEFECT_LABEL[d]} active tone="bad" />
@@ -316,7 +316,7 @@ function BrewDetail({ brewId, onBack }: { brewId: string; onBack: () => void }) 
             )}
             {brew.tasting.characters.length > 0 && (
               <div className="mt-3">
-                <p className="text-[12px] text-mute">Charakter</p>
+                <p className="text-xs text-mute">Charakter</p>
                 <div className="mt-1.5 flex flex-wrap gap-2">
                   {brew.tasting.characters.map((c) => (
                     <Chip key={c} label={CHARACTER_LABEL[c] ?? c} active />

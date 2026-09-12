@@ -239,7 +239,7 @@ export default function SwipeReveal({
                 opacity: `clamp(0.2, calc(0.2 + 0.8 * (var(--ab, 0) - var(--start)) / ${AKTION_PX}), 1)`,
               } as React.CSSProperties
             }
-            className={`flex flex-1 flex-col items-center justify-center gap-1 rounded-xl text-[13px] font-medium ${
+            className={`flex flex-1 flex-col items-center justify-center gap-1 rounded-xl text-sm font-medium ${
               a.tone === 'bad' ? 'bg-bad text-white' : 'bg-raised text-ink'
             }`}
           >
@@ -264,7 +264,7 @@ export default function SwipeReveal({
              Weg für alle, die nicht wischen können. */
           aria-hidden="true"
           style={{ opacity: 0 }}
-          className={`pointer-events-none absolute inset-0 flex items-center justify-end bg-bad pr-5 text-[14px] font-semibold text-white transition-opacity duration-150 ${className}`}
+          className={`pointer-events-none absolute inset-0 flex items-center justify-end bg-bad pr-5 text-base font-semibold text-white transition-opacity duration-150 ${className}`}
         >
           {swipeAwayLabel ?? 'Loslassen'}
         </div>

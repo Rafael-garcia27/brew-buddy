@@ -228,9 +228,9 @@ export function BeanDetail({
           Liste, in der die French Press unter dem Espresso saß und
           trotzdem „gut geeignet" hieß — sichtbar widersprüchlich in
           einem einzigen Blick. */}
-      <Section title="Fit" action={<span className="text-[12px] text-faint">nach Empfehlung</span>}>
+      <Section title="Fit" action={<span className="text-xs text-faint">nach Empfehlung</span>}>
         <Card>
-          <p className="mb-3 text-[11px] leading-snug text-faint">
+          <p className="mb-3 text-2xs leading-snug text-faint">
             Balken: wo die Bohne ihre Stärken ausspielt. Wort: wie leicht die Methode zu treffen
             ist.
           </p>
@@ -238,13 +238,13 @@ export function BeanDetail({
             {fit.map(({ method: m, suitability: f, rank, viable }, i) => (
               <div key={m} className="flex items-center gap-3">
                 <span
-                  className={`w-24 shrink-0 text-[14px] ${i === 0 ? 'font-semibold' : ''} ${
+                  className={`w-24 shrink-0 text-base ${i === 0 ? 'font-semibold' : ''} ${
                     imHaus.includes(m) ? '' : 'text-mute'
                   }`}
                 >
                   {METHOD_LABEL[m]}
                   {!imHaus.includes(m) && (
-                    <span className="block text-[10px] leading-tight text-faint">nicht im Haus</span>
+                    <span className="block text-2xs leading-tight text-faint">nicht im Haus</span>
                   )}
                 </span>
                 <span
@@ -265,7 +265,7 @@ export function BeanDetail({
                   ))}
                 </span>
                 <span
-                  className={`min-w-0 flex-1 text-[13px] ${
+                  className={`min-w-0 flex-1 text-sm ${
                     f.isWarning || !viable ? 'text-warn' : i === 0 ? 'text-ink' : 'text-mute'
                   }`}
                 >
@@ -276,7 +276,7 @@ export function BeanDetail({
           </div>
           {/* Die Begründung gehört zur obersten Zeile — und die ist jetzt
               die empfohlene, nicht mehr die erste in der Anzeigereihenfolge. */}
-          <p className="mt-3 border-t border-line pt-3 text-[13px] leading-relaxed text-mute">
+          <p className="mt-3 border-t border-line pt-3 text-sm leading-relaxed text-mute">
             {fit[0]!.suitability.reason}
           </p>
         </Card>
@@ -299,7 +299,7 @@ export function BeanDetail({
         action={
           <div className="flex items-baseline gap-2">
             {bags.length > 0 && (
-              <span className="text-[12px] text-faint">
+              <span className="text-xs text-faint">
                 Fenster für {METHOD_SHORT[freshnessMethod(bean)]}
               </span>
             )}
@@ -311,7 +311,7 @@ export function BeanDetail({
       >
         {bags.length === 0 ? (
           <Card>
-            <p className="text-[14px] text-mute">
+            <p className="text-base text-mute">
               Noch keine Bag. Ohne Röstdatum kann ich die Frische nicht mitführen.
             </p>
           </Card>
@@ -343,12 +343,12 @@ export function BeanDetail({
                     <div className="flex items-center gap-3">
                       <FreshnessRing score={bag.depleted ? 0 : f.score} label={f.days !== null ? String(f.days) : '?'} />
                       <div className="flex-1">
-                        <p className="text-[15px]">
+                        <p className="text-lg">
                           {bag.roastDate
                             ? `Geröstet ${new Date(bag.roastDate).toLocaleDateString('de-DE')}`
                             : 'Röstdatum fehlt'}
                         </p>
-                        <p className="text-[13px] text-mute">
+                        <p className="text-sm text-mute">
                           {bag.remainingGrams !== undefined ? `${bag.remainingGrams} g übrig` : ''}
                           {bag.storage === 'frozen' ? ' · eingefroren' : ''}
                           {bag.depleted ? ' · leer' : ''}
@@ -373,14 +373,14 @@ export function BeanDetail({
           <div className="space-y-2">
             {bestByMethod.map(({ method, brew }) => (
               <Card key={method}>
-                <p className="text-[13px] text-mute">{METHOD_LABEL[method]}</p>
-                <p className="mt-1 text-[16px]">
+                <p className="text-sm text-mute">{METHOD_LABEL[method]}</p>
+                <p className="mt-1 text-xl">
                   {brew.actual.doseG} g →{' '}
                   {brew.actual.yieldG ? `${brew.actual.yieldG} g` : `${brew.actual.waterG} g Wasser`} ·{' '}
                   {brew.actual.timeS} s
                   {brew.actual.grindSetting ? ` · Mahlgrad ${brew.actual.grindSetting.value}` : ''}
                 </p>
-                <p className="mt-1 text-[13px] text-crema">{'★'.repeat(brew.tasting?.rating ?? 0)}</p>
+                <p className="mt-1 text-sm text-crema">{'★'.repeat(brew.tasting?.rating ?? 0)}</p>
               </Card>
             ))}
           </div>

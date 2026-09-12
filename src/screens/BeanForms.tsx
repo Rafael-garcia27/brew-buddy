@@ -296,7 +296,7 @@ export function BeanSheet({
             bestehende Tüte still überschreiben würde. */}
         {!bearbeiten && (
           <div className="border-t border-line pt-4">
-            <p className="mb-3 text-[13px] font-semibold tracking-wide text-mute uppercase">Erste Bag</p>
+            <p className="mb-3 text-sm font-semibold tracking-wide text-mute uppercase">Erste Bag</p>
             <Field label="Roast Date" hint="Ohne dieses Datum kann ich die Frische nicht mitführen">
               <TextInput value={roastDate} onChange={setRoastDate} type="date" />
             </Field>
@@ -339,16 +339,16 @@ function CountryAdd({ onAdd }: { onAdd: (name: string) => void }) {
     <div className="mt-2 rounded-xl border border-line bg-raised p-3">
       <TextInput value={eingabe} onChange={setEingabe} placeholder="z. B. Bolivien" />
       {!leer && !treffer && (
-        <p className="mt-2 text-[13px] leading-snug text-bad">
+        <p className="mt-2 text-sm leading-snug text-bad">
           „{eingabe.trim()}" ist kein Land, das ich kenne. Schreib es aus — deutsch oder
           englisch, etwa „Elfenbeinküste" oder „Ivory Coast".
         </p>
       )}
       {treffer && treffer.de.toLowerCase() !== eingabe.trim().toLowerCase() && (
-        <p className="mt-2 text-[13px] text-mute">Wird gespeichert als „{treffer.de}".</p>
+        <p className="mt-2 text-sm text-mute">Wird gespeichert als „{treffer.de}".</p>
       )}
       {treffer && !treffer.belt && (
-        <p className="mt-2 text-[13px] leading-snug text-warn">
+        <p className="mt-2 text-sm leading-snug text-warn">
           {treffer.de} liegt außerhalb des Kaffeegürtels. Kann sein, dass es stimmt — häufig
           ist es aber das Land des Rösters und nicht das der Bohne.
         </p>
