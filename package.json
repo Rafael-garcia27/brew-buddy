@@ -11,6 +11,7 @@
     "test": "vitest run",
     "lint": "oxlint",
     "kontrast": "node scripts/kontrast.mjs",
+    "pruefen": "npm run lint && npm run kontrast && npm run build && npm test",
     "test:watch": "vitest",
     "typecheck": "tsc -b --noEmit",
     "deploy:direct": "bash scripts/deploy-direct.sh",
