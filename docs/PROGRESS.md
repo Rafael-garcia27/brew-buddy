@@ -4,9 +4,14 @@ Gedächtnis für diesen Auftrag. Wird nach **jedem** Teilschritt aktualisiert,
 nicht erst am Phasenende.
 
 ## Aktuelle Phase
-Phase 3 — Umsetzung. **Woche 1 und 2 vollständig** (P1–P11). Als Nächstes Woche 3.
+Phase 3 — Umsetzung. **Alle 14 Pakete erledigt** (P1–P14).
 
 ## Zuletzt geprüft
+**Woche 3 fertig.** P12 (Schriftskala: 229 Stellen, neun Stufen, Zeilen­
+höhen auf `inherit` gepinnt — sonst hätte Tailwinds Vorgabe den Abstand
+überall um 5 % verengt), P13 (`Bereichsgrenze` um Bildschirm und Karte,
+mit zwei absichtlichen Abstürzen belegt), P14 (README).
+
 **Woche 2 fertig.** P10 (18 Tests für `hydrate()`, den Kernpfad und den
 Sicherungs-Rundlauf, ohne DOM-Umgebung; per Mutation gegengeprüft),
 P11 (F-13, F-19), P8 (`BeansScreen` 1429 → 572 + 417 + 490),
@@ -50,14 +55,15 @@ gegengeprüft: Der Bestand überlebt, die Warnung erscheint.
 Linter ist zugesagt (P7) und auf Woche 1 vorgezogen.
 
 ## Nächster Schritt
-**Woche 3 — Erlebnis.** P12 (Schriftskala, F-11), P13 (Fehlerzustände je
-Ansicht), P14 (README + CHANGELOG, F-16).
+Keiner mehr aus der Roadmap — alle 14 Pakete sind erledigt. Was
+unterwegs aufgefallen und bewusst liegen geblieben ist, steht in
+`IDEAS.md`.
 
 ## Phasen
 - [x] **Phase 0 — Recon** (nur lesen) → Lagebild + `docs/ARCHITECTURE.md`
 - [x] **Phase 1 — Audit** (nur lesen) → `docs/AUDIT.md`
 - [x] **Phase 2 — Roadmap** → `docs/ROADMAP.md`
-- [ ] **Phase 3…N — Umsetzung**
+- [x] **Phase 3…N — Umsetzung** — P1 bis P14, alle erledigt
 
 ## Offene Teilaufgaben Phase 0
 - [x] Struktur & Größe — 118 Dateien, 17.753 Zeilen TS/TSX
@@ -105,9 +111,9 @@ Ansicht), P14 (README + CHANGELOG, F-16).
 - [x] **P11** Kleinkram (F-13, F-19) — P3 · erledigt
 
 ### Woche 3 — Erlebnis (9 h)
-- [ ] **P12** Schriftskala (F-11) — P2, 4 h
-- [ ] **P13** Fehlerzustände je Ansicht — P2, 3 h
-- [ ] **P14** README + CHANGELOG (F-16) — P3, 2 h
+- [x] **P12** Schriftskala (F-11) — P2 · erledigt, 0 Einzelwerte übrig
+- [x] **P13** Fehlerzustände je Ansicht — P2 · erledigt, AUDIT §6.4 ohne „fehlt“
+- [x] **P14** README + CHANGELOG (F-16) — P3 · erledigt
 
 ### Nur eine Woche Zeit?
 Dann **P1 + P2 + P6**. Zusammen ~1 Tag.

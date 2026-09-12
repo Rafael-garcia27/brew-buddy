@@ -55,6 +55,12 @@ der Git-Historie.
 - **Die letzte gelöschte Mühle bleibt gelöscht.** Sie wurde beim nächsten
   Start wortlos wieder angelegt.
 
+### Neu (klein)
+- **Ein kaputter Teil reißt nicht mehr die ganze App mit.** Geht das
+  Nachladen der Weltkarte schief, steht ein Hinweis an ihrer Stelle und
+  der Rest des Profils bleibt. Stürzt ein Bildschirm ab, bleibt die
+  Reiterleiste bedienbar — man kann ihn verlassen, statt neu zu starten.
+
 ### Behoben (klein)
 - **Das Setup zeigt für die Barista Express nur noch Espresso.** Vorher
   standen dort fünf Mahlgrade für Methoden, die diese Mühle gar nicht
@@ -63,6 +69,10 @@ der Git-Historie.
   Löschen" stand in jeder Zeile im Textfluss. (F-19)
 
 ### Unter der Haube
+- **Eine Schriftskala statt 17 Einzelwerte.** Neun Stufen als Tokens;
+  229 Stellen umgestellt, ohne dass sich der Zeilenabstand ändert. (F-11)
+- **README auf Stand gebracht** — fünf Methoden statt drei, die
+  tatsächlichen Prüfkommandos, die aktuelle Verzeichnisstruktur. (F-16)
 - **Die beiden größten Dateien sind zerlegt.** `BeansScreen` 1429 → 572
   Zeilen, `BrewScreen` 1304 → 838, verteilt auf fünf Dateien statt zwei.
   Reines Verschieben, kein Verhalten geändert. (F-09)

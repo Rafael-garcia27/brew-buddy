@@ -1,6 +1,7 @@
 # Café
 
-**Persönliches Dial-in-Werkzeug für Espresso, V60 und AeroPress.**
+**Persönliches Dial-in-Werkzeug für Espresso, V60, AeroPress,
+French Press und Filterkaffeemaschine.**
 Läuft als PWA auf dem iPhone. Vollständig offline, ohne Konto, ohne Cloud.
 
 ### → **[cafe.garciahub.de](https://cafe.garciahub.de/)**
@@ -81,9 +82,12 @@ Barista/
 ├── types/       Domänenmodell + Rechenkern (reine Funktionen)
 ├── src/
 │   ├── engine/  Startpunkt · Diagnose · Frische · Mühle · Lernen · Eignung
-│   ├── screens/ Beans (Start) · Brühen · Logbuch · Setup
-│   └── store/   Zustand + IndexedDB
-└── docs/        Briefing · Solution Design · Vergleich mit dem Vorgänger
+│   ├── screens/ Coffee (Regal · Profil · Formulare) · Brew (Startpunkt ·
+│   │            Erfassen · Phasen) · Logbuch · Setup
+│   ├── components/  Bausteine, Bohnengrafik, Mahlgradräder, Wischgeste
+│   └── store/   Zustand + IndexedDB + Migration + Import/Export
+├── scripts/     Werkzeuge, u. a. die Kontrastprüfung
+└── docs/        Briefing · Solution Design · Architektur · Audit · Roadmap
 ```
 
 **Leitprinzip:** Fachwissen liegt in `data/*.json`, nicht im Code. Der Code ist
@@ -96,9 +100,18 @@ nur der Interpreter. Eine fachliche Korrektur ist eine Datenänderung.
 ```bash
 npm install
 npm run dev        # Entwicklungsserver
-npm test           # 121 Tests gegen die Abnahmeszenarien
-npm run build      # Produktions-Build
+npm run pruefen    # alles auf einmal — dieselbe Kette wie in der CI
+npm run build      # Produktions-Build (Typprüfung inklusive)
 ```
+
+`npm run pruefen` läuft nacheinander durch und bricht beim ersten Fehler ab:
+
+| Kommando | prüft |
+|---|---|
+| `npm run lint` | Fehlerklassen, die Typen und Tests nicht sehen — Hooks hinter Bedingungen, vergessene Abhängigkeiten, Refs beim Rendern |
+| `npm run kontrast` | jede Textfarbe gegen jeden Untergrund, beide Themes, WCAG 2.1 AA |
+| `npm run build` | Typen und Produktions-Build |
+| `npm test` | 432 Tests |
 
 ### Tests
 
@@ -118,6 +131,11 @@ den Fällen, in denen sie **nicht** das Naheliegende tun darf:
 Zusätzlich prüft `types/domain.test.ts` jedes in `kb/` ausgerechnete Beispiel
 gegen die Implementierung — von der Extraktionsausbeute bis zur Eismenge beim
 Japanese Iced Coffee.
+
+Und seit dem Audit prüfen `src/store/*.test.ts` die Stellen, an denen Daten
+verloren gehen könnten: was beim Start übernommen und was zurückgeschrieben
+wird, die Kette „Bohne anlegen → brühen → protokollieren", und der Rundlauf
+durch eine Sicherungsdatei.
 
 ---
 
@@ -150,8 +168,8 @@ Alle Zahlen stammen aus `kb/` und sind dort mit Konfidenz gekennzeichnet:
 
 ## Deployment
 
-Im Normalfall macht das die CI: Push auf `main` → Typprüfung + Tests → Build →
-GitHub Pages. Nichts weiter zu tun.
+Im Normalfall macht das die CI: Push auf `main` → Linter + Kontrastprüfung +
+Typprüfung + Tests → Build → GitHub Pages. Nichts weiter zu tun.
 
 **Wenn GitHub Actions ausgefallen ist** ([Status prüfen](https://www.githubstatus.com)):
 
@@ -166,12 +184,31 @@ Actions. Danach steht Pages auf `legacy`. Sobald Actions wieder läuft:
 npm run deploy:restore
 ```
 
-> **Achtung, zwei Konten:** Auf diesem Rechner liegt im Schlüsselbund die
-> CogniCore-Anmeldung (`Rafael-278`) für github.com, und sie antwortet vor dem
-> gh-Helfer. Neue Repos pushen deshalb standardmäßig unter dem falschen Konto.
-> Die Deploy-Skripte umgehen das. Dauerhafte Behebung: siehe
-> `docs/04-faktencheck.md` §10.
+> **Zwei Konten auf einem Rechner.** Privat (`Rafael-garcia27`) und
+> geschäftlich liegen beide im Schlüsselbund. Welches gilt, entscheidet nicht
+> `gh`, sondern eine `url.…insteadOf`-Regel in der Git-Konfiguration: Sie
+> schreibt den passenden Benutzernamen in jede GitHub-URL, abhängig vom
+> Verzeichnis. Solange das Projekt unter `~/Claude Projekte/Privat/` liegt,
+> stimmt alles von allein — ein manuelles `gh auth switch` ist unnötig und
+> hat schon einmal den Schlüsselbund gesperrt.
+>
+> Gibt ein Push 403, ist meist das hinterlegte Token veraltet:
+> `gh auth token --user Rafael-garcia27` neu ablegen.
 
 ---
 
-*Gebaut für ein iPhone 12, eine Espressomühle, einen V60 und eine AeroPress.*
+## Weitere Dokumente
+
+| Datei | Inhalt |
+|---|---|
+| `CHANGELOG.md` | was sich für jemanden geändert hat, der die App benutzt |
+| `docs/ARCHITECTURE.md` | wie die App gebaut ist, Datei für Datei belegt |
+| `docs/AUDIT.md` | 19 Befunde mit Beleg, Schwere und Empfehlung |
+| `docs/ROADMAP.md` | die Pakete daraus, mit Abnahmekriterien |
+| `docs/PROGRESS.md` | was davon erledigt ist |
+| `IDEAS.md` | was unterwegs auffiel und bewusst liegen blieb |
+
+---
+
+*Gebaut für ein iPhone 12, eine Sage Barista Express, eine Mylo SG2,
+einen V60, eine AeroPress und eine French Press.*
