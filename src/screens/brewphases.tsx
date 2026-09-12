@@ -78,8 +78,6 @@ export function PhaseLaufkontrolle({
   const alsUhr = !isEspresso
   const immersion = isImmersion(method)
   const ratioTon = ratioTone(ratioLive)
-  const setPhase = (_: 'taste') => weiter()
-  const runDiagnosis = auswerten
 
   return (
     <>
@@ -176,12 +174,12 @@ export function PhaseLaufkontrolle({
       </Section>
 
       <Section>
-        <Button size="lg" className="w-full" onClick={() => setPhase('taste')}>
+        <Button size="lg" className="w-full" onClick={weiter}>
           Weiter zum Tasting
         </Button>
         {/* Wer nur eingemessen hat, muss nicht verkosten, um die
             Zeitkorrektur zu bekommen — Phase C vor Phase D. */}
-        <Button variant="secondary" className="mt-2 w-full" onClick={runDiagnosis}>
+        <Button variant="secondary" className="mt-2 w-full" onClick={auswerten}>
           Ohne Tasting abschließen
         </Button>
       </Section>
@@ -207,8 +205,6 @@ export function PhaseVerkosten({
   setCharacters: (f: (x: Character[]) => Character[]) => void
   auswerten: () => void
 }) {
-  const runDiagnosis = auswerten
-
   return (
     <>
       <Section title="Rating">
@@ -263,7 +259,7 @@ export function PhaseVerkosten({
       </Section>
 
       <Section>
-        <Button size="lg" className="w-full" disabled={rating === 0} onClick={runDiagnosis}>
+        <Button size="lg" className="w-full" disabled={rating === 0} onClick={auswerten}>
           Auswerten
         </Button>
         {/* Ein Knopf, der nichts tut und nicht sagt warum, ist der
