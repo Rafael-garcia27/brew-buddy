@@ -11,6 +11,13 @@ der Git-Historie.
 ## Unveröffentlicht
 
 ### Behoben
+- **Die App lässt sich wieder vergrößern.** Zwei Finger auseinander tun
+  jetzt, was sie sollen — vorher war das gesperrt. Der Auto-Zoom beim
+  Antippen eines Eingabefelds bleibt trotzdem aus. (F-06)
+- **Sechs Textfarben waren zu blass zum Lesen.** Kleingedrucktes, Hinweise
+  und die Signalfarben lagen unter der Schwelle, ab der Text auf seinem
+  Untergrund verlässlich erkennbar ist. Alle Kombinationen liegen jetzt
+  darüber — sichtbar vor allem bei 10–12-px-Text und in der Sonne. (F-05)
 - **Ein seltener Absturz im Brühen-Bildschirm.** Unter bestimmten
   Bedingungen rief der Bildschirm zwei React-Hooks weniger auf als sonst;
   beim Wechsel zwischen beiden Fällen bricht React ab und entlädt die
@@ -38,6 +45,10 @@ der Git-Historie.
   Start wortlos wieder angelegt.
 
 ### Unter der Haube
+- **Kontraste sind jetzt prüfbar** (`npm run kontrast`, auch in der CI).
+  Rechnet jede Textfarbe gegen jeden Untergrund und bricht ab, wenn eine
+  Kombination unter 4,5:1 fällt. Sonst hält der Fix nur bis zum nächsten
+  Griff in die Palette.
 - **Linter eingerichtet** (`npm run lint`, auch in der CI). Nicht ESLint
   wie geplant — `typescript-eslint` läuft nicht auf TypeScript 7, dessen
   Paket die alte Compiler-Schnittstelle nicht mehr hat. Stattdessen

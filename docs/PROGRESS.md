@@ -4,9 +4,16 @@ Gedächtnis für diesen Auftrag. Wird nach **jedem** Teilschritt aktualisiert,
 nicht erst am Phasenende.
 
 ## Aktuelle Phase
-Phase 3 — Umsetzung. P1, P2 und P7 erledigt.
+Phase 3 — Umsetzung. P1, P2, P7 und P6 erledigt.
 
 ## Zuletzt geprüft
+**P6 erledigt.** Sechs Tokens nachgezogen (OKLCH, Farbton und Buntheit
+unangetastet), `maximum-scale` gestrichen. Gemessen mit demselben Weg
+vorher und nachher gegen den Produktions-Build: Accessibility **86 → 100**,
+durchgefallen waren genau `color-contrast` (Gewicht 7) und `meta-viewport`
+(Gewicht 10). Kontrastmatrix ohne `!`. Als `npm run kontrast` in der CI
+festgenagelt, Wächter gegengeprüft (alter Wert → exit 1).
+
 **P7 erledigt — aber anders als geplant.** ESLint ist an TypeScript 7
 nicht möglich (`typescript` exportiert nur noch `version`), belegt in
 `docs/ROADMAP.md` § P7. Stattdessen oxlint, eine dev-Abhängigkeit, null
@@ -28,8 +35,8 @@ gegengeprüft: Der Bestand überlebt, die Warnung erscheint.
 Linter ist zugesagt (P7) und auf Woche 1 vorgezogen.
 
 ## Nächster Schritt
-**P6 — Kontrast + Zoom** (F-05, F-06, ~2 h). Danach P3 (Version +
-Update-Hinweis), P4 (Sicherung vor Import), P5 (`npm audit fix`).
+**P3 — Version + Update-Hinweis** (F-04, F-07, ~1,5 h). Danach P4
+(Sicherung vor Import) und P5 (`npm audit fix`) — damit ist Woche 1 fertig.
 
 ## Phasen
 - [x] **Phase 0 — Recon** (nur lesen) → Lagebild + `docs/ARCHITECTURE.md`
@@ -73,7 +80,7 @@ Update-Hinweis), P4 (Sicherung vor Import), P5 (`npm audit fix`).
 - [ ] **P3** Version + Update-Hinweis (F-04, F-07) — P1, 1,5 h
 - [ ] **P4** Sicherung vor Import (F-08) — P1, 2 h
 - [ ] **P5** `npm audit fix` (F-12) — P2, 15 min
-- [ ] **P6** Kontrast + Zoom (F-05, F-06) — P1, 2 h
+- [x] **P6** Kontrast + Zoom (F-05, F-06) — P1 · erledigt, Accessibility 86 → 100
 
 ### Woche 2 — Aufräumen (16,5 h)
 - [x] **P7** Linter (F-10) — P2 · erledigt (oxlint statt ESLint, siehe ROADMAP § P7)

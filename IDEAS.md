@@ -66,3 +66,20 @@ Bewusst aus P2 herausgehalten: ein Knopf, der alles löscht, gehört nicht
 in denselben Durchgang wie der Bildschirm, der ihn trägt.
 
 ---
+## `--c-mute` und `--c-faint` sind fast dasselbe Token (aus P6)
+
+Vor P6 lagen beide bei 4,27 bzw. 4,26 auf `paper` — als Hierarchie gedacht,
+in Wahrheit nicht unterscheidbar. Nach dem Nachziehen stehen sie bei 5,55
+und 5,15; das ist ein echter, aber kleiner Unterschied.
+
+Dahinter steckt ein Denkfehler, der größer ist als die Farbe: `faint` wird
+für 10–12-px-Text benutzt, `mute` für 13–15 px. Kleinere Schrift braucht
+**mehr** Kontrast, nicht weniger — die beiden Tokens sind also verkehrt
+herum zugeordnet.
+
+Der saubere Weg wäre, sie zu einem zusammenzulegen. Das sind aber rund
+hundert Verwendungsstellen, und der richtige Moment dafür ist P12
+(Schriftskala): Dort werden die Größen ohnehin angefasst, und erst dann
+lässt sich sagen, welche Stufe welche Farbe braucht.
+
+---
