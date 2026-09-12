@@ -227,21 +227,44 @@ export function StorageErrorBar({
   )
 }
 
-/** Aktualisierung des Service Workers sichtbar machen */
+/**
+ * Eine neue Version liegt bereit — sichtbar machen, statt still zu tauschen.
+ *
+ * Befund F-07: Diese Leiste war fertig gebaut und wurde nirgends
+ * gerendert. Mit `registerType: 'autoUpdate'` übernimmt der neue Service
+ * Worker von selbst; die laufende Seite behält aber ihren alten Code, bis
+ * sie neu geladen wird. Wer die App als Lesezeichen offen lässt, läuft
+ * sonst wochenlang auf einem Stand, den es nicht mehr gibt.
+ *
+ * Deshalb sagt sie nicht „geladen", sondern bietet das Neuladen an — das
+ * ist die Handlung, um die es geht.
+ */
 export function UpdateToast() {
-  const [ready, setReady] = useState(false)
+  const [bereit, setBereit] = useState(false)
 
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return
-    const onUpdate = () => setReady(true)
+    /**
+     * Beim allerersten Besuch gibt es noch keinen Controller; wenn dann
+     * der erste Service Worker übernimmt, feuert `controllerchange`
+     * ebenfalls. Das ist keine Aktualisierung, sondern die Installation —
+     * und ein „neue Version" beim ersten Öffnen wäre schlicht falsch.
+     */
+    if (!navigator.serviceWorker.controller) return
+    const onUpdate = () => setBereit(true)
     navigator.serviceWorker.addEventListener('controllerchange', onUpdate)
     return () => navigator.serviceWorker.removeEventListener('controllerchange', onUpdate)
   }, [])
 
-  if (!ready) return null
+  if (!bereit) return null
   return (
-    <div className="pb-safe fixed inset-x-4 bottom-24 z-40 rounded-2xl border border-line bg-raised px-4 py-3">
-      <p className="text-[14px]">Neue Version geladen.</p>
+    <div className="pb-safe fixed inset-x-4 bottom-24 z-40 flex items-center gap-3 rounded-2xl border border-line bg-raised px-4 py-3 shadow-lg">
+      <p className="min-w-0 flex-1 text-[14px] leading-snug">
+        Eine neue Version steht bereit.
+      </p>
+      <Button size="sm" onClick={() => window.location.reload()}>
+        Neu laden
+      </Button>
     </div>
   )
 }

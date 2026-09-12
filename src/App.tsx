@@ -20,7 +20,7 @@ import { useStore } from './store'
 import type { BeanTrash } from './domain'
 import type { BrewMethod } from '@domain'
 import { METHOD_IDS } from './kb'
-import { UndoBar, StorageErrorBar } from './components/system'
+import { UndoBar, StorageErrorBar, UpdateToast } from './components/system'
 import BrewScreen from './screens/BrewScreen'
 import MethodPicker from './screens/MethodPicker'
 import BeanPicker from './screens/BeanPicker'
@@ -175,6 +175,11 @@ export default function App() {
           }}
         />
       )}
+
+      {/* Liegt über der Reiterleiste und geht nicht von selbst — eine
+          Aktualisierung, die man wegwischt, ohne sie zu laden, kommt erst
+          beim nächsten Wechsel des Service Workers wieder. */}
+      <UpdateToast />
 
       {/* Nur die beiden Einstiege. Profil, Log und Setup sind Ziele und
           gehören nicht in eine Leiste, die immer sichtbar ist. */}

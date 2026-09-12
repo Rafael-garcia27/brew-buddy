@@ -14,7 +14,7 @@ import { GRINDER_CATALOG, GLOSSARY, termsForLevel } from '@/kb'
 import { grinderFromCatalog, calibrate, suggestedSetting, formatSetting } from '@/engine/grinder'
 import { METHODS, METHOD_LABEL } from '@/labels'
 import { shareBackup, parseBackup, storageEstimate, requestPersistence } from '@/store/persist'
-import { APP_NAME, BACKUP_REMINDER_DAYS } from '@/config'
+import { APP_NAME, APP_BUILD, BACKUP_REMINDER_DAYS } from '@/config'
 import {
   Screen, Header, Section, Card, Button, Field, Select, Sheet, Stepper,
   Toggle, SegmentedControl, Stat, TextInput, num,
@@ -295,6 +295,12 @@ export default function SetupScreen({ route, back }: Props) {
       <Section>
         <p className="px-1 text-[12px] text-faint">
           {APP_NAME} · Alle Daten bleiben auf diesem Gerät. Keine Cloud, kein Konto, kein Tracking.
+        </p>
+        {/* Version, Commit und Baudatum: Ohne das lässt sich „bei mir tut
+            X nicht" nicht auf einen Stand zurückführen — die Nummer allein
+            steht seit dem ersten Tag auf 0.1.0. */}
+        <p className="mt-1 px-1 font-mono text-[11px] text-faint">
+          {APP_BUILD.version} · {APP_BUILD.commit} · {APP_BUILD.built}
         </p>
       </Section>
 

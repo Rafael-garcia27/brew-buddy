@@ -3,6 +3,28 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import { fileURLToPath, URL } from 'node:url'
+import { readFileSync } from 'node:fs'
+import { execSync } from 'node:child_process'
+
+const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as {
+  version: string
+}
+
+/**
+ * Welcher Stand läuft gerade?
+ *
+ * Die Versionsnummer allein sagt nichts — sie steht seit dem ersten Tag
+ * auf 0.1.0. Was einen Build wirklich identifiziert, ist der Commit.
+ * In der CI liefert GitHub ihn als Umgebungsvariable, lokal fragt git.
+ */
+function commit(): string {
+  if (process.env.GITHUB_SHA) return process.env.GITHUB_SHA.slice(0, 7)
+  try {
+    return execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim()
+  } catch {
+    return 'lokal'
+  }
+}
 
 // Eigene Domain (cafe.garciahub.de) → die App liegt im Wurzelverzeichnis.
 // DEPLOY_BASE bleibt als Notausgang, falls wieder unter /<repo>/ ausgeliefert
@@ -51,6 +73,11 @@ export default defineConfig({
       },
     }),
   ],
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+    __APP_COMMIT__: JSON.stringify(commit()),
+    __APP_BUILT__: JSON.stringify(new Date().toISOString().slice(0, 10)),
+  },
   build: {
     target: 'es2022',
     sourcemap: false,

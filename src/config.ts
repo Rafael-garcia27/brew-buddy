@@ -1,4 +1,18 @@
 export const APP_NAME = 'Café'
+
+/**
+ * Welcher Stand läuft.
+ *
+ * Anlass ist Befund F-04: In der ganzen Oberfläche stand keine Version.
+ * Wer sagen will „bei mir tut X nicht", konnte nicht sagen, welches X.
+ * Die Nummer allein hilft dabei nicht — sie steht seit dem ersten Tag auf
+ * 0.1.0 —, deshalb steht der Commit daneben.
+ */
+export const APP_BUILD = {
+  version: __APP_VERSION__,
+  commit: __APP_COMMIT__,
+  built: __APP_BUILT__,
+} as const
 export const APP_TAGLINE = 'Dein Dial-in, nicht irgendeins'
 export const SCHEMA_VERSION = 3
 
