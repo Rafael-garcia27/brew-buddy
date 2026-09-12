@@ -4,9 +4,14 @@ Gedächtnis für diesen Auftrag. Wird nach **jedem** Teilschritt aktualisiert,
 nicht erst am Phasenende.
 
 ## Aktuelle Phase
-Phase 3 — Umsetzung. P1 erledigt.
+Phase 3 — Umsetzung. P1 und P2 erledigt.
 
 ## Zuletzt geprüft
+**P2 erledigt.** F-03 zuerst im Browser belegt (`root.innerHTML.length
+=== 0`, null Knöpfe), dann Fehlergrenze um `<App/>`. Rettungsweg geht
+bewusst am Store und an `migrate()` vorbei — beide können die Ursache
+sein. 13 Tests für `rescue.ts`, im Browser beide Pfade ausgelöst.
+
 **P1 erledigt** (Commits `e3f2963`, `91e3d71`). Drei Schritte: Startlogik
 aus `hydrate()` herausgelöst (reines Verschieben), Test geschrieben —
 5 von 12 rot —, dann behoben. Im Browser mit einem echten Lesefehler
@@ -15,8 +20,8 @@ gegengeprüft: Der Bestand überlebt, die Warnung erscheint.
 Linter ist zugesagt (P7) und auf Woche 1 vorgezogen.
 
 ## Nächster Schritt
-**P2 — ErrorBoundary** (~2 h). Danach P7 (Linter), dann P6 (Kontrast +
-Zoom).
+**P7 — Linter** (~2 h, vom Auftraggeber zugesagt und vorgezogen).
+Danach P6 (Kontrast + Zoom), dann P3 (Version + Update-Hinweis).
 
 ## Phasen
 - [x] **Phase 0 — Recon** (nur lesen) → Lagebild + `docs/ARCHITECTURE.md`
@@ -49,13 +54,13 @@ Zoom).
 - **O-3 ein iPhone** → F-08 (Sicherung vor Import) bleibt P1, eigenes Paket
 - **O-4 `drinks.json`** → beantwortet in `IDEAS.md`: 35 fertige Getränke­
   rezepturen, nicht im Bundle, bleibt liegen
-- **O-5 Linter** → erklärt in `docs/ROADMAP.md`; **Entscheidung offen**
+- **O-5 Linter** → erklärt in `docs/ROADMAP.md`; **zugesagt am 12.09.**
 
 ## Arbeitspakete (Phase 3+)
 
 ### Woche 1 — Stabilisieren (11 h)
 - [x] **P1** Datenverlust-Pfad (F-01, F-02) — **P0** · erledigt, 391 Tests grün
-- [ ] **P2** ErrorBoundary (F-03) — **P0**, 2 h
+- [x] **P2** ErrorBoundary (F-03) — **P0** · erledigt, 404 Tests grün
 - [ ] **P3** Version + Update-Hinweis (F-04, F-07) — P1, 1,5 h
 - [ ] **P4** Sicherung vor Import (F-08) — P1, 2 h
 - [ ] **P5** `npm audit fix` (F-12) — P2, 15 min

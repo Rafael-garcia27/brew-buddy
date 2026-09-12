@@ -11,6 +11,12 @@ der Git-Historie.
 ## Unveröffentlicht
 
 ### Behoben
+- **Ein Absturz endet nicht mehr in einer weißen Seite.** Ging beim
+  Zeichnen des Bildschirms etwas schief, blieb nichts übrig — in der
+  installierten App ohne Adresszeile eine Sackgasse. Jetzt erscheint ein
+  Fehlerbildschirm mit „Neu starten" und „Daten retten". Beim zweiten
+  Absturz in derselben Sitzung sagt er zusätzlich, dass es vermutlich am
+  gespeicherten Bestand liegt. (F-03)
 - **Ein Lesefehler kann den gespeicherten Bestand nicht mehr
   überschreiben.** Ließ sich die Datenbank beim Start nicht lesen, hielt
   die App das für einen Erststart und schrieb einen leeren Zustand
