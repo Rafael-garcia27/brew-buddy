@@ -3,12 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <!-- viewport-fit=cover ist Pflicht, damit env(safe-area-inset-*) auf dem
-         iPhone 12 überhaupt Werte liefert. maximum-scale verhindert den
-         Auto-Zoom beim Fokussieren von Eingabefeldern. -->
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover"
-    />
+         iPhone 12 überhaupt Werte liefert.
+
+         KEIN maximum-scale. Es stand hier gegen den iOS-Auto-Zoom beim
+         Fokussieren von Eingabefeldern — sperrt aber zugleich das
+         Vergrößern mit zwei Fingern, und damit den einzigen Weg, den
+         jemand mit schwachen Augen hat. Gegen den Auto-Zoom hilft
+         `font-size: max(16px, 1em)` auf Eingabefeldern; die Regel steht
+         in index.css und reicht allein. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <!-- Zwei Themefarben: iOS färbt die Statusleiste danach. -->
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#faf4ea" />
     <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1c1512" />

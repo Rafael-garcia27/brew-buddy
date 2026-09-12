@@ -43,13 +43,13 @@
   --c-raised: #f3e8d6;     /* Beige, abgeleitet von 7401 C */
   --c-line: #e2d2ba;       /* Sandkante */
   --c-ink: #4e3629;        /* Pantone 476 C — Espressobraun */
-  --c-mute: #8a6f58;       /* Milchkaffee */
-  --c-faint: #807263;      /* Hafer, dunkel genug für 4,5:1 */
+  --c-mute: #785d47;       /* Milchkaffee, nachgezogen auf 5,0:1 */
+  --c-faint: #736557;      /* Hafer, jetzt wirklich dunkel genug */
   --c-crema: #8c5a2b;      /* geröstetes Braun, der Akzent */
   --c-on-crema: #fdf7ed;   /* Creme auf dem Akzent */
   --c-crema-dim: #d9b98c;  /* Crema, aufgehellt */
-  --c-ok: #5f7a4a;         /* Kaffeeblatt */
-  --c-warn: #9c6825;       /* Honig, dunkel genug für 4,5:1 */
+  --c-ok: #556f40;         /* Kaffeeblatt */
+  --c-warn: #905d17;       /* Honig, jetzt wirklich dunkel genug */
   --c-bad: #a6402f;        /* Kaffeekirsche */
 
   /* Röstskala — die sieben Agtron-Bänder aus kb/05 §2.1, von hell nach
@@ -84,13 +84,13 @@ html.dark {
   --c-line: #453529;       /* Kante */
   --c-ink: #f7efe3;        /* Creme, abgeleitet von 7401 C */
   --c-mute: #b8a291;       /* Milchschaum im Schatten */
-  --c-faint: #806a58;      /* Pergamenthaut */
+  --c-faint: #a48d7a;      /* Pergamenthaut, aufgehellt auf 4,6:1 */
   --c-crema: #d9a566;      /* Crema — der Akzent auf dunkel */
   --c-on-crema: #2a1c12;   /* Espresso auf dem Akzent */
   --c-crema-dim: #8a6338;  /* Crema im Schatten */
   --c-ok: #8fb36b;
   --c-warn: #d9a566;
-  --c-bad: #d96a56;
+  --c-bad: #e0705c;
 
   /* Dieselben Bänder, angehoben: Auf #261d18 wäre #3a2011 kein Ton mehr,
      sondern ein Loch. Die Reihenfolge hell → dunkel bleibt erhalten,
