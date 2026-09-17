@@ -7,7 +7,7 @@
 import type { RoastLevel } from '@domain'
 import { describe, it, expect } from 'vitest'
 import type { Bean, Bag, Brew, Grinder, Defect } from '@domain'
-import type { EngineContext } from '@/domain'
+import type { EngineContext, PreferenceModel } from '@/domain'
 import { DEFAULT_SETTINGS, EMPTY_LEARNED } from '@/domain'
 import { startingPoint } from './starting'
 import { diagnose } from './diagnose'
@@ -1041,4 +1041,57 @@ describe('Wer eine Zeit verspricht, liefert sie auch als Zahl', () => {
       }
     })
   }
+})
+
+// ── Die Vorliebe zählt so weit, wie sie trägt ─────────────────────────
+
+describe('Gelernter Bias wird gewichtet, nicht geschaltet', () => {
+  /**
+   * Vorher stand hier eine Kante: unter zwölf guten Durchgängen gar kein
+   * Bias, ab zwölf der volle. Seit 2.0 skaliert das Gewicht aus
+   * `ueberzeugung.ts` — Anzahl, Einigkeit und Alter der Belege.
+   */
+  const mitVorliebe = (over: Partial<PreferenceModel>) =>
+    ctx({
+      learned: {
+        ...EMPTY_LEARNED,
+        preference: {
+          espresso: {
+            ratioBias: 0.4,
+            tempBiasC: 0,
+            grindBiasSteps: 0,
+            confidence: 1,
+            sampleSize: 12,
+            streuungRatio: 0,
+            alterTage: 0,
+            gewicht: 0,
+            ...over,
+          } as PreferenceModel,
+        },
+      },
+    })
+
+  const ratio = (over: Partial<PreferenceModel>) =>
+    startingPoint(mitVorliebe(over)).proposal.ratio
+
+  it('viele einige Belege verschieben weiter als wenige', () => {
+    const wenige = ratio({ sampleSize: 12, gewicht: 0.6 })
+    const viele = ratio({ sampleSize: 40, gewicht: 0.83 })
+    expect(viele).toBeGreaterThan(wenige)
+  })
+
+  it('uneinige Belege verschieben weniger als einige', () => {
+    const einig = ratio({ sampleSize: 20, streuungRatio: 0, gewicht: 0.71 })
+    const uneinig = ratio({ sampleSize: 20, streuungRatio: 1.5, gewicht: 0.28 })
+    expect(einig).toBeGreaterThan(uneinig)
+  })
+
+  it('ohne Gewicht bleibt der Standard stehen', () => {
+    expect(ratio({ gewicht: 0 })).toBe(startingPoint(ctx()).proposal.ratio)
+  })
+
+  it('unterhalb der Schwelle passiert weiterhin nichts', () => {
+    // Zu dünne Datenlage, um überhaupt etwas zu behaupten.
+    expect(ratio({ sampleSize: 3, gewicht: 0.27 })).toBe(startingPoint(ctx()).proposal.ratio)
+  })
 })

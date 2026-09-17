@@ -116,6 +116,21 @@ export interface PreferenceModel {
   sampleSize: number
   /** Nutzertext, erst ab LEARN_THRESHOLDS.biasStatement */
   statement?: string
+  /**
+   * Wie einig sich die guten Durchgänge über das Verhältnis sind.
+   * Grundlage der Gewichtung — siehe `engine/ueberzeugung.ts`.
+   */
+  streuungRatio: number
+  /** Tage seit dem jüngsten guten Durchgang. */
+  alterTage: number
+  /**
+   * Wie stark diese Vorliebe gegen den Standard zählt — 0 bis 1.
+   *
+   * Vorher gab es hier eine Kante: unter zwölf Durchgängen gar kein
+   * Bias, ab zwölf der volle. Der zwölfte Shot verschob den Startpunkt um
+   * einen Sprung, den kein einzelner Shot rechtfertigt.
+   */
+  gewicht: number
 }
 
 export interface PerBeanModel {

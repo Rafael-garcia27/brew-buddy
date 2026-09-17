@@ -23,6 +23,8 @@ import {
 import { assessFreshness, driftCorrection } from './freshness'
 import { suggestedSetting, roundToStep } from './grinder'
 import { LEARN_THRESHOLDS } from '@/config'
+import { gewicht, streuung, stufe, type Sicherheitsstufe } from './ueberzeugung'
+import { ratioOf } from './learn'
 
 type Mods = { grindSteps?: number; waterTempC?: number; ratio?: number }
 const ROAST_MODS = formulas.roastModifiers as unknown as Record<RoastLevel, Mods>
@@ -126,6 +128,22 @@ export interface StartingPoint {
   warning?: string
   /** Wie viele gute Brews noch fehlen, bis personalisiert wird */
   brewsUntilPersonal?: number
+  /**
+   * Wie gut dieser Startpunkt belegt ist.
+   *
+   * Vorher war „sicher / wahrscheinlich / Versuch" je Regel von Hand
+   * vergeben. Gerechnet sagt es etwas über die Datenlage statt über die
+   * Meinung dessen, der die Regel geschrieben hat — und die Oberfläche
+   * kann es zeigen, ohne es zu erfinden.
+   */
+  sicherheit: Sicherheit
+}
+
+export interface Sicherheit {
+  gewicht: number
+  stufe: Sicherheitsstufe
+  /** Ein Satz, der die Zahl erklärt. */
+  satz: string
 }
 
 // ── Ähnlichkeit zwischen Bohnen (Solution Design §6.1) ────────────────
@@ -333,14 +351,29 @@ function applyBeanModifiers(
   return p
 }
 
+/**
+ * Die eigene Vorliebe auf den Standard rechnen — so weit, wie sie trägt.
+ *
+ * Briefing B1: „Die Norm ist der Prior, die Historie überschreibt ihn."
+ * Vorher stand hier eine Kante: unter zwölf guten Durchgängen gar kein
+ * Bias, ab zwölf der volle. Der zwölfte Shot verschob den Startpunkt um
+ * einen Sprung, den kein einzelner Shot rechtfertigt — und ein
+ * dreizehnter, der dem widersprach, änderte nichts mehr.
+ *
+ * Jetzt skaliert das Gewicht aus `ueberzeugung.ts` den Bias: Anzahl,
+ * Einigkeit und Alter der Belege entscheiden, wie weit es von der Norm
+ * weggeht. Die Schwelle bleibt trotzdem stehen — unterhalb davon ist die
+ * Datenlage zu dünn, um überhaupt etwas zu behaupten.
+ */
 function applyPreferenceBias(p: Proposal, ctx: EngineContext, lines: RationaleLine[]): Proposal {
   const pref = ctx.learned.preference[ctx.method]
   if (!pref || pref.sampleSize < LEARN_THRESHOLDS.bias) return p
+  const g = pref.gewicht ?? 1
   const out = { ...p }
-  if (pref.ratioBias) out.ratio = Math.round((out.ratio + pref.ratioBias) * 10) / 10
-  if (pref.tempBiasC) out.waterTempC = Math.round(out.waterTempC + pref.tempBiasC)
+  if (pref.ratioBias) out.ratio = Math.round((out.ratio + pref.ratioBias * g) * 10) / 10
+  if (pref.tempBiasC) out.waterTempC = Math.round(out.waterTempC + pref.tempBiasC * g)
   if (pref.grindBiasSteps && out.grindSetting !== undefined)
-    out.grindSetting = Math.max(0, roundToStep(out.grindSetting + pref.grindBiasSteps, ctx.grinder))
+    out.grindSetting = Math.max(0, roundToStep(out.grindSetting + pref.grindBiasSteps * g, ctx.grinder))
   out.yieldG = Math.round(targetYield(out.doseG, out.ratio) * 10) / 10
   if (ctx.method !== 'espresso') out.waterG = Math.round(out.doseG * out.ratio)
   out.targetTimeS = targetTimeRange(ctx.method, out.doseG, ctx.bean.roastLevel, out.yieldG, out.steepS) ?? undefined
@@ -397,6 +430,43 @@ function proposalFromBrew(b: Brew, ctx: EngineContext): Proposal {
 
 // ── Hauptfunktion ─────────────────────────────────────────────────────
 
+/**
+ * Wie gut ein Startpunkt belegt ist.
+ *
+ * Gemessen an dem, was ihn trägt: wie viele eigene gute Durchgänge es
+ * für diese Bohne und Methode gibt, wie einig sie sich über das
+ * Verhältnis sind und wie lange der jüngste her ist. Für die Quellen
+ * ohne eigene Belege steht ein fester, niedriger Wert — dort ist die
+ * Unsicherheit die Aussage.
+ */
+function sicherheitFuer(quelle: StartingSource, eigene: Brew[], heute: Date): Sicherheit {
+  if (quelle === 'default') {
+    return { gewicht: 0.3, stufe: 'wahrscheinlich', satz: 'Standard aus der Wissensbasis.' }
+  }
+  if (quelle === 'transfer') {
+    return { gewicht: 0.25, stufe: 'Versuch', satz: 'Von einer ähnlichen Bohne übertragen.' }
+  }
+
+  const ratios = eigene.map((b) => ratioOf(b)).filter((r): r is number => r !== null)
+  const juengster = eigene.reduce(
+    (a, b) => Math.min(a, Math.max(0, Math.round((heute.getTime() - new Date(b.createdAt).getTime()) / 86_400_000))),
+    Number.POSITIVE_INFINITY,
+  )
+  const u = {
+    n: eigene.length,
+    streuung: streuung(ratios),
+    alter: Number.isFinite(juengster) ? juengster : 0,
+  }
+  const g = gewicht(u)
+  const satz =
+    u.n === 1
+      ? 'Aus einem einzigen guten Durchgang — das kann Zufall sein.'
+      : u.streuung > 0.3
+        ? `Aus ${u.n} Durchgängen, die sich nicht ganz einig sind.`
+        : `Aus ${u.n} Durchgängen, die dasselbe sagen.`
+  return { gewicht: g, stufe: stufe(g), satz }
+}
+
 export function startingPoint(ctx: EngineContext): StartingPoint {
   const lines: RationaleLine[] = []
   const fresh = assessFreshness(
@@ -441,6 +511,7 @@ export function startingPoint(ctx: EngineContext): StartingPoint {
       headline: 'Dein Referenzpunkt',
       rationale: lines,
       warning: fresh.state === 'too-fresh' || fresh.state === 'stale' ? fresh.label : undefined,
+      sicherheit: sicherheitFuer('personal', own, ctx.today),
     }
   }
 
@@ -484,6 +555,7 @@ export function startingPoint(ctx: EngineContext): StartingPoint {
       rationale: lines,
       warning: fresh.state === 'too-fresh' || fresh.state === 'stale' ? fresh.label : undefined,
       brewsUntilPersonal: Math.max(0, LEARN_THRESHOLDS.perBean - own.length),
+      sicherheit: sicherheitFuer('own-attempt', attempts, ctx.today),
     }
   }
 
@@ -517,6 +589,7 @@ export function startingPoint(ctx: EngineContext): StartingPoint {
       rationale: lines,
       warning: fresh.state === 'too-fresh' ? fresh.label : undefined,
       brewsUntilPersonal: LEARN_THRESHOLDS.perBean,
+      sicherheit: sicherheitFuer('transfer', [], ctx.today),
     }
   }
 
@@ -538,5 +611,6 @@ export function startingPoint(ctx: EngineContext): StartingPoint {
     warning:
       fresh.state === 'too-fresh' || fresh.state === 'stale' ? fresh.label : undefined,
     brewsUntilPersonal: LEARN_THRESHOLDS.perBean,
+    sicherheit: sicherheitFuer('default', [], ctx.today),
   }
 }

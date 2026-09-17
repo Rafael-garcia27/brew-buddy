@@ -13,7 +13,13 @@ import { METHODS } from '@/labels'
 import type { LearnedModels, PerBeanModel, PreferenceModel, ProcessModel } from '@/domain'
 import { beanKey, daysOffRoast, EMPTY_LEARNED } from '@/domain'
 import { getMethodDefaults, targetTimeRange } from '@/kb'
+import { gewicht, streuung } from './ueberzeugung'
 import { GOOD_RATING, LEARN_THRESHOLDS } from '@/config'
+
+/** Tage zwischen einem ISO-Zeitpunkt und heute, nie negativ. */
+function tageSeit(iso: string, heute: Date): number {
+  return Math.max(0, Math.round((heute.getTime() - new Date(iso).getTime()) / 86_400_000))
+}
 
 /**
  * Zahl in deutscher Schreibweise für Texte, die der Nutzer liest.
@@ -38,7 +44,7 @@ function stdDev(xs: number[]): number {
   return Math.sqrt(xs.reduce((a, b) => a + (b - mean) ** 2, 0) / (xs.length - 1))
 }
 
-function ratioOf(b: Brew): number | null {
+export function ratioOf(b: Brew): number | null {
   const a = b.actual
   if (a.yieldG) return a.yieldG / a.doseG
   if (a.waterG) return a.waterG / a.doseG
@@ -136,9 +142,21 @@ export function recompute(brews: Brew[], beans: Bean[], bags: Bag[], today: Date
     const ratioBias = ratioDeltas.length ? Math.round(median(ratioDeltas) * 100) / 100 : 0
     const tempBiasC = tempDeltas.length ? Math.round(median(tempDeltas)) : 0
 
+    // Wie tragfähig diese Vorliebe ist: aus Anzahl, Einigkeit und Alter.
+    // Ersetzt die harte Schwelle, ab der der Bias vorher sprunghaft galt.
+    const streuungRatio = streuung(ratioDeltas)
+    const juengster = good.reduce(
+      (a, b) => Math.min(a, tageSeit(b.createdAt, today)),
+      Number.POSITIVE_INFINITY,
+    )
+    const alterTage = Number.isFinite(juengster) ? juengster : 0
+
     const pref: PreferenceModel = {
       ratioBias,
       tempBiasC,
+      streuungRatio,
+      alterTage,
+      gewicht: gewicht({ n, streuung: streuungRatio, alter: alterTage }),
       // Mahlgrad bewusst NICHT global gemittelt: Mahlgradwerte sind nur
       // innerhalb derselben Mühle UND vergleichbarer Bohnendichte sinnvoll
       // vergleichbar. Das deckt bereits das Pro-Bohne-Modell ab.
