@@ -10,8 +10,10 @@ import type { AppState, Settings, AppMode, BeanTrash } from '@/domain'
 import type { Bean, Bag, Brew, Grinder, Water, BrewMethod } from '@domain'
 import { emptyState } from '@/domain'
 import { SCHEMA_VERSION } from '@/config'
-import { loadState, saveState, flush, onPersistError } from './persist'
-import { startzustand } from './startup'
+import { loadState, saveState, flush, onPersistError, loadEvents, appendEvents } from './persist'
+import type { Ereignis, Nutzlast } from './events'
+import { anwenden, brauchtLernen } from './events'
+import { startzustand, abweichung } from './startup'
 import { recompute } from '@/engine/learn'
 
 /**
@@ -74,7 +76,15 @@ export type Store = AppState & {
   storageError: string | null
 } & StoreActions
 
-/** Nach jeder Datenänderung die Lernmodelle neu rechnen und persistieren. */
+/**
+ * Nach jeder Datenänderung die Lernmodelle neu rechnen und die
+ * Momentaufnahme schreiben.
+ *
+ * Seit 2.0 ist der Blob nicht mehr die Wahrheit — die steht im
+ * Ereignisstrom. Er bleibt trotzdem: als zweite Kopie, die einen
+ * unlesbaren Strom auffängt, und als Grundlage des Exports, der damit
+ * ohne Faltung auskommt.
+ */
 function commit(set: (fn: (s: Store) => Partial<Store>) => void, relearn = true) {
   set((s) => {
     const learned = relearn
@@ -96,12 +106,38 @@ function commit(set: (fn: (s: Store) => Partial<Store>) => void, relearn = true)
   })
 }
 
-export const useStore = create<Store>((set, get) => ({
-  ...emptyState(SCHEMA_VERSION),
-  ready: false,
-  storageError: null,
+/**
+ * Die laufende Startzusage.
+ *
+ * Sie bündelt NEBENLÄUFIGE Aufrufe — nicht spätere. Nach dem Durchlauf
+ * wird sie wieder freigegeben; dass ein zweiter Start dann nichts mehr
+ * tut, entscheidet `ready` in `starte()`. Zwei getrennte Gründe, zwei
+ * getrennte Wächter.
+ */
+let startLaeuft: Promise<void> | null = null
 
-  hydrate: async () => {
+export const useStore = create<Store>((set, get) => {
+  /**
+   * Der einzige Schreibweg in den Bestand.
+   *
+   * Jede Änderung ist ein Ereignis: Es wird gebaut, angewendet und
+   * angehängt — in dieser Reihenfolge und ohne Ausnahme. Wer hier
+   * vorbeischreibt, erzeugt einen Bestand, den die Faltung nicht
+   * reproduzieren kann; genau darauf prüft der Selbsttest in
+   * `events.test.ts`.
+   */
+  const melde = (n: Nutzlast): Ereignis => {
+    const e = { id: uid(), at: nowIso(), v: 1, ...n } as Ereignis
+    set((s) => anwenden(selectSnapshot(s), e))
+    appendEvents(e)
+    commit(set, brauchtLernen(e))
+    return e
+  }
+
+  /** Der eigentliche Start. Der Riegel dagegen liegt in `hydrate`. */
+  const starte = async (): Promise<void> => {
+    if (get().ready) return
+
     // Schreibfehler erreichen die Oberfläche über diesen Rückruf. Er wird
     // hier gesetzt und nicht beim Modulstart, damit `persist.ts` nichts
     // über den Store weiß.
@@ -114,27 +150,60 @@ export const useStore = create<Store>((set, get) => ({
       }),
     )
 
-    // Die Entscheidung, was übernommen und was zurückgeschrieben wird,
-    // liegt in `startup.ts` — dort ist sie ohne IndexedDB prüfbar.
-    const { state, persist, error } = startzustand(await loadState(), uid)
-    if (persist) saveState(state)
-    set({ ...state, ready: true, storageError: error ?? null })
-    applyTheme(state.settings.theme)
-  },
+    // Beide Quellen parallel — der Strom ist die Wahrheit, der Blob die
+    // Rückfallebene. Welche gilt, entscheidet `startup.ts`; dort ist die
+    // Entscheidung ohne IndexedDB prüfbar.
+    const [blob, strom] = await Promise.all([loadState(), loadEvents()])
+    const r = startzustand({ blob, strom }, uid, new Date())
+
+    /**
+     * Der Abgleich aus dem Übergangsplan. Er sucht nicht nach falscher
+     * Logik — die ist geteilt und kann nicht abweichen —, sondern nach
+     * einer Änderung, die es nie in den Strom geschafft hat.
+     */
+    if (import.meta.env.DEV && blob.kind === 'ok' && strom.kind === 'ok' && strom.strom.length) {
+      const streit = abweichung(r.state, blob.state)
+      if (streit) console.warn('[strom] Faltung weicht von der Momentaufnahme ab —', streit)
+    }
+
+    if (r.uebernahme) appendEvents(...r.uebernahme)
+    if (r.snapshot) saveState(r.state)
+    set({ ...r.state, ready: true, storageError: r.error ?? null })
+    applyTheme(r.state.settings.theme)
+  }
+
+  return {
+  ...emptyState(SCHEMA_VERSION),
+  ready: false,
+  storageError: null,
+
+  /**
+   * Nur einmal — und zwar wirklich.
+   *
+   * React ruft Effekte im Entwicklungsmodus absichtlich doppelt auf. Ein
+   * `if (ready) return` reicht dagegen nicht: Beide Aufrufe prüfen das
+   * Flag, bevor einer es setzt, und beide laufen durch. Gefunden bei der
+   * ersten Probe mit echten Daten — im Strom standen zwei
+   * Übernahme-Ereignisse.
+   *
+   * Der Riegel liegt deshalb auf der Zusage, nicht auf dem Ergebnis: Der
+   * zweite Aufruf bekommt dieselbe Zusage zurück und wartet mit.
+   */
+  hydrate: () =>
+    (startLaeuft ??= starte().finally(() => {
+      startLaeuft = null
+    })),
 
   dismissStorageError: () => set({ storageError: null }),
 
   // ── Bohnen ──
   addBean: (b) => {
-    const id = uid()
-    set((s) => ({ beans: [...s.beans, { ...b, id, createdAt: nowIso() }] }))
-    commit(set, false)
-    return id
+    const bohne: Bean = { ...b, id: uid(), createdAt: nowIso() }
+    melde({ art: 'bohne-angelegt', bohne })
+    return bohne.id
   },
-  updateBean: (id, patch) => {
-    set((s) => ({ beans: s.beans.map((x) => (x.id === id ? { ...x, ...patch } : x)) }))
-    commit(set)
-  },
+  updateBean: (id, patch) => void melde({ art: 'bohne-geaendert', beanId: id, patch }),
+
   deleteBean: (id) => {
     // Was hier verschwindet, ist mehr als ein Eintrag: Mit der Bohne
     // gehen ihre Tüten UND ihre Protokolle. Bei einer Bohne, die seit
@@ -148,163 +217,75 @@ export const useStore = create<Store>((set, get) => ({
       bags: s.bags.filter((x) => x.beanId === id),
       brews: s.brews.filter((x) => x.beanId === id),
     }
-    set((st) => ({
-      beans: st.beans.filter((x) => x.id !== id),
-      bags: st.bags.filter((x) => x.beanId !== id),
-      brews: st.brews.filter((x) => x.beanId !== id),
-    }))
-    commit(set)
+    melde({ art: 'bohne-geloescht', beanId: id })
     return papierkorb
   },
-  restoreBean: ({ bean, bags, brews }) => {
-    set((s) => ({
-      // Nur einfügen, was fehlt: Ein zweiter Klick auf „Rückgängig"
-      // darf keine Dubletten anlegen.
-      beans: s.beans.some((x) => x.id === bean.id) ? s.beans : [...s.beans, bean],
-      bags: [...s.bags, ...bags.filter((b) => !s.bags.some((x) => x.id === b.id))],
-      brews: [...s.brews, ...brews.filter((b) => !s.brews.some((x) => x.id === b.id))],
-    }))
-    commit(set)
-  },
+  restoreBean: (papierkorb) => void melde({ art: 'bohne-zurueckgeholt', papierkorb }),
 
   // ── Tüten ──
   addBag: (b) => {
-    const id = uid()
-    set((s) => ({ bags: [...s.bags, { ...b, id, depleted: false, createdAt: nowIso() }] }))
-    commit(set, false)
-    return id
+    const bag: Bag = { ...b, id: uid(), depleted: false, createdAt: nowIso() }
+    melde({ art: 'tuete-angelegt', bag })
+    return bag.id
   },
-  updateBag: (id, patch) => {
-    set((s) => ({ bags: s.bags.map((x) => (x.id === id ? { ...x, ...patch } : x)) }))
-    commit(set)
-  },
-  deleteBag: (id) => {
-    set((s) => ({
-      bags: s.bags.filter((x) => x.id !== id),
-      brews: s.brews.filter((x) => x.bagId !== id),
-    }))
-    commit(set)
-  },
+  updateBag: (id, patch) => void melde({ art: 'tuete-geaendert', bagId: id, patch }),
+  deleteBag: (id) => void melde({ art: 'tuete-geloescht', bagId: id }),
 
   // ── Brews ──
   addBrew: (b) => {
-    const id = uid()
-    set((s) => {
-      // Restmenge der Tüte automatisch verringern
-      const bags = s.bags.map((bag) =>
-        bag.id === b.bagId && bag.remainingGrams !== undefined
-          ? {
-              ...bag,
-              remainingGrams: Math.max(0, Math.round((bag.remainingGrams - b.actual.doseG) * 10) / 10),
-              depleted: bag.remainingGrams - b.actual.doseG <= 0,
-            }
-          : bag,
-      )
-      return {
-        brews: [{ ...b, id, createdAt: nowIso() }, ...s.brews],
-        bags,
-        settings: { ...s.settings, lastBeanId: b.beanId, lastMethod: b.method },
-      }
-    })
-    commit(set)
-    return id
+    const brew: Brew = { ...b, id: uid(), createdAt: nowIso() }
+    melde({ art: 'brew-protokolliert', brew })
+    return brew.id
   },
-  updateBrew: (id, patch) => {
-    set((s) => ({ brews: s.brews.map((x) => (x.id === id ? { ...x, ...patch } : x)) }))
-    commit(set)
-  },
-  deleteBrew: (id) => {
-    set((s) => ({ brews: s.brews.filter((x) => x.id !== id) }))
-    commit(set)
-  },
-  setBestBrew: (id) => {
-    set((s) => {
-      const target = s.brews.find((b) => b.id === id)
-      if (!target) return {}
-      return {
-        brews: s.brews.map((b) =>
-          b.beanId === target.beanId && b.method === target.method
-            ? { ...b, isBest: b.id === id }
-            : b,
-        ),
-      }
-    })
-    commit(set)
-  },
+  updateBrew: (id, patch) => void melde({ art: 'brew-geaendert', brewId: id, patch }),
+  deleteBrew: (id) => void melde({ art: 'brew-geloescht', brewId: id }),
+  setBestBrew: (id) => void melde({ art: 'referenz-gesetzt', brewId: id }),
 
   // ── Mühlen ──
   addGrinder: (g) => {
-    const id = uid()
-    set((s) => ({
-      grinders: [...s.grinders, { ...g, id }],
-      settings: s.settings.activeGrinderId ? s.settings : { ...s.settings, activeGrinderId: id },
-    }))
-    commit(set, false)
-    return id
+    const grinder: Grinder = { ...g, id: uid() }
+    melde({ art: 'muehle-angelegt', grinder })
+    return grinder.id
   },
-  updateGrinder: (id, patch) => {
-    set((s) => ({ grinders: s.grinders.map((x) => (x.id === id ? { ...x, ...patch } : x)) }))
-    commit(set, false)
-  },
-  deleteGrinder: (id) => {
-    set((s) => ({
-      grinders: s.grinders.filter((x) => x.id !== id),
-      settings:
-        s.settings.activeGrinderId === id
-          ? { ...s.settings, activeGrinderId: undefined }
-          : s.settings,
-    }))
-    commit(set, false)
-  },
+  updateGrinder: (id, patch) => void melde({ art: 'muehle-geaendert', grinderId: id, patch }),
+  deleteGrinder: (id) => void melde({ art: 'muehle-geloescht', grinderId: id }),
 
-  upsertWater: (w) => {
-    set((s) => ({
-      waters: s.waters.some((x) => x.id === w.id)
-        ? s.waters.map((x) => (x.id === w.id ? w : x))
-        : [...s.waters, w],
-      settings: { ...s.settings, activeWaterId: w.id },
-    }))
-    commit(set, false)
-  },
+  upsertWater: (water) => void melde({ art: 'wasser-gesetzt', water }),
 
   // ── Einstellungen ──
   setSettings: (patch) => {
     // Das Thema hängt an einer Klasse am <html>-Element, nicht nur am
     // Zustand. Ohne diese Zeile ließe sich das Thema über setSettings
-    // setzen, ohne dass sich etwas ändert — eine Falle für jeden späteren
-    // Aufrufer, auch wenn heute nur setTheme diesen Weg geht.
+    // setzen, ohne dass sich etwas ändert.
     if (patch.theme) applyTheme(patch.theme)
-    set((s) => ({ settings: { ...s.settings, ...patch } }))
-    commit(set, false)
+    melde({ art: 'einstellungen-geaendert', patch })
   },
-  setMode: (m) => {
-    set((s) => ({
-      settings: {
-        ...s.settings,
+  setMode: (m) =>
+    void melde({
+      art: 'einstellungen-geaendert',
+      patch: {
         mode: m,
         // Refraktometer-Felder gehören zu Pro. Beim Zurückschalten
         // abschalten, sonst tauchen im Basis-Modus leere Felder auf.
-        showMeasurements: m === 'pro' ? s.settings.showMeasurements : false,
+        ...(m === 'pro' ? {} : { showMeasurements: false }),
       },
-    }))
-    commit(set, false)
-  },
+    }),
   setTheme: (t) => {
     applyTheme(t)
-    set((s) => ({ settings: { ...s.settings, theme: t } }))
-    commit(set, false)
+    melde({ art: 'einstellungen-geaendert', patch: { theme: t } })
   },
 
   replaceState: (s) => {
-    set({ ...s, ready: true })
+    melde({ art: 'bestand-ersetzt', state: s })
+    set({ ready: true })
     applyTheme(s.settings.theme)
-    commit(set)
   },
   resetAll: () => {
-    set({ ...emptyState(SCHEMA_VERSION), ready: true })
-    commit(set)
+    melde({ art: 'bestand-geleert', state: emptyState(SCHEMA_VERSION) })
+    set({ ready: true })
   },
-}))
+  }
+})
 
 export { flush }
 

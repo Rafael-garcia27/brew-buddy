@@ -15,12 +15,17 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import type { AppState } from '@/domain'
 import { emptyState } from '@/domain'
 import { SCHEMA_VERSION } from '@/config'
-import type { LoadResult } from './persist'
+import type { LoadResult, StromErgebnis } from './persist'
+import type { Ereignis } from './events'
 
 // ── Die zwei Dinge, die der Store außerhalb seiner selbst anfasst ─────
 
 /** Was `loadState()` im nächsten `hydrate()` liefern soll. */
 let ladeErgebnis: LoadResult = { kind: 'empty' }
+/** Was `loadEvents()` liefern soll. */
+let stromErgebnis: StromErgebnis = { kind: 'ok', strom: [] }
+/** Alles, was der Store in den Strom gehängt hat. */
+let angehaengt: Ereignis[] = []
 /** Alles, was der Store zu schreiben versucht hat. */
 let geschrieben: AppState[] = []
 /** Der Rückruf, über den Schreibfehler die Oberfläche erreichen. */
@@ -29,7 +34,10 @@ let fehlerRueckruf: ((e: unknown) => void) | null = null
 vi.mock('./persist', () => ({
   loadState: () => Promise.resolve(ladeErgebnis),
   saveState: (s: AppState) => geschrieben.push(s),
+  loadEvents: () => Promise.resolve(stromErgebnis),
+  appendEvents: (...e: Ereignis[]) => angehaengt.push(...e),
   flush: () => Promise.resolve(),
+  flushEvents: () => Promise.resolve(),
   onPersistError: (fn: (e: unknown) => void) => {
     fehlerRueckruf = fn
   },
@@ -48,6 +56,8 @@ const { buildBackup, parseBackup } = await import('./migrate')
 
 beforeEach(() => {
   ladeErgebnis = { kind: 'empty' }
+  stromErgebnis = { kind: 'ok', strom: [] }
+  angehaengt = []
   geschrieben = []
   fehlerRueckruf = null
   useStore.setState({ ...emptyState(SCHEMA_VERSION), ready: false, storageError: null })

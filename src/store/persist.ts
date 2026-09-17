@@ -11,6 +11,7 @@
  */
 import { openDB, type IDBPDatabase } from 'idb'
 import type { AppState } from '@/domain'
+import type { Ereignis } from './events'
 import { migrate, buildBackup, backupFilename, parseBackup } from './migrate'
 export { migrate, buildBackup, backupFilename, parseBackup }
 export type { BackupFile } from './migrate'
@@ -20,8 +21,16 @@ export type { BackupFile } from './migrate'
 // alle bisherigen Bohnen, Tüten und Protokolle verwaisen lassen. Der Name ist
 // ein interner Schlüssel, kein Anzeigetext — er darf nie geändert werden.
 const DB_NAME = 'dialed'
-const DB_VERSION = 1
+/**
+ * 1 → 2: zweiter Object Store `events` für den Ereignisstrom.
+ *
+ * Der Aufstieg legt ihn nur an; er wandelt nichts um. Ein Bestand aus
+ * Fassung 1 hat einen leeren Strom und einen vollen Blob — genau der
+ * Zustand, den `startzustand()` als Übernahme behandelt.
+ */
+const DB_VERSION = 2
 const STORE = 'state'
+const EVENTS = 'events'
 const KEY = 'app'
 
 let dbPromise: Promise<IDBPDatabase> | null = null
@@ -31,6 +40,11 @@ function db() {
     dbPromise = openDB(DB_NAME, DB_VERSION, {
       upgrade(d) {
         if (!d.objectStoreNames.contains(STORE)) d.createObjectStore(STORE)
+        // `autoIncrement` statt eigener Schlüssel: Die Reihenfolge im
+        // Strom IST die fachliche Reihenfolge, und IndexedDB liefert sie
+        // bei `getAll()` in Schlüsselfolge zurück.
+        if (!d.objectStoreNames.contains(EVENTS))
+          d.createObjectStore(EVENTS, { autoIncrement: true })
       },
     })
   }
@@ -73,6 +87,66 @@ export async function loadState(): Promise<LoadResult> {
 export async function loadRaw(): Promise<unknown> {
   const d = await db()
   return await d.get(STORE, KEY)
+}
+
+// ── Ereignisstrom ─────────────────────────────────────────────────────
+
+/**
+ * Ereignisse anhängen.
+ *
+ * Gesammelt und gebündelt geschrieben wie der Blob — aber mit einer
+ * Warteschlange statt einer einzigen Momentaufnahme: Ein Ereignis darf
+ * nicht von einem späteren überschrieben werden, es ist der einzige
+ * Nachweis, dass etwas passiert ist.
+ */
+let wartende: Ereignis[] = []
+let stromTimer: ReturnType<typeof setTimeout> | null = null
+
+export function appendEvents(...neue: Ereignis[]): void {
+  wartende.push(...neue)
+  if (stromTimer) clearTimeout(stromTimer)
+  stromTimer = setTimeout(flushEvents, 300)
+}
+
+export async function flushEvents(): Promise<void> {
+  if (!wartende.length) return
+  const stapel = wartende
+  wartende = []
+  try {
+    const d = await db()
+    const tx = d.transaction(EVENTS, 'readwrite')
+    for (const e of stapel) void tx.store.add(e)
+    await tx.done
+  } catch (e) {
+    console.error('[persist] Ereignisse konnten nicht angehängt werden', e)
+    // Vorn einreihen, damit die Reihenfolge stimmt, wenn es beim
+    // nächsten Versuch klappt.
+    wartende = [...stapel, ...wartende]
+    meldeFehler?.(e)
+  }
+}
+
+export type StromErgebnis =
+  | { kind: 'ok'; strom: Ereignis[] }
+  | { kind: 'failed'; error: unknown }
+
+export async function loadEvents(): Promise<StromErgebnis> {
+  try {
+    const d = await db()
+    return { kind: 'ok', strom: (await d.getAll(EVENTS)) as Ereignis[] }
+  } catch (e) {
+    console.error('[persist] Ereignisstrom nicht lesbar', e)
+    return { kind: 'failed', error: e }
+  }
+}
+
+/** Nur für den Übergang: den Strom einmalig aus einem Blob neu setzen. */
+export async function resetEvents(strom: Ereignis[]): Promise<void> {
+  const d = await db()
+  const tx = d.transaction(EVENTS, 'readwrite')
+  await tx.store.clear()
+  for (const e of strom) void tx.store.add(e)
+  await tx.done
 }
 
 let writeTimer: ReturnType<typeof setTimeout> | null = null
@@ -120,7 +194,10 @@ export async function flush(): Promise<void> {
 
 /** Vor dem Schließen der App noch schnell wegschreiben. */
 export function installFlushHandlers(): void {
-  const handler = () => void flush()
+  const handler = () => {
+    void flush()
+    void flushEvents()
+  }
   window.addEventListener('pagehide', handler)
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') handler()
