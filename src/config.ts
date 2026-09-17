@@ -14,7 +14,7 @@ export const APP_BUILD = {
   built: __APP_BUILT__,
 } as const
 export const APP_TAGLINE = 'Dein Dial-in, nicht irgendeins'
-export const SCHEMA_VERSION = 3
+export const SCHEMA_VERSION = 4
 
 /** Im Siebträger verbaute Mühle — nur unter Espresso wählbar. */
 export const INTEGRATED_GRINDER_ID = 'sage-barista-express'

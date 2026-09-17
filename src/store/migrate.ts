@@ -43,6 +43,11 @@ export function migrate(state: AppState): AppState {
     if (g) s = { ...s, grinders: [...vorhandene, g] }
   }
 
+  // Schema 3 → 4: `empfehlungen` kommt dazu. Kein eigener Schritt nötig —
+  // das Auffüllen unten setzt die leere Liste. Der Versionssprung steht
+  // trotzdem hier, damit die Nummer die Form beschreibt und nicht nur
+  // zählt, wie oft etwas passiert ist.
+
   // Künftige Migrationen hier, jeweils mit Versionssprung.
 
   // Auffüllen: Neue Felder bekommen Vorgabewerte, vorhandene Daten gewinnen.

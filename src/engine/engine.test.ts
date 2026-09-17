@@ -6,7 +6,7 @@
  */
 import type { RoastLevel } from '@domain'
 import { describe, it, expect } from 'vitest'
-import type { Bean, Bag, Brew, Grinder } from '@domain'
+import type { Bean, Bag, Brew, Grinder, Defect } from '@domain'
 import type { EngineContext } from '@/domain'
 import { DEFAULT_SETTINGS, EMPTY_LEARNED } from '@/domain'
 import { startingPoint } from './starting'
@@ -984,4 +984,61 @@ describe('Die Begründung nennt nur, was auch geschieht', () => {
     const v60 = startingPoint(ctx({ method: 'v60', bean: koffeinfrei }))
     expect(v60.rationale.some((r) => /kühler/.test(r.text))).toBe(true)
   })
+})
+
+// ── Die Vorhersage muss maschinenlesbar sein ──────────────────────────
+
+describe('Wer eine Zeit verspricht, liefert sie auch als Zahl', () => {
+  /**
+   * Seit 2.0 löst die App ihre Vorhersagen ein. Das geht nur, wenn der
+   * Satz „Erwartete Zeit danach: 28 s" denselben Wert auch strukturiert
+   * mitbringt. Eine Regel, die das vergisst, fällt im Betrieb nicht auf —
+   * die Empfehlung sieht vollständig aus und wird trotzdem nie
+   * abgerechnet. Genau so ist D-31 durchgerutscht.
+   *
+   * Deshalb hier keine Einzelfallprüfung, sondern eine Eigenschaft über
+   * alle Zeitbefunde.
+   */
+  const faelle: { name: string; timeS: number; defects?: Defect[] }[] = [
+    // Mit Geschmack — der sensorische Pfad in diagnose.ts
+    { name: 'deutlich zu langsam, bitter', timeS: 40, defects: ['bitter'] },
+    { name: 'etwas zu langsam, bitter', timeS: 32, defects: ['bitter'] },
+    { name: 'deutlich zu schnell, sauer', timeS: 16, defects: ['sour'] },
+    { name: 'etwas zu schnell, sauer', timeS: 20, defects: ['sour'] },
+    { name: 'im Band, aber sauer', timeS: 26, defects: ['sour'] },
+    // OHNE Geschmack — die reine Laufkontrolle in runcheck.ts. Genau
+    // dieser Pfad hat D-31 durchrutschen lassen.
+    { name: 'nur die Uhr, zu langsam', timeS: 34 },
+    { name: 'nur die Uhr, weit zu langsam', timeS: 45 },
+    { name: 'nur die Uhr, zu schnell', timeS: 18 },
+    { name: 'nur die Uhr, weit zu schnell', timeS: 12 },
+  ]
+
+  for (const f of faelle) {
+    it(`${f.name} (${f.timeS} s)`, () => {
+      const d = diagnose({
+        ctx: ctx(),
+        actual: {
+          doseG: 18, yieldG: 36, timeS: f.timeS, waterTempC: 93,
+          grindSetting: { equipmentId: 'gr1', value: 24, unit: 'clicks' },
+        },
+        ...(f.defects
+          ? { tasting: { rating: 2, defects: [...f.defects], characters: [], wouldRepeat: false } }
+          : {}),
+        targetTimeS: [26, 30],
+      })
+      const alle = [...d.suggestions, ...(d.run?.suggestion ? [d.run.suggestion] : [])]
+      expect(alle.length, 'kein Befund — der Fall prüft nichts').toBeGreaterThan(0)
+      for (const sg of alle) {
+        // Nennt der Text eine Sekundenzahl als Erwartung, muss sie auch
+        // als Zahl danebenstehen.
+        const nenntZeit = /Erwartete Zeit danach|sollte sich Richtung \d/.test(sg.expectation)
+        if (nenntZeit) {
+          expect(sg.erwartung, `${sg.ruleId}: „${sg.expectation}"`).toBeDefined()
+          expect(sg.erwartung!.groesse).toBe('zeit')
+          expect(sg.erwartung!.wert).toBeGreaterThan(0)
+        }
+      }
+    })
+  }
 })

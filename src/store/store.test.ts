@@ -334,3 +334,92 @@ describe('Rundlauf durch eine Sicherungsdatei', () => {
     expect(useStore.getState().beans).toHaveLength(1)
   })
 })
+
+// ── 4. Die Empfehlung, von der Wette bis zur Abrechnung ───────────────
+
+describe('Die Schleife schließt sich', () => {
+  it('eine übernommene Vorhersage wird am nächsten Durchgang gemessen', async () => {
+    await useStore.getState().hydrate()
+    const s = () => useStore.getState()
+
+    const beanId = s().addBean({
+      name: 'Hausmischung', origins: [], process: 'natural', roastLevel: 'medium',
+    })
+    const bagId = s().addBag({ beanId, remainingGrams: 500 })
+
+    // Ein zu langsamer Shot.
+    s().addBrew({
+      beanId, bagId, method: 'espresso',
+      actual: { doseG: 18, yieldG: 36, timeS: 32 },
+      isBest: false,
+    })
+
+    // Die App wettet: nach drei Klicks gröber sind es 28 s.
+    s().merkeEmpfehlung({
+      id: 'emp1', at: '2026-09-17T08:00:00.000Z', brewId: 'w1', beanId, method: 'espresso',
+      regelId: 'D-14', titel: '3 Klicks gröber',
+      eingriff: { groesse: 'mahlgrad', von: 7, nach: 10, einheit: 'Klicks' },
+      vorhersage: { groesse: 'zeit', erwartet: 28, toleranz: 2, konfidenz: 0.65 },
+      begruendung: ['Der Shot lief 32 s statt 25.'],
+      zustand: 'offen',
+    })
+    expect(s().empfehlungen[0]!.zustand).toBe('offen')
+
+    // Solange sie nur dasteht, wird nichts gemessen.
+    s().addBrew({
+      beanId, bagId, method: 'espresso',
+      actual: { doseG: 18, yieldG: 36, timeS: 27 },
+      isBest: false,
+    })
+    expect(s().empfehlungen[0]!.zustand).toBe('offen')
+
+    // Übernommen — und der nächste Durchgang rechnet ab.
+    s().uebernehmeEmpfehlung('emp1')
+    s().addBrew({
+      beanId, bagId, method: 'espresso',
+      actual: { doseG: 18, yieldG: 36, timeS: 27 },
+      isBest: false,
+    })
+    const emp = s().empfehlungen[0]!
+    expect(emp.zustand).toBe('eingeloest')
+    expect(emp.einloesung).toMatchObject({ istWert: 27, abweichung: -1, getroffen: true })
+  })
+
+  it('eine daneben liegende Vorhersage wird als verfehlt verbucht', async () => {
+    await useStore.getState().hydrate()
+    const s = () => useStore.getState()
+    const beanId = s().addBean({ name: 'X', origins: [], process: 'washed', roastLevel: 'medium' })
+    const bagId = s().addBag({ beanId, remainingGrams: 500 })
+
+    s().merkeEmpfehlung({
+      id: 'emp1', at: '2026-09-17T08:00:00.000Z', brewId: 'w1', beanId, method: 'espresso',
+      regelId: 'D-14', titel: '3 Klicks gröber',
+      vorhersage: { groesse: 'zeit', erwartet: 28, toleranz: 2, konfidenz: 0.65 },
+      begruendung: [], zustand: 'offen',
+    })
+    s().uebernehmeEmpfehlung('emp1')
+    s().addBrew({
+      beanId, bagId, method: 'espresso',
+      actual: { doseG: 18, yieldG: 36, timeS: 34 },
+      isBest: false,
+    })
+    expect(s().empfehlungen[0]!.zustand).toBe('verfehlt')
+  })
+
+  it('eine neue Empfehlung beendet die alte, die offen blieb', async () => {
+    // Das stille Präferenzsignal: Wer weitergebrüht hat, ohne sie
+    // anzuwenden, hat sich dagegen entschieden.
+    await useStore.getState().hydrate()
+    const s = () => useStore.getState()
+    const beanId = s().addBean({ name: 'X', origins: [], process: 'washed', roastLevel: 'medium' })
+    const roh = {
+      at: '2026-09-17T08:00:00.000Z', brewId: 'w1', beanId, method: 'espresso' as const,
+      regelId: 'D-14', titel: 'egal', begruendung: [], zustand: 'offen' as const,
+    }
+    s().merkeEmpfehlung({ ...roh, id: 'alt' })
+    s().merkeEmpfehlung({ ...roh, id: 'neu' })
+
+    expect(s().empfehlungen.find((e) => e.id === 'alt')!.zustand).toBe('verworfen')
+    expect(s().empfehlungen.find((e) => e.id === 'neu')!.zustand).toBe('offen')
+  })
+})

@@ -334,6 +334,9 @@ export function diagnose(input: DiagnoseInput): Diagnosis {
         ruleId: eyLow ? 'D-11' : 'D-17',
         what,
         why: `Deine Extraktion liegt bei ${de(ey, 1)} % — Ziel sind ${eyMin}–${eyMax} %.`,
+        ...(corr?.expectedTimeS
+          ? { erwartung: { groesse: 'zeit' as const, wert: corr.expectedTimeS } }
+          : {}),
         expectation: corr?.expectedTimeS
           ? `Erwartete Zeit danach: ${corr.expectedTimeS} s. Extraktion sollte Richtung ${de(((eyMin + eyMax) / 2), 0)} % gehen.`
           : `Die Extraktion sollte sich Richtung ${de(((eyMin + eyMax) / 2), 0)} % bewegen.`,
@@ -429,6 +432,12 @@ export function diagnose(input: DiagnoseInput): Diagnosis {
       delta: steps,
       newValue:
         actual.grindSetting?.value !== undefined ? actual.grindSetting.value + steps : undefined,
+      // Nur wenn die Korrektur nicht gedeckelt wurde: Bei gedeckelter
+      // Korrektur gehen wir bewusst nicht den ganzen Weg, und eine
+      // Zeitprognose wäre unehrlich — sie einzulösen erst recht.
+      ...(grindCorr && !grindCorr.capped && grindCorr.expectedTimeS
+        ? { erwartung: { groesse: 'zeit' as const, wert: grindCorr.expectedTimeS } }
+        : {}),
     }
   }
 

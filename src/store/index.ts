@@ -6,7 +6,7 @@
  * testbar (Solution Design §4).
  */
 import { create } from 'zustand'
-import type { AppState, Settings, AppMode, BeanTrash } from '@/domain'
+import type { AppState, Settings, AppMode, BeanTrash, Empfehlung } from '@/domain'
 import type { Bean, Bag, Brew, Grinder, Water, BrewMethod } from '@domain'
 import { emptyState } from '@/domain'
 import { SCHEMA_VERSION } from '@/config'
@@ -54,6 +54,11 @@ interface StoreActions {
 
   upsertWater: (w: Water) => void
 
+  /** Eine gegebene Empfehlung festhalten, damit sie eingelöst werden kann. */
+  merkeEmpfehlung: (e: Empfehlung) => void
+  uebernehmeEmpfehlung: (id: string) => void
+  verwerfeEmpfehlung: (id: string) => void
+
   setSettings: (patch: Partial<Settings>) => void
   setMode: (m: AppMode) => void
   setTheme: (t: 'dark' | 'light') => void
@@ -100,6 +105,7 @@ function commit(set: (fn: (s: Store) => Partial<Store>) => void, relearn = true)
       waters: s.waters,
       settings: s.settings,
       learned,
+      empfehlungen: s.empfehlungen,
     }
     saveState(next)
     return { learned }
@@ -252,6 +258,11 @@ export const useStore = create<Store>((set, get) => {
 
   upsertWater: (water) => void melde({ art: 'wasser-gesetzt', water }),
 
+  // ── Empfehlungen ──
+  merkeEmpfehlung: (empfehlung) => void melde({ art: 'empfehlung-gegeben', empfehlung }),
+  uebernehmeEmpfehlung: (id) => void melde({ art: 'empfehlung-uebernommen', empfehlungId: id }),
+  verwerfeEmpfehlung: (id) => void melde({ art: 'empfehlung-verworfen', empfehlungId: id }),
+
   // ── Einstellungen ──
   setSettings: (patch) => {
     // Das Thema hängt an einer Klasse am <html>-Element, nicht nur am
@@ -360,4 +371,5 @@ export const selectSnapshot = (s: Store): AppState => ({
   waters: s.waters,
   settings: s.settings,
   learned: s.learned,
+  empfehlungen: s.empfehlungen,
 })

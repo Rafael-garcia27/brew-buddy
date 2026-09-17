@@ -30,9 +30,11 @@
  * wiederholbar: Dieselbe Folge ergibt immer denselben Bestand — auch
  * morgen, auch auf einem anderen Gerät.
  */
-import type { AppState, BeanTrash, Settings } from '@/domain'
+import type { AppState, BeanTrash, Settings, Empfehlung } from '@/domain'
 import type { Bean, Bag, Brew, Grinder, Water } from '@domain'
 import { recompute } from '@/engine/learn'
+import { einloesen } from '@/engine/wette'
+import { migrate } from './migrate'
 
 // ── Ereignisse ────────────────────────────────────────────────────────
 
@@ -65,6 +67,10 @@ export type Nutzlast =
   | { art: 'muehle-geaendert'; grinderId: string; patch: Partial<Grinder> }
   | { art: 'muehle-geloescht'; grinderId: string }
   | { art: 'wasser-gesetzt'; water: Water }
+  // Empfehlungen
+  | { art: 'empfehlung-gegeben'; empfehlung: Empfehlung }
+  | { art: 'empfehlung-uebernommen'; empfehlungId: string }
+  | { art: 'empfehlung-verworfen'; empfehlungId: string }
   // Einstellungen
   | { art: 'einstellungen-geaendert'; patch: Partial<Settings> }
   // Grobes
@@ -82,6 +88,9 @@ const OHNE_LERNEN = new Set([
   'muehle-geloescht',
   'wasser-gesetzt',
   'einstellungen-geaendert',
+  'empfehlung-gegeben',
+  'empfehlung-uebernommen',
+  'empfehlung-verworfen',
 ])
 
 export function brauchtLernen(e: Ereignis): boolean {
@@ -157,6 +166,19 @@ export function anwenden(s: AppState, e: Ereignis): AppState {
       return {
         ...s,
         brews: [e.brew, ...s.brews],
+        /**
+         * Die Einlösung ist kein eigenes Ereignis, sondern eine Folge.
+         *
+         * Der Strom soll erzählen, was ein Mensch getan hat. „Die
+         * Vorhersage wurde geprüft" hat niemand getan — es ergibt sich
+         * daraus, dass wieder gebrüht wurde. Als Ereignis geführt könnte
+         * es außerdem vergessen werden; als Folge kann es das nicht.
+         */
+        empfehlungen: s.empfehlungen.map((emp) => {
+          const el = einloesen(emp, e.brew, e.at)
+          if (!el) return emp
+          return { ...emp, zustand: el.getroffen ? 'eingeloest' : 'verfehlt', einloesung: el }
+        }),
         bags: s.bags.map((bag) =>
           bag.id === e.brew.bagId && bag.remainingGrams !== undefined
             ? {
@@ -227,6 +249,47 @@ export function anwenden(s: AppState, e: Ereignis): AppState {
         settings: { ...s.settings, activeWaterId: e.water.id },
       }
 
+    /**
+     * Eine neue Empfehlung für dieselbe Bohne und Methode beendet die
+     * alte, die noch offen war: Wer weitergebrüht hat, ohne sie
+     * anzuwenden, hat sich dagegen entschieden. Das ist das stille
+     * Präferenzsignal — es steht nicht im Weg und geht nicht verloren.
+     */
+    case 'empfehlung-gegeben':
+      return {
+        ...s,
+        empfehlungen: [
+          ...s.empfehlungen.map((x) =>
+            x.zustand === 'offen' &&
+            x.beanId === e.empfehlung.beanId &&
+            x.method === e.empfehlung.method
+              ? { ...x, zustand: 'verworfen' as const }
+              : x,
+          ),
+          e.empfehlung,
+        ],
+      }
+
+    case 'empfehlung-uebernommen':
+      return {
+        ...s,
+        empfehlungen: s.empfehlungen.map((x) =>
+          x.id === e.empfehlungId && x.zustand === 'offen'
+            ? { ...x, zustand: 'uebernommen' as const }
+            : x,
+        ),
+      }
+
+    case 'empfehlung-verworfen':
+      return {
+        ...s,
+        empfehlungen: s.empfehlungen.map((x) =>
+          x.id === e.empfehlungId && x.zustand === 'offen'
+            ? { ...x, zustand: 'verworfen' as const }
+            : x,
+        ),
+      }
+
     case 'einstellungen-geaendert':
       return { ...s, settings: { ...s.settings, ...e.patch } }
 
@@ -235,10 +298,19 @@ export function anwenden(s: AppState, e: Ereignis): AppState {
      * Ereignis. Das ist der größte Eintrag im Strom und der einzige, der
      * die Vergangenheit fachlich beendet — aber er löscht sie nicht: Die
      * Ereignisse davor bleiben lesbar.
+     *
+     * **Durch `migrate()`, und das ist nicht optional.** Ein Ereignis von
+     * gestern trägt die Form von gestern; ein Feld, das es damals nicht
+     * gab, fehlt darin. Beim ersten Versuch stand hier `return e.state`,
+     * und die App stürzte ab, sobald ein Übernahme-Ereignis aus Schema 3
+     * auf eine Fassung traf, die `empfehlungen` erwartet.
+     *
+     * Der Strom braucht dieselbe Migrationsdisziplin wie die
+     * Momentaufnahme — er ist sogar der ältere von beiden.
      */
     case 'bestand-ersetzt':
     case 'bestand-geleert':
-      return e.state
+      return migrate(e.state)
 
     default: {
       // Ein unbekanntes Ereignis darf den Bestand nicht beschädigen.

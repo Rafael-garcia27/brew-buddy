@@ -169,6 +169,81 @@ export interface AppState {
   waters: Water[]
   settings: Settings
   learned: LearnedModels
+  /**
+   * Gegebene Empfehlungen mit ihrem Ausgang.
+   *
+   * Das Solution Design nennt das Feld ERWARTUNG „den
+   * Vertrauensmechanismus der App" — gebaut war es als Anzeigetext. Eine
+   * Vorhersage, die niemand nachprüft, ist eine Behauptung. Hier steht
+   * sie als Gegenstand mit Lebenslauf, und damit wird sie messbar.
+   */
+  empfehlungen: Empfehlung[]
+}
+
+// ── Die Empfehlung als Gegenstand ─────────────────────────────────────
+
+/** Woran gedreht wird. */
+export type Stellgroesse = 'mahlgrad' | 'ratio' | 'temperatur' | 'dosis' | 'technik'
+
+/** Was sich messen lässt, wenn man wieder brüht. */
+export type Messgroesse = 'zeit' | 'ausbringung'
+
+export interface Eingriff {
+  groesse: Stellgroesse
+  von?: number
+  nach?: number
+  einheit: string
+}
+
+export interface Vorhersage {
+  groesse: Messgroesse
+  /** Der erwartete Wert. */
+  erwartet: number
+  /** Wie weit daneben noch als getroffen gilt. */
+  toleranz: number
+  /** 0…1, aus der Konfidenz der Regel. */
+  konfidenz: number
+}
+
+export interface Einloesung {
+  /** Der Durchgang, an dem gemessen wurde. */
+  brewId: string
+  istWert: number
+  abweichung: number
+  getroffen: boolean
+  at: string
+}
+
+export type Empfehlungszustand =
+  | 'offen'
+  | 'uebernommen'
+  | 'verworfen'
+  | 'eingeloest'
+  | 'verfehlt'
+
+export interface Empfehlung {
+  id: string
+  at: string
+  /** Der Durchgang, der sie ausgelöst hat. */
+  brewId: string
+  beanId: string
+  method: BrewMethod
+  /** Welche der Regeln aus `data/diagnostics.json` gefeuert hat. */
+  regelId: string
+  /** Die Überschrift, wie sie dem Nutzer gezeigt wurde. */
+  titel: string
+  eingriff?: Eingriff
+  vorhersage?: Vorhersage
+  /**
+   * Die Begründungskette, gespeichert statt neu gerechnet.
+   *
+   * Sie muss auch dann noch stimmen, wenn die Regel inzwischen geändert
+   * wurde — sonst behauptet die App rückwirkend etwas, das sie damals
+   * nicht gesagt hat.
+   */
+  begruendung: string[]
+  zustand: Empfehlungszustand
+  einloesung?: Einloesung
 }
 
 export function emptyState(schemaVersion: number): AppState {
@@ -182,6 +257,7 @@ export function emptyState(schemaVersion: number): AppState {
     waters: [],
     settings: { ...DEFAULT_SETTINGS },
     learned: { ...EMPTY_LEARNED },
+    empfehlungen: [],
   }
 }
 

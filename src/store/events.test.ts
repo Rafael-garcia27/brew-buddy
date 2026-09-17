@@ -175,6 +175,31 @@ describe('Der Strom bildet den Bestand vollständig ab', () => {
   })
 })
 
+describe('Der Strom trägt alte Formen', () => {
+  it('ein Übernahme-Ereignis aus einem älteren Schema läuft durch die Migration', async () => {
+    /**
+     * Ein Ereignis von gestern trägt die Form von gestern. Beim ersten
+     * Versuch stand in `anwenden()` schlicht `return e.state`, und die
+     * App stürzte ab, sobald ein Übernahme-Ereignis aus Schema 3 auf
+     * eine Fassung traf, die `empfehlungen` erwartet.
+     */
+    const alt = {
+      schemaVersion: 3,
+      beans: [{ id: 'b1', name: 'Alt', origins: [], process: 'washed', roastLevel: 'medium', createdAt: '2026-01-01T00:00:00.000Z' }],
+      bags: [], brews: [], grinders: [], setups: [], waters: [],
+      settings: { mode: 'basic', theme: 'light', showMeasurements: false },
+      learned: { process: {}, preference: {}, perBean: {} },
+    } as unknown as AppState
+
+    const e = { id: 'e1', at: JETZT.toISOString(), v: 1, art: 'bestand-ersetzt', state: alt } as Ereignis
+    const nachher = falte([e], emptyState(SCHEMA_VERSION), JETZT)
+
+    expect(nachher.empfehlungen).toEqual([])
+    expect(nachher.schemaVersion).toBe(SCHEMA_VERSION)
+    expect(nachher.beans).toHaveLength(1)
+  })
+})
+
 describe('Was der Strom über sich selbst weiß', () => {
   it('jedes Ereignis trägt Kennung, Zeitpunkt und Schemaversion', async () => {
     await useStore.getState().hydrate()

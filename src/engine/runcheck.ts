@@ -59,6 +59,15 @@ export interface Suggestion {
   delta?: number
   /** Direkt anwendbarer neuer Wert, wenn berechenbar */
   newValue?: number
+  /**
+   * Die Erwartung als Zahl, nicht als Satz.
+   *
+   * `expectation` ist der Text für den Nutzer. Damit die App nachprüfen
+   * kann, ob die Vorhersage eingetroffen ist, braucht sie denselben Wert
+   * maschinenlesbar — sonst bliebe „danach 28 s" eine Behauptung, die
+   * niemand je einlöst.
+   */
+  erwartung?: { groesse: 'zeit' | 'ausbringung'; wert: number }
 }
 
 /** Wie die Zeit zum Zielband steht. */
@@ -589,6 +598,29 @@ export function checkRun(input: RunCheckInput): RunCheck {
         actual.grindSetting?.value !== undefined
           ? roundToStep(actual.grindSetting.value + steps, ctx.grinder)
           : undefined,
+      /**
+       * Die Erwartung als Zahl — Grundlage der Einlösung.
+       *
+       * Drei Fälle, drei Antworten: Bei gedeckelter Korrektur gehen wir
+       * bewusst nicht den ganzen Weg, da wäre eine Prognose unehrlich.
+       * Bei halbierter Korrektur ist der erwartete Wert die Mitte
+       * zwischen jetzt und Ziel — genau der Wert, der auch im Text
+       * steht. Sonst die Zielmitte.
+       */
+      ...(corr?.capped
+        ? {}
+        : corr?.expectedTimeS
+          ? {
+              erwartung: {
+                groesse: 'zeit' as const,
+                wert: Math.round(
+                  halbiere ? (actual.timeS + corr.expectedTimeS) / 2 : corr.expectedTimeS,
+                ),
+              },
+            }
+          : mid !== undefined && mid !== null
+            ? { erwartung: { groesse: 'zeit' as const, wert: Math.round(mid) } }
+            : {}),
       alternative: grindAlternative(finer, actual, method),
     }
 

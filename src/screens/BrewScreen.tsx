@@ -6,7 +6,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Route } from '@/router'
-import { useStore, selectActiveWater, grinderFor } from '@/store'
+import { useStore, selectActiveWater, grinderFor, uid } from '@/store'
 import type {
   Bean, BrewMethod, Defect, Character, FlowState, PuckState, BloomBehavior, SpeedFeel,
   BrewActual, Observation, Tasting,
@@ -14,6 +14,7 @@ import type {
 import type { EngineContext } from '@/domain'
 import { startingPoint } from '@/engine/starting'
 import { diagnose, type Diagnosis } from '@/engine/diagnose'
+import { alsEmpfehlung } from '@/engine/wette'
 import { checkRun, type RunCheck } from '@/engine/runcheck'
 import { fmtSpanne } from '@/engine/text'
 import { assessFreshness } from '@/engine/freshness'
@@ -164,6 +165,14 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
   const [characters, setCharacters] = useState<Character[]>([])
   const [result, setResult] = useState<Diagnosis | null>(null)
   const [showTweak, setShowTweak] = useState(false)
+  /**
+   * Die Kennung der Wette, die gerade auf dem Ergebnisbildschirm steht.
+   *
+   * Sie wird beim Auswerten festgehalten und beim Übernehmen gebraucht —
+   * ohne sie wüsste die App nicht, welche Vorhersage der Nutzer
+   * tatsächlich ausprobiert.
+   */
+  const [empfehlungId, setEmpfehlungId] = useState<string | null>(null)
   /**
    * Der Weg zum Anpassen — von überall her derselbe.
    *
@@ -350,21 +359,51 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
   const uebernehmen = (sg: { variable: string; newValue?: number }) => {
     if (sg.newValue === undefined) return undefined
     const wert = sg.newValue
-    if (sg.variable === 'grindSetting') return () => { setGrindVal(wert); setPhase('proposal') }
-    if (sg.variable === 'waterTempC') return () => { setTempC(wert); setPhase('proposal') }
+    // Übernehmen heißt: Der Nutzer probiert die Vorhersage aus. Erst
+    // damit wird sie abrechenbar — eine nur gelesene Empfehlung gehört
+    // nicht in die Trefferquote.
+    const angenommen = () => {
+      if (empfehlungId) s.uebernehmeEmpfehlung(empfehlungId)
+      setPhase('proposal')
+    }
+    if (sg.variable === 'grindSetting') return () => { setGrindVal(wert); angenommen() }
+    if (sg.variable === 'waterTempC') return () => { setTempC(wert); angenommen() }
     if (sg.variable === 'ratio')
       return () => {
         // Die Empfehlung nennt das Verhältnis, die Felder führen Mengen.
         if (isEspresso) setYieldG(Math.round(doseG * wert * 10) / 10)
         else setWaterG(Math.round(doseG * wert))
-        setPhase('proposal')
+        angenommen()
       }
     return undefined
   }
 
   const runDiagnosis = () => {
-    setResult(diagnose({ ctx, actual, observations, tasting, targetTimeS: targetT }))
-    s.addBrew({ bagId: bag?.id ?? '', beanId: bean.id, method, actual, observations, tasting, isBest: false })
+    const d = diagnose({ ctx, actual, observations, tasting, targetTimeS: targetT })
+    setResult(d)
+
+    /**
+     * Reihenfolge mit Absicht: erst protokollieren, dann wetten.
+     *
+     * Der neue Durchgang rechnet die VORIGE Wette ab — er ist ihre
+     * Messung. Erst danach kommt die neue dazu, sonst löste sie sich
+     * selbst ein.
+     */
+    const brewId = s.addBrew({
+      bagId: bag?.id ?? '', beanId: bean.id, method, actual, observations, tasting, isBest: false,
+    })
+    const emp = alsEmpfehlung({
+      diagnose: d,
+      brewId,
+      beanId: bean.id,
+      method,
+      istWert: actual.grindSetting?.value,
+      id: uid(),
+      at: new Date().toISOString(),
+    })
+    setEmpfehlungId(emp?.id ?? null)
+    if (emp) s.merkeEmpfehlung(emp)
+
     setPhase('result')
   }
 
