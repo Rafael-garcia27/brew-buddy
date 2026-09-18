@@ -57,6 +57,14 @@ export interface Settings {
   targetEy: [number, number]
   targetEySource: 'standard' | 'learned'
   lastBackupAt?: string
+  /**
+   * Tonhinweise während des Durchgangs.
+   *
+   * Ersatz für die Haptik, die eine PWA auf iOS nicht hat: ein kurzer Ton
+   * am Anfang und am Ende des Zielbands. Wer beide Hände am Siebträger
+   * hat, muss dann nicht hinsehen.
+   */
+  tonhinweise?: boolean
   lastBeanId?: string
   lastMethod?: BrewMethod
   /**
@@ -92,6 +100,7 @@ export const DEFAULT_SETTINGS: Settings = {
   theme: 'light',
   targetEy: [18, 22],
   targetEySource: 'standard',
+  tonhinweise: true,
   onboardingDone: false,
 }
 

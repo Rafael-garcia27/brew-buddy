@@ -23,6 +23,7 @@ import { suitability, SUITABILITY_LABEL, bestMethodFor } from '@/engine/suitabil
 import { ratioTone, ratioLabel, RATIO_ANCHOR } from '@/engine/ratio'
 import { grindPlausibility, formatSetting } from '@/engine/grinder'
 import { MethodIcon, BrewButton } from '@/components/methodicons'
+import SessionLauf from '@/components/SessionLauf'
 import {
   GRINDER_CATALOG,
   getMethod,
@@ -52,7 +53,7 @@ import { Mahlwerk, WerteAnpassen, Beobachtungen } from './brewinputs'
  * dagegen bleibt hier — sie ändert den Vorschlag, und diese Wirkung soll
  * man sehen, während man sie umstellt.
  */
-type Phase = 'proposal' | 'record' | 'check' | 'taste' | 'result'
+type Phase = 'proposal' | 'laeuft' | 'record' | 'check' | 'taste' | 'result'
 
 interface Props {
   /** Beides steht in der Route und wird von App aufgelöst. */
@@ -275,6 +276,33 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
     targetTimeRange(method, doseG, bean.roastLevel, isEspresso ? yieldG : undefined, sp.proposal.steepS) ??
     undefined
   const ratioTon = ratioTone(ratioLive)
+
+  /**
+   * Der laufende Durchgang füllt den ganzen Bildschirm.
+   *
+   * Kein Kopf, keine Reiterleiste, kein Scrollen: In diesen Sekunden hat
+   * man beide Hände am Siebträger. Alles, was nicht Zeit und Zielband
+   * ist, wäre im Weg.
+   */
+  if (phase === 'laeuft') {
+    return (
+      <SessionLauf
+        method={method}
+        beanName={bean.name}
+        {...(targetT ? { ziel: targetT } : {})}
+        tonhinweise={s.settings.tonhinweise !== false}
+        onTon={(an) => s.setSettings({ tonhinweise: an })}
+        onStopp={(sekunden) => {
+          // Gemessen, nicht geraten — deshalb gilt die Zeit ab hier als
+          // angefasst und der Hinweis „nur vorbelegt" entfällt.
+          setElapsed(sekunden)
+          setElapsedTouched(true)
+          setPhase('record')
+        }}
+        onAbbruch={() => setPhase('proposal')}
+      />
+    )
+  }
 
   /**
    * Zielzeit für die Triade: die Mitte groß, das Band klein darunter.
@@ -623,17 +651,13 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
               der Abschnitt „Anpassen" von hier in ein Blatt gewandert und
               die Mühlengrafik unter den Knopf gerückt. */}
           <Section>
+            {/* Der Knopf startet jetzt die Uhr, statt ins Formular zu
+                springen. Vorher wurde die Zeit mit der Zielmitte vorbelegt
+                und hinterher eingetippt — die App wertete damit im Zweifel
+                ihre eigene Vorgabe aus. */}
             <BrewButton
               icon={getMethod(method).icon ?? method}
-              onClick={() => {
-                // Zeit mit der Zielmitte vorbelegen — ein Startwert, der in
-                // der Größenordnung stimmt und beim Eintragen überschrieben wird.
-                if (elapsed === 0 && targetT) {
-                  setElapsed(Math.round((targetT[0] + targetT[1]) / 2))
-                  setElapsedTouched(false)
-                }
-                setPhase('record')
-              }}
+              onClick={() => setPhase('laeuft')}
             />
           </Section>
 
