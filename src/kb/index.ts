@@ -59,11 +59,45 @@ export interface MethodProfile {
     string,
     { ratio: [number, number]; grindOffset: number; note?: string; pressureBar?: number }
   >
-  correctionOrder?: Record<string, string[]>
   recipeVariants?: RecipeVariant[]
   maxChamberWaterG?: number
   usableChamberWaterG?: number
   tempRangeC?: { min: number; max: number }
+
+  /**
+   * Fähigkeiten der Methode — bis 2.0 standen sie im Code.
+   *
+   * `isImmersion()`, `tempAdjustable()` und `timeSignalsGrind()` lasen
+   * diese Felder über eine Typumgehung aus, weil sie hier nicht
+   * deklariert waren. Der Typ war schmaler als die Daten, und jeder
+   * echte Zugriff musste an ihm vorbei.
+   *
+   * Damit galt die Leitentscheidung E2 („Fachwissen als Daten") zwar für
+   * das Wissen, aber nicht für das Verhalten: Eine sechste Methode
+   * hätte Code an vier Stellen gebraucht. Jetzt ist sie eine
+   * Datenänderung.
+   */
+  /** Lässt sich die Brühtemperatur einstellen? Fehlt = ja. */
+  tempAdjustable?: boolean
+  /** Zielfluss je Röstgrad, plus `_ratioExponent`. Nur Espresso. */
+  targetFlowRateGs?: Record<string, number>
+  /** In welcher Reihenfolge korrigiert wird — je Richtung oder pauschal. */
+  correctionOrder?: string[] | Record<string, string[]>
+  /** Phasen der AeroPress: Bloom, Transfer, Pressen. */
+  phaseModel?: {
+    bloomMaxS: number
+    bloomFractionOfSteep: number
+    transferS: number
+    pressS: number
+  }
+  /** Zeitzuschlag je Röstgrad — helle Röstungen vertragen längeren Kontakt. */
+  roastTimeOffsetS?: Record<string, number>
+  /** Kehrt die LRR-Richtung um (French Press). */
+  lrrInverted?: boolean
+  /** Wie weit Dosis und Zeit abweichen dürfen, bevor es zählt. */
+  tolerances?: Tolerances
+  /** Rezept, von dem aus eingemessen wird. */
+  baseRecipe?: { doseG: number; yieldG: number; ratio: number; timeS: number }
 }
 
 export interface RecipeVariant {
@@ -135,9 +169,7 @@ export function getMethodDefaults(id: BrewMethod, roast: RoastLevel): MethodDefa
  * Dunkler = poröser = schnellerer Fluss, bevor es in die Bitterkeit kippt.
  */
 export function targetFlowRate(roast: RoastLevel, ratio = 2): number {
-  const f = (getMethod('espresso') as unknown as {
-    targetFlowRateGs?: Record<string, number>
-  }).targetFlowRateGs
+  const f = getMethod('espresso').targetFlowRateGs
   const base = f?.[roast] ?? 1.44
   const exp = f?.['_ratioExponent'] ?? 0.6
   // Wer die Ratio weitet, mahlt gröber — der Fluss steigt mit.
@@ -174,9 +206,7 @@ export function correctionOrder(
   method: BrewMethod,
   richtung: 'underextracted' | 'overextracted',
 ): string[] | null {
-  const co = (getMethod(method) as unknown as {
-    correctionOrder?: string[] | Record<string, string[]>
-  }).correctionOrder
+  const co = getMethod(method).correctionOrder
   if (!co) return null
   if (Array.isArray(co)) return co
   return co[richtung] ?? null
@@ -219,11 +249,11 @@ export function timeSignalsGrind(method: BrewMethod): boolean {
  * es eine gab, bei der es nicht stimmt.
  */
 export function tempAdjustable(method: BrewMethod): boolean {
-  return (getMethod(method) as unknown as { tempAdjustable?: boolean }).tempAdjustable !== false
+  return getMethod(method).tempAdjustable !== false
 }
 
 export function isImmersion(method: BrewMethod): boolean {
-  return (getMethod(method) as unknown as { physics?: string }).physics === 'immersion'
+  return getMethod(method).physics === 'immersion'
 }
 
 export interface AeropressPhases {
@@ -245,9 +275,8 @@ export interface AeropressPhases {
  * ruhiges Ziehen, dann Kappe aufsetzen und Wenden, zuletzt Pressen.
  */
 export function aeropressPhases(steepS: number, method: BrewMethod = 'aeropress'): AeropressPhases {
-  const pm = (getMethod(method) as unknown as {
-    phaseModel?: { bloomMaxS: number; bloomFractionOfSteep: number; transferS: number; pressS: number }
-  }).phaseModel ?? { bloomMaxS: 35, bloomFractionOfSteep: 0.4, transferS: 8, pressS: 25 }
+  const pm = getMethod(method).phaseModel ??
+    { bloomMaxS: 35, bloomFractionOfSteep: 0.4, transferS: 8, pressS: 25 }
   const bloomEnd = Math.min(pm.bloomMaxS, Math.round(steepS * pm.bloomFractionOfSteep))
   return {
     bloomEnd,
@@ -289,8 +318,7 @@ export function targetTimeRange(
     }
     // Röstgradabhängig: Helle Röstungen sind dicht und vertragen längeren
     // Kontakt, dunkle sind porös und kippen früher in die Bitterkeit.
-    const off = ((m as unknown as { roastTimeOffsetS?: Record<string, number> })
-      .roastTimeOffsetS?.[roast]) ?? 0
+    const off = m.roastTimeOffsetS?.[roast] ?? 0
     return [best.timeS[0] + off, best.timeS[1] + off]
   }
 
@@ -330,15 +358,13 @@ export interface Tolerances {
  * die Engine darf dort nicht korrigieren.
  */
 export function tolerances(method: BrewMethod): Tolerances {
-  const t = (getMethod(method) as unknown as { tolerances?: Tolerances }).tolerances
+  const t = getMethod(method).tolerances
   return t ?? { doseG: 1, timeS: 3 }
 }
 
 /** Basisrezept, von dem aus eingemessen wird */
 export function baseRecipe(method: BrewMethod) {
-  return (getMethod(method) as unknown as {
-    baseRecipe?: { doseG: number; yieldG: number; ratio: number; timeS: number }
-  }).baseRecipe
+  return getMethod(method).baseRecipe
 }
 
 /** Mahlgrad-Offset, wenn die Dosis stark vom Referenzpunkt abweicht */
@@ -925,7 +951,9 @@ export function lrrFor(method: BrewMethod, inverted = false): number {
   if (method === 'frenchpress') {
     // Grob gemahlener Kaffee in voller Immersion hält rund das Doppelte
     // seines Eigengewichts zurück (kb/10b §5).
-    return (getMethod('frenchpress') as unknown as { lrr?: number }).lrr ?? 2.0
+    // `lrr` ist längst deklariert — die Umgehung stammt aus der Zeit
+    // davor und verdeckte nur, dass der Typ `number | null` ist.
+    return getMethod('frenchpress').lrr ?? 2.0
   }
   // Filtermaschine: derselbe Papierfilter wie der V60 (kb/10c §2).
   if (method === 'batchbrew') return LRR_DEFAULTS['batchbrew'] ?? 2.0

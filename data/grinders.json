@@ -588,6 +588,8 @@
       "burrType": "flat",
       "scaleType": "stepless",
       "adjustment": "wormwheel",
+      "micronPerStep": 10,
+      "_micronNote": "Stufenlos über Schneckengetriebe — eine „Einheit“ ist kein Rastpunkt, sondern der kleinste sinnvoll wiederholbare Schritt. Zehn Mikrometer wie bei den anderen stufenlosen Einträgen (Niche Zero, DF64), kb/07 §5.",
       "confidence": "estimated",
       "note": "Stufenlos über Schneckengetriebe — nur relativ kalibrierbar."
     },
