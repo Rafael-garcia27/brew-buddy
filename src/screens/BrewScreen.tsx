@@ -169,6 +169,8 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
   const [characters, setCharacters] = useState<Character[]>([])
   const [result, setResult] = useState<Diagnosis | null>(null)
   const [showTweak, setShowTweak] = useState(false)
+  /** Der Rechenweg unter den Zahlen — zugeklappt, bis jemand fragt. */
+  const [zeigeHerleitung, setZeigeHerleitung] = useState(false)
   /**
    * Die Kennung der Wette, die gerade auf dem Ergebnisbildschirm steht.
    *
@@ -246,6 +248,9 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
   const aktuelleEmpfehlung = empfehlungId
     ? s.empfehlungen.find((e) => e.id === empfehlungId)
     : undefined
+
+  /** Die Zeilen, die erklären, WIE gerechnet wurde — nicht, woher es kommt. */
+  const herleitung = sp.rationale.filter((r) => r.kind === 'modifier' || r.kind === 'learning')
 
   const fresh = assessFreshness(bag, method, bean.roastLevel, !!bean.isDecaf, new Date(), bean.process)
   const fit = suitability(bean, method)
@@ -577,17 +582,58 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
               </div>
 
               <div className="mt-3 space-y-1.5 border-t border-line pt-3">
-                {sp.rationale.map((r, i) => (
-                  <p
-                    key={i}
-                    className={`text-sm leading-snug ${
-                      r.kind === 'warning' ? 'text-warn' : r.kind === 'learning' ? 'text-crema' : 'text-mute'
-                    }`}
+                {/*
+                  Herkunft und Warnung stehen immer da, der Rechenweg
+                  klappt auf.
+
+                  Vorher standen bis zu fünf Zeilen unter den drei Zahlen —
+                  jede für sich richtig, zusammen eine Wand. Was man beim
+                  Hinsehen wissen muss, ist WOHER der Vorschlag kommt und ob
+                  etwas dagegen spricht. Wie er zustande kam, will man
+                  wissen, wenn man ihn anzweifelt — und dann gezielt.
+                */}
+                {sp.rationale
+                  .filter((r) => r.kind === 'source' || r.kind === 'warning')
+                  .map((r, i) => (
+                    <p
+                      key={i}
+                      className={`text-sm leading-snug ${
+                        r.kind === 'warning' ? 'text-warn' : 'text-mute'
+                      }`}
+                    >
+                      {r.kind === 'source' ? '▸ ' : '· '}
+                      {r.text}
+                    </p>
+                  ))}
+
+                {herleitung.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setZeigeHerleitung((z) => !z)}
+                    aria-expanded={zeigeHerleitung}
+                    className="-ml-0.5 self-start text-sm font-medium text-crema"
                   >
-                    {r.kind === 'source' ? '▸ ' : '· '}
-                    {r.text}
-                  </p>
-                ))}
+                    {zeigeHerleitung ? 'Weniger' : 'Woher die Zahlen kommen'}
+                  </button>
+                )}
+
+                {zeigeHerleitung && (
+                  <div className="mt-0.5 flex flex-col gap-1.5 border-l-2 border-crema pl-3">
+                    {herleitung.map((r, i) => (
+                      <p
+                        key={i}
+                        className={`text-sm leading-snug ${
+                          r.kind === 'learning' ? 'text-crema' : 'text-mute'
+                        }`}
+                      >
+                        {r.text}
+                      </p>
+                    ))}
+                    <p className="text-sm leading-snug text-faint">
+                      {sp.sicherheit.satz} Konfidenz: {sp.sicherheit.stufe}.
+                    </p>
+                  </div>
+                )}
               </div>
             </Card>
 
