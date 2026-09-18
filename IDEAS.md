@@ -119,3 +119,20 @@ Schrift braucht relativ mehr Durchschuss als große, und die `leading-*`
 ansieht, nicht einer, den man ausrechnet.
 
 ---
+## Fehler als Ausprägung statt als Schalter (aus 2.0/O5)
+
+Das Geschmackspad liefert eine Position — „deutlich sauer, etwas dünn" —
+und übersetzt sie in dieselben Fehler-Tags wie die Chips davor. Die
+Information über die *Stärke* geht dabei verloren.
+
+Sie zu behalten hieße, die Fehlerachse der Engine von kategorial auf
+kontinuierlich umzustellen. 57 Regeln fragen heute „ist `sour` gesetzt?",
+nicht „wie sehr" — und viele Schwellen (Tore, Deckelungen, Konfidenz)
+hängen an dieser Binärität.
+
+Der Gewinn wäre echt: Eine Korrektur könnte proportional zur Ausprägung
+ausfallen statt in festen Schritten. Der Aufwand ist aber ein Durchgang
+durch die gesamte Diagnostik, mit neuen Testfällen für jede Regel. Das
+ist ein eigenes Vorhaben, kein Anhängsel an eine Oberfläche.
+
+---

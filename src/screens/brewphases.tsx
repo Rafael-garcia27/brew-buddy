@@ -18,6 +18,7 @@
  *
  * Reines Verschieben, kein Verhalten geändert.
  */
+import { useState } from 'react'
 import type { BrewMethod, Defect, Character, SpeedFeel } from '@domain'
 import { useStore } from '@/store'
 import type { Diagnosis } from '@/engine/diagnose'
@@ -34,6 +35,10 @@ import {
 import {
   Section, Card, Button, Chip, Triad, MetaRow, fmtClock, num,
 } from '@/components/ui'
+import Geschmackspad, { type Achsen, MITTE, SCHWELLE, tagsAus } from '@/components/geschmackspad'
+
+/** Die Fehler, die das Pad besitzt — alle anderen gehören den Chips. */
+const ACHSEN_TAGS = new Set<Defect>(['sour', 'bitter', 'thin'])
 
 /**
  * Was eine Empfehlung anzubieten hat, wenn man sie annimmt — oder nichts,
@@ -190,7 +195,18 @@ export function PhaseLaufkontrolle({
   )
 }
 
-/** Verkosten: Sterne, Fehlerbilder, beschreibende Notizen. */
+/**
+ * Verkosten — eine Frage, nicht acht Felder.
+ *
+ * Nach dem Shot sind die Hände nass und der Kaffee wird kalt. Vorher
+ * standen hier fünf Sterne, acht Fehlerchips und sieben Charakterchips:
+ * zwanzig Ziele, von denen keines größer als ein Daumennagel war.
+ *
+ * Jetzt beantwortet ein Tipp die Frage, um die es beim Einmessen geht —
+ * zu sauer, sitzt, zu bitter. Das ist die Extraktionsachse, und mehr
+ * braucht die Engine für eine Korrektur nicht. Alles Weitere steht unter
+ * „Genauer" und ist da, wenn man es will.
+ */
 export function PhaseVerkosten({
   rating,
   setRating,
@@ -198,78 +214,165 @@ export function PhaseVerkosten({
   setDefects,
   characters,
   setCharacters,
+  achsen,
+  setAchsen,
   auswerten,
 }: {
   rating: number
   setRating: (n: number) => void
   defects: Defect[]
-  setDefects: (f: (x: Defect[]) => Defect[]) => void
+  setDefects: (d: Defect[]) => void
   characters: Character[]
   setCharacters: (f: (x: Character[]) => Character[]) => void
+  achsen: Achsen
+  setAchsen: (a: Achsen) => void
   auswerten: () => void
 }) {
+  const [genauer, setGenauer] = useState(false)
+
+  /**
+   * Das Pad besitzt die Extraktionsachse, die Chips besitzen den Rest.
+   *
+   * Ohne diese Trennung würden sich beide gegenseitig überschreiben:
+   * Ein Zug am Pad hätte „salzig" gelöscht, ein Tipp auf „flach" die
+   * Position verworfen.
+   */
+  const sonstige = defects.filter((d) => !ACHSEN_TAGS.has(d))
+  const setzeAchsen = (a: Achsen) => {
+    setAchsen(a)
+    setDefects([...tagsAus(a), ...sonstige])
+  }
+
+  const gewaehlt: 'sauer' | 'sitzt' | 'bitter' | null =
+    achsen.saeure <= -SCHWELLE
+      ? 'sauer'
+      : achsen.saeure >= SCHWELLE
+        ? 'bitter'
+        : rating >= 4
+          ? 'sitzt'
+          : null
+
+  const karte = (
+    id: 'sauer' | 'sitzt' | 'bitter',
+    titel: string,
+    unter: string,
+    a: Achsen,
+    bewertung: number,
+  ) => (
+    <button
+      type="button"
+      onClick={() => {
+        setzeAchsen(a)
+        setRating(bewertung)
+      }}
+      aria-pressed={gewaehlt === id}
+      className={`w-full rounded-2xl border px-4 py-4 text-left transition-colors ${
+        gewaehlt === id ? 'border-crema bg-crema/10' : 'border-line bg-card'
+      }`}
+    >
+      <div className="text-xl font-semibold">{titel}</div>
+      <div className="mt-0.5 text-sm text-mute">{unter}</div>
+    </button>
+  )
+
   return (
     <>
-      <Section title="Rating">
-        <div className="flex justify-center gap-2 py-2">
-          {[1, 2, 3, 4, 5].map((n) => (
-            <button
-              key={n}
-              onClick={() => setRating(n)}
-              aria-label={`${n} von 5`}
-              className={`flex h-14 w-14 items-center justify-center rounded-2xl text-3xl transition-colors ${
-                n <= rating ? 'text-crema' : 'text-line'
-              }`}
-            >
-              ★
-            </button>
-          ))}
-        </div>
+      <Section>
+        <h2 className="text-2xl font-semibold tracking-tight">Wie war er?</h2>
       </Section>
 
-      <Section title="Defects" action={<span className="text-xs text-faint">löst Korrekturen aus</span>}>
-        <div className="flex flex-wrap gap-2">
-          {COMMON_DEFECTS.map((d) => (
-            <Chip
-              key={d}
-              label={DEFECT_LABEL[d]}
-              tone="bad"
-              active={defects.includes(d)}
-              onClick={() =>
-                setDefects((x) => (x.includes(d) ? x.filter((y) => y !== d) : [...x, d]))
-              }
-            />
-          ))}
-        </div>
-        <p className="mt-2 text-xs text-faint">
-          Nichts angetippt ist der Normalfall bei einem guten Kaffee.
-        </p>
-      </Section>
-
-      <Section title="Notes" action={<span className="text-xs text-faint">nur beschreibend</span>}>
-        <div className="flex flex-wrap gap-2">
-          {COMMON_CHARACTERS.map((c) => (
-            <Chip
-              key={c}
-              label={CHARACTER_LABEL[c] ?? c}
-              active={characters.includes(c)}
-              onClick={() =>
-                setCharacters((x) => (x.includes(c) ? x.filter((y) => y !== c) : [...x, c]))
-              }
-            />
-          ))}
+      <Section>
+        <div className="flex flex-col gap-2.5">
+          {karte('sauer', 'Zu sauer', 'dünn, scharf, kurzer Abgang', { saeure: -0.6, koerper: 0 }, 2)}
+          {karte('sitzt', 'Sitzt', 'süß, rund, trägt', MITTE, 4)}
+          {karte('bitter', 'Zu bitter', 'trocken, kratzig, schwer', { saeure: 0.6, koerper: 0 }, 2)}
         </div>
       </Section>
 
       <Section>
-        <Button size="lg" className="w-full" disabled={rating === 0} onClick={auswerten}>
+        <button
+          type="button"
+          onClick={() => setGenauer((g) => !g)}
+          aria-expanded={genauer}
+          className="text-base font-medium text-crema"
+        >
+          {genauer ? 'Weniger' : 'Genauer'}
+        </button>
+      </Section>
+
+      {genauer && (
+        <>
+          <Section title="Wo genau">
+            <Geschmackspad wert={achsen} onChange={setzeAchsen} />
+          </Section>
+
+          <Section title="Bewertung">
+            <div className="flex justify-center gap-2 py-1">
+              {[1, 2, 3, 4, 5].map((n) => (
+                <button
+                  key={n}
+                  onClick={() => setRating(n)}
+                  aria-label={`${n} von 5`}
+                  className={`flex h-14 w-14 items-center justify-center rounded-2xl text-3xl transition-colors ${
+                    n <= rating ? 'text-crema' : 'text-line'
+                  }`}
+                >
+                  ★
+                </button>
+              ))}
+            </div>
+          </Section>
+
+          <Section
+            title="Sonst noch"
+            action={<span className="text-2xs text-faint">löst Korrekturen aus</span>}
+          >
+            <div className="flex flex-wrap gap-2">
+              {COMMON_DEFECTS.filter((d) => !ACHSEN_TAGS.has(d)).map((d) => (
+                <Chip
+                  key={d}
+                  label={DEFECT_LABEL[d]}
+                  tone="bad"
+                  active={defects.includes(d)}
+                  onClick={() =>
+                    setDefects(
+                      defects.includes(d)
+                        ? defects.filter((x) => x !== d)
+                        : [...tagsAus(achsen), ...sonstige, d],
+                    )
+                  }
+                />
+              ))}
+            </div>
+          </Section>
+
+          <Section title="Notizen" action={<span className="text-2xs text-faint">nur beschreibend</span>}>
+            <div className="flex flex-wrap gap-2">
+              {COMMON_CHARACTERS.map((c) => (
+                <Chip
+                  key={c}
+                  label={CHARACTER_LABEL[c] ?? c}
+                  active={characters.includes(c)}
+                  onClick={() =>
+                    setCharacters((x) => (x.includes(c) ? x.filter((y) => y !== c) : [...x, c]))
+                  }
+                />
+              ))}
+            </div>
+          </Section>
+        </>
+      )}
+
+      <Section>
+        <Button size="lg" className="w-full" disabled={gewaehlt === null} onClick={auswerten}>
           Auswerten
         </Button>
         {/* Ein Knopf, der nichts tut und nicht sagt warum, ist der
             häufigste Grund, eine App wegzulegen. */}
-        {rating === 0 && (
+        {gewaehlt === null && (
           <p className="mt-2 text-center text-sm text-faint">
-            Erst die Sterne — ohne Bewertung weiß die App nicht, ob eine Korrektur geholfen hat.
+            Erst die eine Frage oben — ohne sie weiß die App nicht, in welche Richtung sie
+            korrigieren soll.
           </p>
         )}
       </Section>

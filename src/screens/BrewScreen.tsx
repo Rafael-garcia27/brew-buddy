@@ -24,6 +24,7 @@ import { ratioTone, ratioLabel, RATIO_ANCHOR } from '@/engine/ratio'
 import { grindPlausibility, formatSetting } from '@/engine/grinder'
 import { MethodIcon, BrewButton } from '@/components/methodicons'
 import SessionLauf from '@/components/SessionLauf'
+import { type Achsen, MITTE } from '@/components/geschmackspad'
 import {
   GRINDER_CATALOG,
   getMethod,
@@ -163,6 +164,8 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
   const [speedFeel, setSpeedFeel] = useState<SpeedFeel | undefined>()
   const [rating, setRating] = useState(0)
   const [defects, setDefects] = useState<Defect[]>([])
+  /** Die Position im Geschmackspad — Extraktionsachse und Körper. */
+  const [achsen, setAchsen] = useState<Achsen>(MITTE)
   const [characters, setCharacters] = useState<Character[]>([])
   const [result, setResult] = useState<Diagnosis | null>(null)
   const [showTweak, setShowTweak] = useState(false)
@@ -356,6 +359,7 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
 
   const reset = () => {
     setPhase('proposal'); setElapsed(0); setElapsedTouched(false); setRating(0); setShowTweak(false)
+    setAchsen(MITTE); setDefects([]); setCharacters([])
     setDefects([]); setCharacters([]); setResult(null)
     setFlow(undefined); setPuck(undefined); setBloom(undefined); setDrawdown(0)
     setDecanted(undefined); setSpeedFeel(undefined)
@@ -905,6 +909,8 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
           setDefects={setDefects}
           characters={characters}
           setCharacters={setCharacters}
+          achsen={achsen}
+          setAchsen={setAchsen}
           auswerten={runDiagnosis}
         />
       )}
