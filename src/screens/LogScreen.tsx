@@ -5,6 +5,8 @@
  * und ob sie eingetroffen ist. Das macht die App überprüfbar.
  */
 import { useState } from 'react'
+import { Lernkurve, Versuchskette } from '@/components/lernkurve'
+import { targetTimeRange } from '@/kb'
 import type { Route } from '@/router'
 import { useStore } from '@/store'
 import type { BrewMethod } from '@domain'
@@ -55,6 +57,16 @@ interface Props {
 export default function LogScreen({ route, navigate, back }: Props) {
   const brews = useStore((s) => s.brews)
   const beans = useStore((s) => s.beans)
+  const empfehlungen = useStore((s) => s.empfehlungen)
+  /**
+   * Zwei Sichten auf dieselben Daten.
+   *
+   * „Verlauf" beantwortet „wie lief es?", „Versuche" beantwortet „was hat
+   * geholfen?". Die zweite Frage stellte man bisher an eine
+   * chronologische Liste, in der die Antwort über zwei Einträge verteilt
+   * stand, die nichts voneinander wussten.
+   */
+  const [sicht, setSicht] = useState<'verlauf' | 'versuche'>('verlauf')
   const [filterMethod, setFilterMethod] = useState<BrewMethod | 'all'>('all')
   /**
    * Kommt der Log von einer Bohne, ist er auf sie vorgefiltert.
@@ -79,6 +91,39 @@ export default function LogScreen({ route, navigate, back }: Props) {
   )
 
   const beanName = (id: string) => beans.find((b) => b.id === id)?.name ?? 'Unbekannt'
+
+  /**
+   * Die Daten für die Kurve — oder nichts.
+   *
+   * Zeiten verschiedener Methoden auf einer Achse wären bedeutungslos,
+   * deshalb braucht die Kurve genau eine. Ist keine gewählt, nimmt sie
+   * die meistgebrühte der gefilterten Auswahl — das ist hilfreicher, als
+   * eine weitere Bedienung zu verlangen.
+   */
+  const kurve = (() => {
+    if (filtered.length < 2) return null
+    const zaehler = new Map<BrewMethod, number>()
+    for (const b of filtered) zaehler.set(b.method, (zaehler.get(b.method) ?? 0) + 1)
+    const method =
+      filterMethod !== 'all'
+        ? filterMethod
+        : [...zaehler.entries()].sort((a, b) => b[1] - a[1])[0]?.[0]
+    if (!method) return null
+
+    // Chronologisch, ältester zuerst — der Verlauf liest sich von links.
+    const reihe = filtered
+      .filter((b) => b.method === method)
+      .slice()
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+    if (reihe.length < 2) return null
+
+    const letzter = reihe[reihe.length - 1]!
+    const bohne = beans.find((b) => b.id === letzter.beanId)
+    const band =
+      targetTimeRange(method, letzter.actual.doseG, bohne?.roastLevel, letzter.actual.yieldG) ??
+      undefined
+    return { method, brews: reihe, band }
+  })()
 
   /**
    * Was im Logbuch tatsächlich vorkommt — und nur das wird angeboten.
@@ -178,6 +223,49 @@ export default function LogScreen({ route, navigate, back }: Props) {
             </Section>
           )}
 
+          <Section>
+            <SegmentedControl
+              value={sicht}
+              onChange={(v) => setSicht(v as 'verlauf' | 'versuche')}
+              options={[
+                { value: 'verlauf', label: 'Verlauf' },
+                { value: 'versuche', label: 'Versuche' },
+              ]}
+            />
+          </Section>
+
+          {sicht === 'versuche' ? (
+            <Section title="Was geholfen hat">
+              <Versuchskette
+                empfehlungen={
+                  filterBean === 'all'
+                    ? empfehlungen
+                    : empfehlungen.filter((e) => e.beanId === filterBean)
+                }
+                alsUhr={(m) => m !== 'espresso'}
+                methodLabel={(m) => METHOD_LABEL[m]}
+              />
+            </Section>
+          ) : (
+          <>
+          {/* Die Kurve braucht eine Methode: V60-Zeiten neben
+              Espresso-Zeiten auf einer Achse wären bedeutungslos. Ist
+              keine gewählt, nimmt sie die meistgebrühte der Auswahl. */}
+          {kurve && (
+            <Section
+              title="Lernkurve"
+              action={<span className="text-2xs text-faint">{METHOD_LABEL[kurve.method]}</span>}
+            >
+              <Card>
+                <Lernkurve
+                  brews={kurve.brews}
+                  {...(kurve.band ? { band: kurve.band } : {})}
+                  alsUhr={kurve.method !== 'espresso'}
+                />
+              </Card>
+            </Section>
+          )}
+
           <Section title="Brews">
             {filtered.length === 0 && (
               <Card>
@@ -234,6 +322,8 @@ export default function LogScreen({ route, navigate, back }: Props) {
               ))}
             </div>
           </Section>
+          </>
+          )}
         </>
       )}
     </Screen>
