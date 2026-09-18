@@ -23,7 +23,7 @@ import { useCallback, useEffect, useState } from 'react'
  * hängen an einer Bohne (bzw. an nichts) und werden von den beiden
  * Einstiegen aus geöffnet.
  */
-export type Tab = 'coffee' | 'brew' | 'profile' | 'log' | 'setup'
+export type Tab = 'heute' | 'coffee' | 'brew' | 'profile' | 'log' | 'setup'
 
 /**
  * Was `id` und `detail` bedeuten, hängt am Reiter.
@@ -33,6 +33,7 @@ export type Tab = 'coffee' | 'brew' | 'profile' | 'log' | 'setup'
  *
  * | Reiter    | `id`                     | `detail`        |
  * | --------- | ------------------------ | --------------- |
+ * | `heute`   | —                        | —               |
  * | `coffee`  | Bohne (Vorauswahl)       | `new`           |
  * | `brew`    | **Methode**              | **Bohne**       |
  * | `profile` | Bohne                    | —               |
@@ -49,7 +50,7 @@ export interface Route {
   detail?: string
 }
 
-const TABS: Tab[] = ['coffee', 'brew', 'profile', 'log', 'setup']
+const TABS: Tab[] = ['heute', 'coffee', 'brew', 'profile', 'log', 'setup']
 
 /** Typisierte Leser, damit `route.id` nicht überall gedeutet werden muss. */
 export function beanOf(r: Route): string | undefined {
@@ -66,6 +67,12 @@ export function methodOf(r: Route): string | undefined {
  * Eine installierte PWA startet mit dem Hash, der beim letzten Mal offen
  * war. Ohne diese Zuordnung landet ein Update auf `#/shelf` und zeigt
  * einen leeren Bildschirm.
+ */
+/**
+ * Alte Adressen bleiben gültig.
+ *
+ * Wer die App als Lesezeichen mit `#/coffee` abgelegt hat, landet
+ * weiterhin im Regal — nur der leere Pfad führt seit 2.0 nach „Heute".
  */
 const ALT: Record<string, Tab> = { shelf: 'coffee', beans: 'coffee' }
 
@@ -92,7 +99,7 @@ function parse(hash: string): Route {
   const clean = hash.replace(/^#\/?/, '')
   const [tab, id, detail] = clean.split('/')
   const roh = tab ?? ''
-  const t = (TABS as string[]).includes(roh) ? (roh as Tab) : (ALT[roh] ?? 'coffee')
+  const t = (TABS as string[]).includes(roh) ? (roh as Tab) : (ALT[roh] ?? 'heute')
   return { tab: t, id: seg(id), detail: seg(detail) }
 }
 

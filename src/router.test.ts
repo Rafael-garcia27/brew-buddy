@@ -55,10 +55,19 @@ describe('Bedeutung der Segmente', () => {
 })
 
 describe('Unbekannte Adressen', () => {
-  it('landen auf Beans statt auf einem leeren Bildschirm', () => {
-    expect(parse('#/').tab).toBe('coffee')
-    expect(parse('').tab).toBe('coffee')
-    expect(parse('#/quatsch').tab).toBe('coffee')
+  it('landen auf Heute statt auf einem leeren Bildschirm', () => {
+    // Seit 2.0 ist „Heute" der Einstieg: Er beantwortet die Frage
+    // „welche Bohne, welche Methode" vorweg, statt sie zu stellen.
+    // Vorher landete man im Regal und musste zweimal wählen.
+    expect(parse('#/').tab).toBe('heute')
+    expect(parse('').tab).toBe('heute')
+    expect(parse('#/quatsch').tab).toBe('heute')
+  })
+
+  it('lassen die Regal-Adresse gültig', () => {
+    // Wer die App mit `#/coffee` als Lesezeichen abgelegt hat, landet
+    // weiterhin dort — nur der leere Pfad führt jetzt woandershin.
+    expect(parse('#/coffee').tab).toBe('coffee')
   })
 
   it('leiten die alten Regal-Adressen weiter', () => {

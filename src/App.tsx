@@ -22,6 +22,7 @@ import type { BrewMethod } from '@domain'
 import { METHOD_IDS } from './kb'
 import { UndoBar, StorageErrorBar, UpdateToast } from './components/system'
 import { Bereichsgrenze } from './components/ErrorBoundary'
+import HeuteScreen from './screens/HeuteScreen'
 import BrewScreen from './screens/BrewScreen'
 import MethodPicker from './screens/MethodPicker'
 import BeanPicker from './screens/BeanPicker'
@@ -32,9 +33,11 @@ import SetupScreen from './screens/SetupScreen'
 
 const REITER: { id: Tab; label: string; icon: ReactElement }[] = [
   {
-    id: 'brew',
-    label: 'Brew',
+    id: 'heute',
+    label: 'Heute',
     icon: (
+      // Die Tasse steht jetzt hier: Von „Heute" aus wird gebrüht, und
+      // „Brew" ist seit 2.0 kein Reiter mehr, sondern ein Ziel.
       <path
         d="M6 9h11a3 3 0 010 6h-1M6 9v5a5 5 0 005 5h0a5 5 0 005-5V9M6 9H5m1-4v1m4-1v1m4-1v1M4 21h14"
         strokeWidth="1.8"
@@ -45,7 +48,7 @@ const REITER: { id: Tab; label: string; icon: ReactElement }[] = [
   },
   {
     id: 'coffee',
-    label: 'Coffee',
+    label: 'Regal',
     icon: (
       // Kaffeebohne: Ellipse mit der Naht auf der Längsachse. Beide in
       // EINER gedrehten Gruppe — vorher war nur die Ellipse gedreht und
@@ -54,6 +57,20 @@ const REITER: { id: Tab; label: string; icon: ReactElement }[] = [
         <ellipse cx="12" cy="12" rx="6" ry="9" strokeWidth="1.8" />
         <path d="M12 3.2c-2.9 4.2-2.9 13.4 0 17.6" strokeWidth="1.8" strokeLinecap="round" />
       </g>
+    ),
+  },
+  {
+    id: 'log',
+    label: 'Verlauf',
+    icon: (
+      // Eine Kurve, die ins Zielband läuft — dasselbe Bild wie im
+      // Logbuch selbst.
+      <path
+        d="M4 17l4-4 3 2 4-6 5 3"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     ),
   },
 ]
@@ -104,7 +121,7 @@ export default function App() {
    */
   const heim = () => {
     if (window.history.length > 1) back()
-    else navigate({ tab: 'coffee' }, true)
+    else navigate({ tab: 'heute' }, true)
   }
 
   const bean = beans.find((b) => b.id === beanOf(route))
@@ -146,6 +163,8 @@ export default function App() {
           was="Dieser Bildschirm"
           neustartBei={`${route.tab}/${route.id ?? ''}/${route.detail ?? ''}`}
         >
+        {route.tab === 'heute' && <HeuteScreen route={route} navigate={navigate} />}
+
         {route.tab === 'coffee' && coffee}
 
         {/* Drei Stufen, in der Reihenfolge, in der man wählt: Methode,
@@ -202,7 +221,15 @@ export default function App() {
       <nav className="pb-nav border-t border-line bg-paper/95 backdrop-blur-xl">
         <div className="flex">
           {REITER.map((t) => {
-            const aktiv = route.tab === t.id || (t.id === 'coffee' && route.tab === 'profile')
+            /**
+             * `brew` gehört unter „Heute": Von dort aus wird gebrüht, und
+             * die Leiste soll zeigen, wo man hergekommen ist — nicht ins
+             * Leere laufen, weil der Bildschirm keinen eigenen Reiter hat.
+             */
+            const aktiv =
+              route.tab === t.id ||
+              (t.id === 'coffee' && route.tab === 'profile') ||
+              (t.id === 'heute' && route.tab === 'brew')
             return (
               <button
                 key={t.id}

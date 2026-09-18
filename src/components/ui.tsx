@@ -952,7 +952,10 @@ export function FreshnessRing({
   size?: number
   label?: string
 }) {
-  const r = (size - 5) / 2
+  // Die Strichstärke wächst mit dem Ring. Fest auf 3 sah er bei 74 px
+  // aus wie ein Haar; bei 36 px stimmen die 3 weiterhin.
+  const dicke = Math.max(3, Math.round(size / 14))
+  const r = (size - dicke - 2) / 2
   const c = 2 * Math.PI * r
   const pct = Math.max(0, Math.min(100, score))
   const color = pct > 65 ? 'var(--c-ok)' : pct > 35 ? 'var(--c-warn)' : 'var(--c-bad)'
@@ -960,20 +963,23 @@ export function FreshnessRing({
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
       <svg width={size} height={size} style={style} aria-hidden>
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--c-line)" strokeWidth="3" />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--c-line)" strokeWidth={dicke} />
         <circle
           cx={size / 2}
           cy={size / 2}
           r={r}
           fill="none"
           stroke={color}
-          strokeWidth="3"
+          strokeWidth={dicke}
           strokeLinecap="round"
           strokeDasharray={`${(pct / 100) * c} ${c}`}
         />
       </svg>
       {label && (
-        <span className="tnum absolute inset-0 flex items-center justify-center text-2xs font-semibold">
+        <span
+          className="tnum absolute inset-0 flex flex-col items-center justify-center font-semibold"
+          style={{ fontSize: Math.max(11, Math.round(size / 3.6)) }}
+        >
           {label}
         </span>
       )}
