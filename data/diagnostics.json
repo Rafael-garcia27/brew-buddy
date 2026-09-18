@@ -564,7 +564,19 @@
         "direction": "increase",
         "formulaRef": "F-22"
       },
-      "confidence": "high"
+      "confidence": "high",
+      "beispiel": {
+        "fall": "Espresso zu langsam und bitter — überextrahiert",
+        "method": "espresso",
+        "timeS": 34,
+        "defects": [
+          "bitter"
+        ],
+        "targetTimeS": [
+          26,
+          30
+        ]
+      }
     },
     {
       "id": "D-32",
@@ -1218,7 +1230,7 @@
         ],
         "hint": "Helle Röstungen vertragen mehr: feiner, heißer und weiter als du denkst.",
         "tempCeiling": 96,
-        "ratioCeiling": 3.0,
+        "ratioCeiling": 3,
         "confidence": "high"
       },
       {

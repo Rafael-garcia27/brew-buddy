@@ -24,6 +24,7 @@ import { ratioTone, ratioLabel, RATIO_ANCHOR } from '@/engine/ratio'
 import { grindPlausibility, formatSetting } from '@/engine/grinder'
 import { MethodIcon, BrewButton } from '@/components/methodicons'
 import SessionLauf from '@/components/SessionLauf'
+import { ZURUECK, type Phase } from './sitzung'
 import { type Achsen, MITTE } from '@/components/geschmackspad'
 import {
   GRINDER_CATALOG,
@@ -54,7 +55,14 @@ import { Mahlwerk, WerteAnpassen, Beobachtungen } from './brewinputs'
  * dagegen bleibt hier — sie ändert den Vorschlag, und diese Wirkung soll
  * man sehen, während man sie umstellt.
  */
-type Phase = 'proposal' | 'laeuft' | 'record' | 'check' | 'taste' | 'result'
+/**
+ * Die Phasen stehen in `sitzung.ts`, nicht hier.
+ *
+ * Ein Durchgang IST ein Zustandsautomat; solange er nirgends steht, muss
+ * jede Stelle ihn im Kopf haben. Dort ist er einmal beschrieben, ohne
+ * React und ohne Browser — und geprüft.
+ */
+export type { Phase } from './sitzung'
 
 interface Props {
   /** Beides steht in der Route und wird von App aufgelöst. */
@@ -354,12 +362,13 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
    * Daten löscht, ist keiner.
    */
   const zurueck = () => {
-    if (phase === 'proposal') return back()
-    if (phase === 'record') return setPhase('proposal')
-    if (phase === 'check') return setPhase('record')
-    if (phase === 'taste') return setPhase('check')
-    // Aus dem Ergebnis führt kein Weg zurück: Der Brew ist protokolliert.
-    return reset()
+    const ziel = ZURUECK[phase]
+    if (ziel === 'verlassen') return back()
+    // Aus dem Ergebnis führt kein Weg zurück in die Erfassung: Der Brew
+    // ist protokolliert. Ihn nachträglich zu ändern wäre eine andere
+    // Handlung als „zurück".
+    if (ziel === 'neu') return reset()
+    return setPhase(ziel)
   }
 
   const reset = () => {

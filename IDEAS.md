@@ -136,3 +136,63 @@ durch die gesamte Diagnostik, mit neuen Testfällen für jede Regel. Das
 ist ein eigenes Vorhaben, kein Anhängsel an eine Oberfläche.
 
 ---
+## `when` und `priority` der Diagnoseregeln werden nie gelesen (aus 2.0/U7)
+
+`data/diagnostics.json` beschreibt 57 Regeln mit einer Bedingung (`when`)
+und einer Rangfolge (`priority`). Beim Bauen des Beispiel-Mechanismus kam
+heraus: **Die Engine liest beides nicht.** `RULES` wird ausschließlich
+über `getRule(id)` benutzt — um Text zu einer Regel nachzuschlagen, die
+der Code vorher selbst ausgewählt hat.
+
+Belegt am 18.09.2026: Ein Beispiel für D-30 (`when` = bitter **und**
+adstringierend, `priority` 1) ließ D-32 feuern (`priority` 3). Nach der
+Datei hätte D-30 gewinnen müssen.
+
+**Warum das zählt.** Leitentscheidung E2 lautet „Fachwissen liegt in
+`data/*.json`, der Code ist ihr Interpreter". Für Methoden, Herkünfte,
+Formeln und Mühlen stimmt das. Für die Diagnoseregeln stimmt es nur zur
+Hälfte: Text, Konfidenz und Techniktipps kommen aus der Datei, die
+*Auslösebedingung* steht im Code. Beides kann auseinanderlaufen, ohne
+dass irgendwo etwas rot wird — und wer die Datei liest, glaubt, er habe
+das Regelwerk vor sich.
+
+**Drei Wege, absteigend nach Aufwand:**
+
+1. **Einen Auswerter bauen.** `when` ist eine kleine Ausdruckssprache
+   (`defects includes 'bitter' && timeS > targetTimeS * 1.15`). Ein
+   Interpreter dafür wäre überschaubar — aber er würde das Verhalten
+   überall ändern, und die 57 Bedingungen müssten erst gegen die
+   heutige Implementierung geprüft werden.
+2. **Die Divergenz sichtbar machen.** Für jede Regel ein `beispiel`, das
+   durch `diagnose()` läuft. Wo Datei und Code sich uneinig sind, wird
+   es rot. Der Mechanismus steht seit U7; es fehlen die Beispiele.
+3. **Ehrlich umbenennen.** `when` nach `_when` und dokumentieren, dass es
+   eine Beschreibung ist, keine Regel. Kostet eine Stunde und nimmt der
+   Datei den falschen Anschein.
+
+Weg 2 ist der beste: Er kostet je Regel fünf Zeilen, deckt die
+Divergenzen einzeln auf und lässt Weg 1 später offen.
+
+---
+## Einheiten im Typsystem — bewusst nicht gebaut (aus 2.0/U8)
+
+Der Entwurf sah `Gramm`, `Sekunden`, `Celsius`, `Mikrometer` und `Klicks`
+als eigene Typen vor, damit man sie nicht verwechseln kann. Beim
+Abarbeiten der Liste ist das durchgefallen, und zwar aus einem Grund, der
+zählt: **Es gibt keinen Beleg für die Fehlerklasse.**
+
+In der ganzen Historie dieses Projekts — 50 Commits vor dem Audit, 19
+Audit-Befunde, 534 Tests — steht keine einzige Verwechslung von Sekunden
+und Gramm. Die Namenskonvention (`doseG`, `timeS`, `waterTempC`) trägt
+die Einheit bereits, und sie wird durchgehend eingehalten.
+
+Der Preis wäre dagegen hoch: Jedes Zahlenliteral im Code und in den Tests
+bräuchte einen Konstruktor, und die Wissensbasis liefert nackte Zahlen,
+die an jeder Grenze umgewandelt werden müssten.
+
+**Wenn es doch kommt, dann von der Grenze her:** zuerst nur `Mikrometer`
+und `Klicks`, weil zwischen diesen beiden tatsächlich umgerechnet wird
+(`micronPerStep`) und ein Vorzeichenfehler dort plausibel ist. Der Rest
+hat die Konvention.
+
+---
