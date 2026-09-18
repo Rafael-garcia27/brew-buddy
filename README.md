@@ -82,10 +82,11 @@ Barista/
 ├── types/       Domänenmodell + Rechenkern (reine Funktionen)
 ├── src/
 │   ├── engine/  Startpunkt · Diagnose · Frische · Mühle · Lernen · Eignung
+│   │            · Wette (Vorhersagen einlösen) · Überzeugung · Heute
 │   ├── screens/ Coffee (Regal · Profil · Formulare) · Brew (Startpunkt ·
 │   │            Erfassen · Phasen) · Logbuch · Setup
 │   ├── components/  Bausteine, Bohnengrafik, Mahlgradräder, Wischgeste
-│   └── store/   Zustand + IndexedDB + Migration + Import/Export
+│   └── store/   Ereignisstrom (die Wahrheit) + Momentaufnahme + Migration
 ├── scripts/     Werkzeuge, u. a. die Kontrastprüfung
 └── docs/        Briefing · Solution Design · Architektur · Audit · Roadmap
 ```
@@ -111,7 +112,7 @@ npm run build      # Produktions-Build (Typprüfung inklusive)
 | `npm run lint` | Fehlerklassen, die Typen und Tests nicht sehen — Hooks hinter Bedingungen, vergessene Abhängigkeiten, Refs beim Rendern |
 | `npm run kontrast` | jede Textfarbe gegen jeden Untergrund, beide Themes, WCAG 2.1 AA |
 | `npm run build` | Typen und Produktions-Build |
-| `npm test` | 432 Tests |
+| `npm test` | 534 Tests |
 
 ### Tests
 

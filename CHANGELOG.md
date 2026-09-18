@@ -8,6 +8,46 @@ der Git-Historie.
 
 ---
 
+## 2.0 — Unveröffentlicht
+
+### Neu
+- **Ein Einstieg statt zwei.** „Heute" beantwortet die Frage „welche
+  Bohne, welche Methode" vorweg — aus der zuletzt gebrühten Bohne, der
+  Uhrzeit und der Brühbereitschaft — und nennt den Grund dafür.
+- **Eine laufende Uhr.** Bis jetzt hat die App die Zeit nicht gemessen,
+  sondern abgefragt. „Let's Brew" startet jetzt einen Vollbild-Timer mit
+  Zielband; der Bildschirm bleibt dabei an, und am Anfang und Ende des
+  Bands gibt es einen Ton.
+- **Die App steht für ihre Vorhersagen gerade.** „Erwartete Zeit danach:
+  28 s" wird gespeichert, und der nächste Durchgang rechnet ab. Im
+  Ergebnis steht die Prognose neben der gemessenen Zeit, im Verlauf die
+  Trefferquote, und nach drei vergeblichen Korrekturen an derselben
+  Stellgröße sagt die App, dass es nicht daran liegt.
+- **Verkosten in einer Frage.** Zu sauer, sitzt, zu bitter — drei große
+  Ziele statt zwanzig kleiner. Genauer geht es unter „Genauer", mit einem
+  Geschmackspad statt acht Chips.
+- **Das Logbuch ist eine Kurve.** Man sieht das Einmessen konvergieren,
+  und unter „Versuche" steht, was geholfen hat: „24 → 23 → gemessen
+  31 s. Vorhergesagt waren 26. Um 5 s daneben."
+- **Im Regal steht der Termin.** Bei „noch zu frisch" jetzt mit dem Tag,
+  ab dem es losgeht.
+
+### Unter der Haube
+- **Der Ereignisstrom ist die Wahrheit.** Der gesamte Bestand entsteht
+  aus einer angehängten Ereignisfolge; die bisherige Momentaufnahme
+  bleibt als zweite Kopie. Fällt eine Quelle aus, rettet die andere den
+  Bestand — vorher gab es nur eine.
+- **Gewicht statt Schwelle.** Der gelernte Geschmacks-Bias schaltet nicht
+  mehr beim zwölften Durchgang an, sondern wächst mit Anzahl, Einigkeit
+  und Alter der Belege.
+- **Die Wissensbasis prüft sich selbst.** Dabei kam heraus, dass eine
+  stufenlose Mühle im Katalog ohne Schrittweite stand — wer sie gewählt
+  hätte, hätte ab da falsche Mahlgradzahlen bekommen.
+- **Methodenfähigkeiten stehen in den Daten**, nicht mehr im Code.
+- 505 → 534 Tests.
+
+---
+
 ## Unveröffentlicht
 
 ### Neu
