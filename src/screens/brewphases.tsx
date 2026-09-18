@@ -21,6 +21,9 @@
 import type { BrewMethod, Defect, Character, SpeedFeel } from '@domain'
 import { useStore } from '@/store'
 import type { Diagnosis } from '@/engine/diagnose'
+import type { Trefferbilanz, Kreisbefund } from '@/engine/wette'
+import type { Empfehlung } from '@/domain'
+import { Vorhersagebalken, Trefferzeile, Kreiswarnung } from '@/components/vorhersage'
 import type { RunCheck } from '@/engine/runcheck'
 import { ratioTone } from '@/engine/ratio'
 import { isImmersion } from '@/kb'
@@ -279,14 +282,36 @@ export function PhaseErgebnis({
   result,
   uebernehmen,
   back,
+  empfehlung,
+  jetzt,
+  band,
+  alsUhr,
+  bilanz,
+  kreis,
 }: {
   result: Diagnosis
   uebernehmen: Uebernehmen
   /** „Fertig" führt zurück zu den Bohnen — dieselbe Stelle wie der Kopfpfeil. */
   back: () => void
+  /** Die gerade gestellte Wette, wenn die Diagnose eine hergab. */
+  empfehlung?: Empfehlung
+  /** Die gemessene Zeit dieses Durchgangs. */
+  jetzt: number
+  band?: [number, number]
+  alsUhr: boolean
+  bilanz: Trefferbilanz
+  /** Gesetzt, wenn dreimal vergeblich an derselben Größe gedreht wurde. */
+  kreis: Kreisbefund | null
 }) {
   return (
     <>
+      {/* Steht ÜBER der Empfehlung: Wer dreimal vergeblich gedreht hat,
+          soll den vierten Vorschlag gar nicht erst als naheliegend lesen. */}
+      {kreis && (
+        <Section>
+          <Kreiswarnung befund={kreis} />
+        </Section>
+      )}
       {/* Stufe eins bleibt sichtbar. Ohne sie stünde auf der
           Ergebnisseite eine Empfehlung ohne die Zahl, aus der sie
           entstanden ist — und der Nutzer müsste glauben statt prüfen. */}
@@ -342,6 +367,23 @@ export function PhaseErgebnis({
         // Zeit — die Überschrift hätte dann das Falsche behauptet.
         <Section key={sg.ruleId} title="Empfehlung">
           <SuggestionCard s={sg} kicker={result.headline} onApply={uebernehmen(sg)} />
+
+          {/* Die Prognose neben der gemessenen Zeit, auf derselben Skala.
+              Als Satz allein bleibt sie eine Behauptung; hier kann man sie
+              prüfen, ohne zu rechnen. */}
+          {empfehlung?.vorhersage && (
+            <Card className="mt-2">
+              <Vorhersagebalken
+                jetzt={jetzt}
+                {...(band ? { band } : {})}
+                vorhersage={empfehlung.vorhersage}
+                alsUhr={alsUhr}
+              />
+              <div className="mt-2 border-t border-line pt-2">
+                <Trefferzeile bilanz={bilanz} />
+              </div>
+            </Card>
+          )}
         </Section>
       ))}
 

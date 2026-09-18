@@ -14,7 +14,7 @@ import type {
 import type { EngineContext } from '@/domain'
 import { startingPoint } from '@/engine/starting'
 import { diagnose, type Diagnosis } from '@/engine/diagnose'
-import { alsEmpfehlung } from '@/engine/wette'
+import { alsEmpfehlung, trefferquote, imKreis } from '@/engine/wette'
 import { checkRun, type RunCheck } from '@/engine/runcheck'
 import { fmtSpanne } from '@/engine/text'
 import { assessFreshness } from '@/engine/freshness'
@@ -174,6 +174,17 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
    * tatsächlich ausprobiert.
    */
   const [empfehlungId, setEmpfehlungId] = useState<string | null>(null)
+
+  /**
+   * Die Zeit, mit der ausgewertet wurde.
+   *
+   * Nicht `elapsed` nehmen: Das Protokollieren ändert den Bestand, der
+   * Startpunkt wird neu gerechnet, und der Effekt weiter unten belegt die
+   * Ist-Felder wieder mit dem Vorschlag — bis die Ergebnisseite erscheint,
+   * steht dort längst wieder 0. Auf dem Bildschirm stand dann „jetzt 0 s"
+   * neben einer Diagnose über 28 Sekunden.
+   */
+  const [gemesseneZeit, setGemesseneZeit] = useState(0)
   /**
    * Der Weg zum Anpassen — von überall her derselbe.
    *
@@ -227,6 +238,11 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
   // Ohne Bohne wird dieser Screen nicht geöffnet (siehe App) — der Rest
   // ist Absicherung gegen eine Route, die auf eine gelöschte Bohne zeigt.
   if (!bean || !ctx || !sp) return null
+
+  /** Die Wette, die zu dem Ergebnis gehört, das gerade auf dem Schirm steht. */
+  const aktuelleEmpfehlung = empfehlungId
+    ? s.empfehlungen.find((e) => e.id === empfehlungId)
+    : undefined
 
   const fresh = assessFreshness(bag, method, bean.roastLevel, !!bean.isDecaf, new Date(), bean.process)
   const fit = suitability(bean, method)
@@ -409,6 +425,7 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
   const runDiagnosis = () => {
     const d = diagnose({ ctx, actual, observations, tasting, targetTimeS: targetT })
     setResult(d)
+    setGemesseneZeit(elapsed)
 
     /**
      * Reihenfolge mit Absicht: erst protokollieren, dann wetten.
@@ -894,7 +911,17 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
 
       {/* ══ ERGEBNIS ══ */}
       {phase === 'result' && result && (
-        <PhaseErgebnis result={result} uebernehmen={uebernehmen} back={back} />
+        <PhaseErgebnis
+          result={result}
+          uebernehmen={uebernehmen}
+          back={back}
+          {...(aktuelleEmpfehlung ? { empfehlung: aktuelleEmpfehlung } : {})}
+          jetzt={gemesseneZeit}
+          {...(targetT ? { band: targetT } : {})}
+          alsUhr={alsUhr}
+          bilanz={trefferquote(s.empfehlungen)}
+          kreis={imKreis(s.empfehlungen, bean.id, method)}
+        />
       )}
     </Screen>
   )
