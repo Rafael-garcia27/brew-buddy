@@ -19,6 +19,7 @@ import { useStore } from '@/store'
 import type { Bag, Bean, BrewMethod } from '@domain'
 import type { BeanTrash } from '@/domain'
 import type { Freshness } from '@/engine/freshness'
+import { restWindowFor } from '@/engine/freshness'
 import {
   suitability,
   bestMethodFor,
@@ -167,7 +168,7 @@ export default function BeansScreen({ route, navigate, onDeleted }: Props) {
   return (
     <Screen>
       <Header
-        title="Coffee"
+        title="Regal"
         large
         right={
           <div className="flex items-center gap-1">
@@ -438,6 +439,15 @@ function BohnenKarte({
   onProfil: () => void
   onLog: () => void
 }) {
+  /**
+   * Ab welchem Tag die Bohne brühbereit ist.
+   *
+   * `restWindowFor` kennt das Ruhefenster je Methode; gezeigt wird es
+   * nur, solange es noch nicht offen ist — danach wäre es eine Zahl über
+   * die Vergangenheit.
+   */
+  const abTag = fresh.state === 'too-fresh' ? restWindowFor(bean, best).min : null
+
   const kopf = (
     <div className="flex items-center gap-3">
       {/* Drei Angaben statt einer: Ring = Frische, Füllung = Röstgrad,
@@ -478,8 +488,12 @@ function BohnenKarte({
             {/* `short` statt `label`: Die Tageszahl steht einen Zentimeter
                 weiter links im Ring, und zweimal dieselbe Zahl in einer
                 Zeile liest sich wie zwei verschiedene Angaben. */}
+            {/* Bei „noch zu frisch" gehört der Tag dazu, ab dem es
+                losgeht. Sonst steht im Regal eine Absage ohne Termin —
+                und man fragt sich jeden Morgen aufs Neue. */}
             <p className="mt-1 truncate text-xs text-faint">
               {fresh.short}
+              {fresh.state === 'too-fresh' && abTag !== null && ` · ab Tag ${abTag}`}
               {count > 0 && ` · ${count}× gebrüht`}
             </p>
             <p className="mt-0.5 truncate text-xs text-crema">
