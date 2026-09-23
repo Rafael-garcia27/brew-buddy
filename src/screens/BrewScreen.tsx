@@ -982,6 +982,9 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
           alsUhr={alsUhr}
           bilanz={trefferquote(s.empfehlungen)}
           kreis={imKreis(s.empfehlungen, bean.id, method)}
+          {...(isEspresso && s.settings.getraenke !== false
+            ? { shot: { doseG, yieldG, roastLevel: bean.roastLevel } }
+            : {})}
         />
       )}
     </Screen>

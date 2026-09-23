@@ -262,6 +262,26 @@ export default function SetupScreen({ route, back }: Props) {
         </Card>
       </Section>
 
+      {/* ── Zusatzfunktionen ──
+          Eigener Abschnitt, nicht unter „Darstellung": Hier wird nichts
+          umgefärbt, hier verschwindet ein ganzer Teil der App. */}
+      <Section title="Zusatzfunktionen">
+        <Card>
+          <Toggle
+            checked={s.settings.getraenke !== false}
+            onChange={(v) => s.setSettings({ getraenke: v })}
+            label="Getränkekarte"
+          />
+          {/* Anders als die Erklärsätze, die anderswo weggefallen sind:
+              Ein Schalter, der eine unbekannte Funktion an- und ausmacht,
+              erklärt sich nicht durch Antippen — man müsste ihn erst
+              einschalten, um zu sehen, was er tut. */}
+          <p className="mt-1 text-sm leading-snug text-faint">
+            Nach einem Espresso: was daraus wird, mit den Mengen für diesen Shot.
+          </p>
+        </Card>
+      </Section>
+
       {/* ── Gelernt ── */}
       {Object.keys(s.learned.preference).length > 0 && (
         <Section title="Was ich über dich gelernt habe">

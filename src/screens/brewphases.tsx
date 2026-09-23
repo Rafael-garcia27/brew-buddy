@@ -25,6 +25,8 @@ import type { Diagnosis } from '@/engine/diagnose'
 import type { Trefferbilanz, Kreisbefund } from '@/engine/wette'
 import type { Empfehlung } from '@/domain'
 import { Vorhersagebalken, Trefferzeile, Kreiswarnung } from '@/components/vorhersage'
+import { Getraenkekarte } from '@/components/getraenke'
+import type { Shot } from '@/engine/getraenke'
 import type { RunCheck } from '@/engine/runcheck'
 import { ratioTone } from '@/engine/ratio'
 import { isImmersion } from '@/kb'
@@ -387,6 +389,7 @@ export function PhaseErgebnis({
   alsUhr,
   bilanz,
   kreis,
+  shot,
 }: {
   result: Diagnosis
   uebernehmen: Uebernehmen
@@ -401,6 +404,14 @@ export function PhaseErgebnis({
   bilanz: Trefferbilanz
   /** Gesetzt, wenn dreimal vergeblich an derselben Größe gedreht wurde. */
   kreis: Kreisbefund | null
+  /**
+   * Der Shot als Ausgangspunkt für die Getränkekarte.
+   *
+   * Fehlt er, gibt es keine Karte — bei Filtermethoden ist das der
+   * Normalfall, und wer die Zusatzfunktion abgeschaltet hat, bekommt
+   * ebenfalls nichts. Beides ist dieselbe Antwort: nichts anzeigen.
+   */
+  shot?: Shot
 }) {
   return (
     <>
@@ -503,6 +514,16 @@ export function PhaseErgebnis({
           </Card>
         </Section>
       )}
+
+      {/* Steht zwischen Empfehlung und „Fertig": Die Empfehlung gilt dem
+          nächsten Durchgang, die Karte diesem Glas. Wer nichts mehr
+          korrigieren will, geht hier weiter statt zurück.
+
+          Nicht bei `blocked`: Dort sagt die App gerade, dass sie aus
+          diesem Durchgang nichts ableiten kann — ein abgebrochener Shot
+          nach einer Sekunde. Darunter „Was wird daraus?" zu fragen,
+          widerspricht dem Satz darüber. */}
+      {shot && !result.blocked && <Getraenkekarte shot={shot} />}
 
       <Section>
         {/* „Fertig" heißt fertig — zurück zu den Bohnen. Den nächsten

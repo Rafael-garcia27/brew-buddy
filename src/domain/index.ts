@@ -65,6 +65,15 @@ export interface Settings {
    * hat, muss dann nicht hinsehen.
    */
   tonhinweise?: boolean
+  /**
+   * Die Getränkekarte nach einem Espresso.
+   *
+   * Eine Zusatzfunktion, keine Grundfunktion: Wer seinen Espresso pur
+   * trinkt, soll nach jedem Durchgang nicht gefragt werden, ob ein
+   * Cortado daraus werden soll. `undefined` heißt an — die Funktion
+   * existiert, wer sie nicht will, schaltet sie in den Optionen ab.
+   */
+  getraenke?: boolean
   lastBeanId?: string
   lastMethod?: BrewMethod
   /**
@@ -101,6 +110,7 @@ export const DEFAULT_SETTINGS: Settings = {
   targetEy: [18, 22],
   targetEySource: 'standard',
   tonhinweise: true,
+  getraenke: true,
   onboardingDone: false,
 }
 

@@ -31,6 +31,12 @@ der Git-Historie.
   31 s. Vorhergesagt waren 26. Um 5 s daneben."
 - **Im Regal steht der Termin.** Bei „noch zu frisch" jetzt mit dem Tag,
   ab dem es losgeht.
+- **Die Getränkekarte.** Nach einem Espresso beantwortet die App die
+  Frage „und jetzt?": dreiundzwanzig Getränke von Cortado bis Espresso
+  Tonic, mit Milchmenge, Gießreihenfolge, Glasgröße und Schaumhöhe — und
+  zwar auf den Shot gerechnet, der gerade gelaufen ist. Wer 20 g
+  einwiegt, bekommt die passende Milchmenge und nicht die aus dem Buch.
+  Abschaltbar in den Optionen unter „Zusatzfunktionen".
 
 ### Unter der Haube
 - **Der Ereignisstrom ist die Wahrheit.** Der gesamte Bestand entsteht

@@ -5,31 +5,49 @@ Kein Versprechen, nur ein Merkzettel.
 
 ---
 
-## Getränkekatalog aus `data/drinks.json` (aus Audit F-17)
+## Getränkekatalog aus `data/drinks.json` — **umgesetzt am 23.09.2026**
 
-Die Datei ist keine Leiche, sondern ein fertiger, ungenutzter Datensatz:
-35 Getränke von Ristretto bis Nitro Cold Brew, dazu Referenzbasen,
-Sirupmengen, Eisarten und Validierungsregeln. Quelle laut Datei selbst:
-`kb/12-getraenke.md` und `kb/13-iced-und-cold.md`.
+Der Datensatz ist keine Leiche mehr: 23 der 35 Rezepturen erscheinen als
+Getränkekarte auf der Ergebnisseite, auf den gelaufenen Shot gerechnet.
+Was bleibt, ist der zweite Teil des Katalogs — die zwölf Getränke, die
+eine eigene Brühung sind (Pour Over, Batch Brew, Japanese Iced, Cold Brew
+in drei Ausführungen, Nitro). Sie beantworten nicht „was mache ich aus
+diesem Shot", sondern „was brühe ich heute anders", und das ist eine
+Frage für den Brühbildschirm, nicht für die Ergebnisseite. Besonders
+`japanese-iced` wäre naheliegend: eine V60-Variante mit `grindOffset`,
+`tempOffset` und einem Eisanteil, die die App rechnen könnte.
+
+---
+
+## Vier der sieben Prüfregeln in `drinks.json` prüfen nichts (aus der Getränkekarte)
+
+Derselbe Fund wie bei `diagnostics.json`, nur kleiner. `validation`
+führt sieben Regeln mit `when`-Ausdrücken. Vier davon vergleichen eine
+Rezeptur mit ihren eigenen festen Zahlen:
 
 ```
-drinks:        35 Einträge
-referenceBase:  7 Schlüssel
-syrups:         2 · iceTypes: 4 · validation: 7
+intensityHighMilk   intensityPct > 4 && category === 'milk'
+                    → beim Espresso Macchiato IMMER wahr (7,06 %)
+iceTooMuch          icePct > 0.55
+                    → beim Espresso on Ice IMMER wahr (0,625)
+tooFewShots         glassMl > 400 && shots === 1
+                    → kein Getränk der Datei hat ein Glas über 400 ml
+milkDominates       milkG / espressoG > 10
+                    → höchster Wert ist der Latte mit 6,8
 ```
 
-Die naheliegende Funktion dahinter: **„Was mache ich aus diesem Shot?"**
-Nach einem gelungenen Espresso zeigt die App, dass daraus ein Cortado
-(1 Shot + 60 ml Milch) oder ein Flat White wird — mit den Mengen, die
-dazugehören. Das ist der einzige Teil der Wissensbasis, der bisher
-nirgends ankommt.
+Als Meldung wären sie eine Konstante: „Sehr kräftig — bitte prüfen"
+unter einem Getränk, das definitionsgemäß kräftig ist. Die Engine wertet
+deshalb nur aus, was sich mit dem Shot ändert, und
+`PRUEFUNGEN_KONSTANT` in `engine/getraenke.ts` benennt den Rest
+ausdrücklich. Ein Test hält beide Listen gegen die Datei, damit eine
+achte Regel nicht stillschweigend nie ausgewertet wird.
 
-**Kosten:** Die Datei wird nicht importiert und liegt deshalb *nicht* im
-Bundle. Sie zu behalten kostet 15,7 KB im Repository und sonst nichts.
-
-**Empfehlung:** behalten, nicht löschen. Entweder wird daraus einmal eine
-Funktion, oder sie bleibt liegen — beides ist billiger als die Arbeit
-wegzuwerfen, die in den 35 Rezepturen steckt.
+**Was daraus folgen könnte.** Die vier Regeln sind als Prüfung an der
+falschen Stelle: Sie gehören nicht in die App, sondern in einen Test über
+`drinks.json` selbst — „stimmt die eingetragene `intensityPct` mit den
+Mengen überein?". Dann prüfen sie die Datei statt das Getränk, und dort
+wären sie nützlich.
 
 ---
 

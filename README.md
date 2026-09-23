@@ -83,6 +83,7 @@ Barista/
 ├── src/
 │   ├── engine/  Startpunkt · Diagnose · Frische · Mühle · Lernen · Eignung
 │   │            · Wette (Vorhersagen einlösen) · Überzeugung · Heute
+│   │            · Getränke (was aus dem Shot wird)
 │   ├── screens/ Coffee (Regal · Profil · Formulare) · Brew (Startpunkt ·
 │   │            Erfassen · Phasen) · Logbuch · Setup
 │   ├── components/  Bausteine, Bohnengrafik, Mahlgradräder, Wischgeste

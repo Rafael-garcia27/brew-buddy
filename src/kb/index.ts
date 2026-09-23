@@ -16,6 +16,7 @@ import glossaryRaw from '@data/glossary.json'
 import formulasRaw from '@data/formulas.json'
 import countriesRaw from '@data/countries.json'
 import processesRaw from '@data/processes.json'
+import drinksRaw from '@data/drinks.json'
 import type { BrewMethod, RoastLevel, Process } from '@domain'
 
 // ── Methoden ──────────────────────────────────────────────────────────
@@ -971,4 +972,120 @@ export function beverageYield(method: BrewMethod, doseG: number, waterG: number,
   const lrr = lrrFor(method, inverted)
   if (!lrr) return waterG
   return Math.max(0, Math.round(waterG - doseG * lrr))
+}
+
+// ── Getränke (kb/12 und kb/13) ────────────────────────────────────────
+
+/**
+ * Eine Zutat, die zum Kaffee dazukommt.
+ *
+ * `massG` ist immer die FINALE Masse im Glas. Bei Milch heißt das: nach
+ * dem Aufschäumen. Dampf kondensiert und macht die Milch schwerer
+ * (`milkFinalFactor`), deshalb steht daneben `milkToPourG` — was man
+ * vorher in die Kanne gießt.
+ */
+export interface Zutat {
+  kind: 'milk' | 'water' | 'ice' | 'chocolate' | 'cream' | 'syrup' | 'tonic'
+  massG: number
+  tempC?: number
+  foamClass?: 'microfoam-thin' | 'microfoam-standard' | 'airy'
+  note?: string
+}
+
+export type Getraenkeart = 'pure' | 'water' | 'milk' | 'iced' | 'special'
+
+export interface Getraenk {
+  id: string
+  name: string
+  category: Getraenkeart
+  baseMethod: string
+  baseRatio: number
+  /** Nur bei Filtergetränken: die Einwaage, auf die sich `baseRatio` bezieht. */
+  doseG?: number
+  /** Feste Espressomasse, wo die Rezeptur nicht der Ratio folgt (Cappuccino classico). */
+  shotYieldG?: number
+  baseShotStyle?: string
+  baseShotStyleOption?: string[]
+  components: Zutat[]
+  totalG: number
+  glassMl: [number, number]
+  intensityPct?: number
+  /** `false` heißt: feste Rezeptur, die Mengen werden NICHT mitskaliert. */
+  scalable?: boolean
+  /** Milch vor dem Aufschäumen — weniger als die finale Masse. */
+  milkToPourG?: number
+  overrunPct?: number
+  foamHeightCm?: number
+  pourOrder?: string[]
+  garnish?: string
+  technique?: string
+  notes?: string
+  warnings?: string[]
+  preferredRoast?: RoastLevel[]
+  requiresRoast?: RoastLevel[]
+  requiresAccessory?: string
+  icedMode?: string
+  icePct?: number
+  meltAssumption?: number
+  steepHours?: [number, number]
+  steepTempC?: number
+  shelfLifeDays?: number
+  dilutionRatio?: number
+  grindOffset?: number
+  tempOffset?: number
+  singleShot?: boolean
+  isDefault?: boolean
+  expectedTdsPct?: number
+  formulaRef?: string
+}
+
+export const DRINKS = drinksRaw.drinks as unknown as Getraenk[]
+
+/**
+ * Die Bezugsgrößen, auf die sich alle Rezepturen beziehen.
+ *
+ * Ein Cortado mit 60 g Milch gilt für einen Shot aus 18 g mit 36 g
+ * Ertrag. Wer 20 g einwiegt, braucht mehr Milch — und genau dafür steht
+ * diese Zahl hier und nicht als Literal im Rechenweg.
+ */
+export const DRINK_BASIS = drinksRaw.referenceBase as {
+  espressoDoseG: number
+  espressoYieldG: number
+  espressoTdsPct: number
+  ristrettoYieldG: number
+  ristrettoTdsPct: number
+  milkFinalFactor: number
+  note: string
+}
+
+/**
+ * Die Prüfregeln aus der Datei.
+ *
+ * Nur die Meldungstexte werden hier gelesen; wann sie greifen, steht in
+ * `engine/getraenke.ts`. Das ist bewusst so benannt und nicht als
+ * Auswerter getarnt — dieselbe Falle wie bei `diagnostics.json`, wo
+ * `when` wie eine Regel aussieht und keine ist. Ein Test hält beide
+ * Seiten zusammen, damit die Datei keine Regel führen kann, die im Code
+ * fehlt.
+ */
+export const DRINK_PRUEFUNGEN = drinksRaw.validation as Record<
+  string,
+  { when: string; message: string }
+>
+
+export function getDrink(id: string): Getraenk | undefined {
+  return DRINKS.find((d) => d.id === id)
+}
+
+/**
+ * Was man aus einem gezogenen Shot machen kann.
+ *
+ * Zwei Bedingungen: Es muss auf Espresso aufbauen, und es muss etwas
+ * dazukommen. Ein Ristretto ist kein Getränk, das aus einem Espresso
+ * entsteht — er ist ein anders gezogener Espresso, und die Auswahl dafür
+ * steht im Brühbildschirm. Übrig bleibt, was die Frage „und jetzt?"
+ * tatsächlich beantwortet.
+ */
+export function ausEspresso(): Getraenk[] {
+  return DRINKS.filter((d) => d.baseMethod === 'espresso' && d.components.length > 0)
 }
