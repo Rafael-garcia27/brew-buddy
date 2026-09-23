@@ -67,21 +67,23 @@ export default function BeansScreen({ route, navigate, onDeleted }: Props) {
   const beans = useStore((s) => s.beans)
   const bags = useStore((s) => s.bags)
   const brews = useStore((s) => s.brews)
-  const lastBeanId = useStore((s) => s.settings.lastBeanId)
   const [showNew, setShowNew] = useState(route.detail === 'new')
   /** Gesetzt: Bearbeiten-Blatt für genau diese Bohne. */
   const [editBean, setEditBean] = useState<Bean | undefined>()
   const deleteBean = useStore((st) => st.deleteBean)
   /**
-   * Die Vorauswahl. Erst sie schaltet die Aktionen frei — ein Tippen auf
-   * eine Bohne soll nicht sofort irgendwo hinspringen, sondern zeigen,
-   * was mit dieser Bohne möglich ist.
+   * Die aufgeklappte Bohne — gesetzt durch Tippen, nie im Voraus.
    *
-   * Sie steht zusätzlich in der Route, damit sie den Weg nach Brühen und
-   * zurück übersteht: Ohne das sprang die Auswahl beim Zurückkommen auf
-   * die zuletzt gebrühte Bohne, nicht auf die gerade gewählte.
+   * Vorher stand hier `route.id ?? lastBeanId`: Das Regal öffnete sich
+   * mit der zuletzt gebrühten Bohne aufgeklappt, und alle anderen lagen
+   * bei 38 % Deckkraft dahinter. Ein Regal, das beim Aufmachen schon
+   * entschieden hat, ist kein Regal — man kommt hierher, um zu schauen.
+   *
+   * `route.id` bleibt: Wer aus dem Brühen zurückkommt, soll seine
+   * Auswahl wiederfinden statt bei null anzufangen. Der Unterschied ist,
+   * dass sie dann aus einer Handlung stammt und nicht aus einer Vermutung.
    */
-  const [selected, setSelected] = useState<string | undefined>(route.id ?? lastBeanId)
+  const [selected, setSelected] = useState<string | undefined>(route.id)
   const waehle = (id: string | undefined) => {
     setSelected(id)
     // Ersetzen, nicht anhängen: Ein Auswahlwechsel ist kein Schritt, den

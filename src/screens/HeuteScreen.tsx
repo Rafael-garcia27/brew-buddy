@@ -19,7 +19,7 @@ import { heuteVorschlag } from '@/engine/heute'
 import { startingPoint } from '@/engine/starting'
 import type { EngineContext } from '@/domain'
 import { daysOffRoast } from '@/domain'
-import { METHOD_LABEL } from '@/labels'
+import { METHOD_LABEL, METHOD_SHORT, METHODS } from '@/labels'
 import { MethodIcon } from '@/components/methodicons'
 import { getMethod } from '@/kb'
 import { Screen, Header, Section, Card, Button, Empty, FreshnessRing, GearButton, LogButton, num } from '@/components/ui'
@@ -70,6 +70,19 @@ export default function HeuteScreen({ navigate }: Props) {
 
   const { bean, bag, method, freshness, grund, methodengrund, weitere } = heute
   const tage = daysOffRoast(bag, new Date())
+
+  /**
+   * Welche Methoden im Einstieg stehen.
+   *
+   * Dieselbe Auswahl wie im Brühbildschirm: Was nicht im Haus ist,
+   * gehört auch hier nicht angeboten. Die vorgeschlagene bleibt in jedem
+   * Fall dabei — sie steht sonst als leerer Zustand in der Reihe.
+   */
+  const gesetzt = (s.settings.favoriteMethods ?? []).filter((m) =>
+    (METHODS as readonly string[]).includes(m),
+  )
+  const basis = gesetzt.length ? gesetzt : METHODS
+  const methoden = METHODS.filter((m) => basis.includes(m) || m === method)
 
   /**
    * Der Startpunkt schon hier, nicht erst im Brühbildschirm.
@@ -152,8 +165,38 @@ export default function HeuteScreen({ navigate }: Props) {
         </p>
       </Section>
 
+      {/*
+        Beide Einstiege bleiben erhalten.
+
+        „Heute" beantwortet die Frage vorweg — aber ein Vorschlag, der
+        die Alternativen versteckt, ist eine Entscheidung. Wer Lust auf
+        eine Methode hat, fängt links an und bekommt die passende Bohne;
+        wer Lust auf eine Bohne hat, fängt rechts an und bekommt die
+        passende Methode. Beides führt in denselben Brühbildschirm.
+      */}
+      <Section title="Oder nach Methode">
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          {methoden.map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => navigate({ tab: 'brew', id: m })}
+              className={`flex min-w-[76px] flex-col items-center gap-1 rounded-2xl border px-3 py-2.5 ${
+                m === method ? 'border-crema bg-crema/10' : 'border-line bg-card'
+              }`}
+            >
+              <MethodIcon icon={getMethod(m).icon ?? m} className="h-6 w-6" />
+              <span className="text-2xs whitespace-nowrap">{METHOD_SHORT[m]}</span>
+            </button>
+          ))}
+        </div>
+        <p className="mt-1.5 text-2xs text-faint">
+          Danach schlägt die App die Bohne vor, die dazu am besten passt.
+        </p>
+      </Section>
+
       <Section
-        title="Etwas anderes"
+        title="Oder nach Bohne"
         action={
           <button
             type="button"
@@ -168,20 +211,28 @@ export default function HeuteScreen({ navigate }: Props) {
           <p className="text-base text-mute">Mehr steht gerade nicht im Regal.</p>
         ) : (
           <div className="space-y-2">
-            {weitere.slice(0, 3).map((r) => (
-              <Card key={r.bean.id} onClick={() => navigate({ tab: 'profile', id: r.bean.id })}>
+            {weitere.map((r) => (
+              <Card
+                key={r.bean.id}
+                onClick={() => navigate({ tab: 'brew', id: '-', detail: r.bean.id })}
+              >
                 <div className="flex items-center gap-3">
                   <FreshnessRing score={r.freshness.score} size={40} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-base font-medium">{r.bean.name}</p>
                     <p className="truncate text-sm text-mute">{r.note ?? r.freshness.label}</p>
                   </div>
+                  <span className="text-faint">›</span>
                 </div>
               </Card>
             ))}
           </div>
         )}
+        <p className="mt-1.5 text-2xs text-faint">
+          Danach schlägt die App die Methode vor, die zu der Bohne am besten passt.
+        </p>
       </Section>
+
     </Screen>
   )
 }
