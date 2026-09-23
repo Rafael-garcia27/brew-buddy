@@ -26,7 +26,7 @@ import type { Trefferbilanz, Kreisbefund } from '@/engine/wette'
 import type { Empfehlung } from '@/domain'
 import { Vorhersagebalken, Trefferzeile, Kreiswarnung } from '@/components/vorhersage'
 import { Getraenkekarte } from '@/components/getraenke'
-import type { Shot } from '@/engine/getraenke'
+import type { Grundlage } from '@/engine/getraenke'
 import type { RunCheck } from '@/engine/runcheck'
 import { ratioTone } from '@/engine/ratio'
 import { isImmersion } from '@/kb'
@@ -389,7 +389,7 @@ export function PhaseErgebnis({
   alsUhr,
   bilanz,
   kreis,
-  shot,
+  basis,
 }: {
   result: Diagnosis
   uebernehmen: Uebernehmen
@@ -405,13 +405,13 @@ export function PhaseErgebnis({
   /** Gesetzt, wenn dreimal vergeblich an derselben Größe gedreht wurde. */
   kreis: Kreisbefund | null
   /**
-   * Der Shot als Ausgangspunkt für die Getränkekarte.
+   * Der Durchgang als Ausgangspunkt für die Getränkekarte.
    *
-   * Fehlt er, gibt es keine Karte — bei Filtermethoden ist das der
-   * Normalfall, und wer die Zusatzfunktion abgeschaltet hat, bekommt
-   * ebenfalls nichts. Beides ist dieselbe Antwort: nichts anzeigen.
+   * Fehlt er, gibt es keine Karte — wer die Zusatzfunktion abgeschaltet
+   * hat, bekommt nichts, und dasselbe gilt für Methoden, für die die
+   * Wissensbasis keine Rezepturen führt.
    */
-  shot?: Shot
+  basis?: Grundlage
 }) {
   return (
     <>
@@ -523,7 +523,7 @@ export function PhaseErgebnis({
           diesem Durchgang nichts ableiten kann — ein abgebrochener Shot
           nach einer Sekunde. Darunter „Was wird daraus?" zu fragen,
           widerspricht dem Satz darüber. */}
-      {shot && !result.blocked && <Getraenkekarte shot={shot} />}
+      {basis && !result.blocked && <Getraenkekarte basis={basis} />}
 
       <Section>
         {/* „Fertig" heißt fertig — zurück zu den Bohnen. Den nächsten

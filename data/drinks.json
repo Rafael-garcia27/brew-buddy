@@ -165,7 +165,7 @@
       "intensityPct": 1.55, "scalable": true
     },
     {
-      "id": "batch-brew", "name": "Batch Brew", "category": "pure", "baseMethod": "v60",
+      "id": "batch-brew", "name": "Batch Brew", "category": "pure", "baseMethod": "batchbrew",
       "baseRatio": 16.7, "doseG": 60,
       "components": [], "totalG": 880, "glassMl": [1000, 1200],
       "intensityPct": 1.36, "scalable": true
@@ -189,7 +189,7 @@
       "notes": "Erhält die Säurestruktur vollständig — die richtige Wahl für helle, fruchtige Kaffees."
     },
     {
-      "id": "cold-brew-concentrate", "name": "Cold Brew Konzentrat", "category": "iced", "baseMethod": "aeropress",
+      "id": "cold-brew-concentrate", "name": "Cold Brew Konzentrat", "category": "iced", "baseMethod": "aeropress", "alsoFor": ["frenchpress"],
       "baseRatio": 8.0, "doseG": 100,
       "icedMode": "cold-brew", "steepHours": [12, 16], "steepTempC": 20,
       "grindOffset": 6,
@@ -200,7 +200,7 @@
       "warnings": ["Max. 16 h bei Raumtemperatur, danach kühlen (Lebensmittelsicherheit)."]
     },
     {
-      "id": "cold-brew-rtd", "name": "Cold Brew (trinkfertig)", "category": "iced", "baseMethod": "aeropress",
+      "id": "cold-brew-rtd", "name": "Cold Brew (trinkfertig)", "category": "iced", "baseMethod": "aeropress", "alsoFor": ["frenchpress"],
       "baseRatio": 14.0, "doseG": 70,
       "icedMode": "cold-brew", "steepHours": [14, 18],
       "grindOffset": 6,
@@ -297,7 +297,7 @@
       "notes": "Sofort servieren."
     },
     {
-      "id": "nitro-cold-brew", "name": "Nitro Cold Brew", "category": "special", "baseMethod": "aeropress",
+      "id": "nitro-cold-brew", "name": "Nitro Cold Brew", "category": "special", "baseMethod": "aeropress", "alsoFor": ["frenchpress"],
       "baseRatio": 14.0, "icedMode": "cold-brew",
       "components": [], "totalG": 300, "glassMl": [350, 400], "intensityPct": 1.3,
       "requiresAccessory": "nitrogen",

@@ -21,9 +21,19 @@
  * Was NICHT mitskaliert: Rezepturen mit `scalable: false`. Ein
  * Cappuccino classico ist über Drittel definiert und ein Affogato über
  * zwei Kugeln Eis — das sind feste Formen, keine Verhältnisse.
+ *
+ * ── Zwei Fragen, zwei Karten
+ *
+ * Nach einem Espresso lautet die Frage „was mache ich daraus?" — der
+ * Shot steht da, und die Mengen richten sich nach ihm. Nach einem V60
+ * lautet sie „was geht sonst noch?", denn Japanese Iced, Cold Brew und
+ * Batch Brew sind keine Weiterverarbeitung, sondern eigene Brühungen.
+ * Sie werden deshalb auch NICHT umgerechnet: Wer sie liest, hat noch
+ * nichts in der Hand, auf das sich etwas skalieren ließe. Die Rezeptur
+ * steht so da, wie die Wissensbasis sie führt.
  */
-import type { RoastLevel } from '@domain'
-import { DRINK_BASIS, DRINK_PRUEFUNGEN, ausEspresso } from '@/kb'
+import type { BrewMethod, RoastLevel } from '@domain'
+import { DRINK_BASIS, DRINK_PRUEFUNGEN, ausEspresso, zurMethode } from '@/kb'
 import type { Getraenk, Zutat } from '@/kb'
 
 /** Der Shot, aus dem das Getränk werden soll. */
@@ -36,10 +46,25 @@ export interface Shot {
 
 export interface Rezept {
   getraenk: Getraenk
+  /**
+   * Woher die Zahlen kommen.
+   *
+   * `aus-shot`: auf den Durchgang gerechnet, den man gerade hatte.
+   * `eigene-bruehung`: die Rezeptur, wie sie in der Wissensbasis steht.
+   */
+  sorte: 'aus-shot' | 'eigene-bruehung'
   /** 1 = genau wie in der Karte. 1,2 = ein Fünftel mehr von allem. */
   faktor: number
-  /** Espresso im Glas. */
+  /** Espresso im Glas. Bei einer eigenen Brühung: der fertige Kaffee. */
   kaffeeG: number
+  /** Nur bei eigenen Brühungen: was eingewogen wird. */
+  einwaageG?: number
+  /** Nur bei eigenen Brühungen: Brühwasser insgesamt, Eis eingerechnet. */
+  wasserG?: number
+  /** Beim Flash Chill: der heiße Anteil des Wassers. */
+  heissWasserG?: number
+  /** Beim Flash Chill: das Eis, das vorher in der Kanne liegt. */
+  eisG?: number
   zutaten: Zutat[]
   /** Was am Ende im Glas steht. */
   gesamtG: number
@@ -168,12 +193,75 @@ export function rezept(d: Getraenk, shot: Shot): Rezept {
 
   return {
     getraenk: d,
+    sorte: 'aus-shot',
     faktor,
     kaffeeG,
     zutaten,
     gesamtG,
     ...(d.milkToPourG !== undefined ? { milchEingiessenG: runde(d.milkToPourG * faktor) } : {}),
     ...(intensitaetPct !== undefined ? { intensitaetPct } : {}),
+    hinweise,
+  }
+}
+
+/**
+ * Brühwasser so runden, wie man es abmisst.
+ *
+ * 18 g auf 1:16,7 sind rechnerisch 300,6 g. Die Wissensbasis schreibt
+ * 300 g, und das ist auch die Zahl, die man in die Kanne gießt — die
+ * Nachkommastelle stammt allein aus der gerundeten Ratio. Ab hundert
+ * Gramm wird deshalb auf fünf gerundet.
+ */
+function rundeWasser(g: number): number {
+  return g >= 100 ? Math.round(g / 5) * 5 : Math.round(g)
+}
+
+/**
+ * Eine eigenständige Brührezeptur, unverändert aus der Wissensbasis.
+ *
+ * Kein Faktor, keine Umrechnung: Japanese Iced sind 20 g auf 300 g, und
+ * ob der letzte Durchgang mit 18 oder 22 g lief, ändert daran nichts.
+ * Was hier entsteht, ist eine Anleitung für den nächsten Aufguss — nicht
+ * die Weiterverarbeitung einer Tasse, die schon dasteht.
+ */
+export function bruehrezept(d: Getraenk, roastLevel: RoastLevel): Rezept {
+  const einwaageG = d.doseG
+  const wasserG = einwaageG !== undefined ? rundeWasser(einwaageG * d.baseRatio) : undefined
+  const eis = d.components.find((c) => c.kind === 'ice')
+
+  const hinweise: string[] = []
+  if (d.requiresRoast && !d.requiresRoast.includes(roastLevel)) {
+    hinweise.push('Braucht eine andere Röstung als diese.')
+  } else if (d.preferredRoast && !d.preferredRoast.includes(roastLevel)) {
+    // Bei den kalten Rezepturen ist das keine Kleinigkeit: Cold Brew
+    // zerlegt die Säurestruktur heller Bohnen, Flash Chill bewahrt sie.
+    // Welche Richtung gemeint ist, steht in der Datei.
+    hinweise.push(
+      d.icedMode === 'cold-brew'
+        ? 'Diese Bohne ist heller, als das Rezept mag — Cold Brew nimmt ihr die Säurestruktur. Flash Chill erhält sie.'
+        : 'Kommt mit helleren Röstungen besser — mit dieser geht es auch.',
+    )
+  }
+  if (d.requiresAccessory === 'nitrogen') {
+    hinweise.push('Braucht Stickstoff: Sahnesiphon mit N₂-Kapseln oder Zapfsystem.')
+  }
+  if (d.warnings) hinweise.push(...d.warnings)
+
+  return {
+    getraenk: d,
+    sorte: 'eigene-bruehung',
+    faktor: 1,
+    // Was in der Kanne landet: das Gesamtergebnis abzüglich des Eises,
+    // das erst beim Schmelzen dazukommt.
+    kaffeeG: d.totalG - (eis?.massG ?? 0),
+    ...(einwaageG !== undefined ? { einwaageG } : {}),
+    ...(wasserG !== undefined ? { wasserG } : {}),
+    ...(eis && wasserG !== undefined
+      ? { eisG: eis.massG, heissWasserG: rundeWasser(wasserG - eis.massG) }
+      : {}),
+    zutaten: [],
+    gesamtG: d.totalG,
+    ...(d.intensityPct !== undefined ? { intensitaetPct: d.intensityPct } : {}),
     hinweise,
   }
 }
@@ -188,13 +276,45 @@ export function rezept(d: Getraenk, shot: Shot): Rezept {
  */
 const GRUPPEN: Getraenk['category'][] = ['milk', 'water', 'iced', 'special', 'pure']
 
+function sortiert(rezepte: Rezept[]): Rezept[] {
+  return rezepte.sort((a, b) => {
+    const g = GRUPPEN.indexOf(a.getraenk.category) - GRUPPEN.indexOf(b.getraenk.category)
+    return g !== 0 ? g : a.gesamtG - b.gesamtG
+  })
+}
+
 export function karte(shot: Shot): Rezept[] {
-  return ausEspresso()
-    .map((d) => rezept(d, shot))
-    .sort((a, b) => {
-      const g = GRUPPEN.indexOf(a.getraenk.category) - GRUPPEN.indexOf(b.getraenk.category)
-      return g !== 0 ? g : a.gesamtG - b.gesamtG
-    })
+  return sortiert(ausEspresso().map((d) => rezept(d, shot)))
+}
+
+/**
+ * Die Karte für eine Methode, die keinen Shot liefert.
+ *
+ * V60, AeroPress, French Press und Filtermaschine: Hier steht kein
+ * fertiges Getränk auf dem Tisch, das man weiterverarbeitet, sondern
+ * eine Rezeptur für den nächsten Durchgang.
+ */
+export function bruehkarte(method: BrewMethod, roastLevel: RoastLevel): Rezept[] {
+  return sortiert(zurMethode(method).map((d) => bruehrezept(d, roastLevel)))
+}
+
+/**
+ * Was auf dieser Seite überhaupt zu zeigen ist.
+ *
+ * Eine Stelle für beide Fragen, damit die Oberfläche nicht selbst
+ * entscheiden muss, welche sie gerade stellt.
+ */
+export interface Grundlage {
+  method: BrewMethod
+  doseG: number
+  yieldG: number
+  roastLevel: RoastLevel
+}
+
+export function fuer(g: Grundlage): { titel: string; rezepte: Rezept[] } {
+  return g.method === 'espresso'
+    ? { titel: 'Was wird daraus?', rezepte: karte(g) }
+    : { titel: 'Was geht noch?', rezepte: bruehkarte(g.method, g.roastLevel) }
 }
 
 export const GRUPPENNAME: Record<Getraenk['category'], string> = {

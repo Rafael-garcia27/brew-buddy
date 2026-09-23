@@ -37,6 +37,13 @@ der Git-Historie.
   zwar auf den Shot gerechnet, der gerade gelaufen ist. Wer 20 g
   einwiegt, bekommt die passende Milchmenge und nicht die aus dem Buch.
   Abschaltbar in den Optionen unter „Zusatzfunktionen".
+- **Und nach dem Filter: „Was geht noch?"** Am V60 stehen Japanese Iced
+  Coffee und die kräftige Variante, in der Immersion Cold Brew als
+  Konzentrat und trinkfertig samt Nitro, an der Maschine der Batch Brew —
+  mit Einwaage, Wasser, Mahlgradabweichung, Temperatur und Ziehzeit. Die
+  werden bewusst NICHT auf den letzten Durchgang umgerechnet: Das sind
+  eigene Brühungen für das nächste Mal, keine Weiterverarbeitung dessen,
+  was gerade in der Tasse steht.
 
 ### Unter der Haube
 - **Der Ereignisstrom ist die Wahrheit.** Der gesamte Bestand entsteht

@@ -13,8 +13,8 @@
  */
 import { useState } from 'react'
 import { Card, Section, Sheet, num } from '@/components/ui'
-import { karte, rezept, GRUPPENNAME, ZUTATNAME, SCHAUM } from '@/engine/getraenke'
-import type { Rezept, Shot } from '@/engine/getraenke'
+import { fuer, rezept, bruehrezept, GRUPPENNAME, ZUTATNAME, SCHAUM } from '@/engine/getraenke'
+import type { Grundlage, Rezept } from '@/engine/getraenke'
 import type { Getraenk } from '@/kb'
 
 /** Espresso ist keine Zutat, steht aber in der Gießreihenfolge. */
@@ -32,17 +32,18 @@ function gramm(v: number): string {
   return num(v, v >= 10 ? 0 : 1)
 }
 
-export function Getraenkekarte({ shot }: { shot: Shot }) {
+export function Getraenkekarte({ basis }: { basis: Grundlage }) {
   const [offen, setOffen] = useState(false)
   const [gewaehlt, setGewaehlt] = useState<Getraenk | null>(null)
-  const alle = karte(shot)
+  const { titel, rezepte: alle } = fuer(basis)
   if (alle.length === 0) return null
 
-  // Die Vorschau nimmt die ersten Milchgetränke der Karte — dieselbe
-  // Reihenfolge wie im Blatt. Welche das sind, entscheidet die Datei
-  // und nicht diese Datei hier.
-  const vorschau = alle
-    .filter((r) => r.getraenk.category === 'milk')
+  const ausShot = basis.method === 'espresso'
+
+  // Die Vorschau nimmt die ersten Einträge in der Ordnung der Karte —
+  // bei Espresso die Milchgetränke, sonst schlicht die ersten drei.
+  // Welche das sind, entscheidet die Datei und nicht diese hier.
+  const vorschau = (ausShot ? alle.filter((r) => r.getraenk.category === 'milk') : alle)
     .slice(0, 3)
     .map((r) => r.getraenk.name)
     .join(', ')
@@ -53,7 +54,7 @@ export function Getraenkekarte({ shot }: { shot: Shot }) {
         <Card onClick={() => setOffen(true)}>
           <div className="flex items-center gap-3">
             <div className="min-w-0 flex-1">
-              <p className="text-xl font-semibold tracking-tight">Was wird daraus?</p>
+              <p className="text-xl font-semibold tracking-tight">{titel}</p>
               {vorschau && <p className="mt-0.5 truncate text-sm text-mute">{vorschau} …</p>}
             </div>
             <span className="shrink-0 text-sm text-faint">{alle.length}</span>
@@ -63,12 +64,15 @@ export function Getraenkekarte({ shot }: { shot: Shot }) {
       </Section>
 
       {offen && (
-        <Sheet title="Was wird daraus?" onClose={() => setOffen(false)}>
-          {/* Der Shot steht oben, weil jede Menge im Blatt auf ihn
-              gerechnet ist. Ohne diese Zeile stünden dort Zahlen, von
-              denen man nicht weiß, woher sie kommen. */}
+        <Sheet title={titel} onClose={() => setOffen(false)}>
+          {/* Woher die Zahlen kommen, steht oben. Bei Espresso sind sie
+              auf den Durchgang gerechnet, sonst stehen sie so da, wie
+              die Wissensbasis sie führt — ohne diese Zeile müsste man
+              raten, welches von beidem gilt. */}
           <p className="text-sm text-mute">
-            Gerechnet auf deinen Shot: {gramm(shot.doseG)} g → {gramm(shot.yieldG)} g
+            {ausShot
+              ? `Gerechnet auf deinen Shot: ${gramm(basis.doseG)} g → ${gramm(basis.yieldG)} g`
+              : 'Eigene Rezepturen — die Mengen stehen für sich, nicht für deinen letzten Durchgang.'}
           </p>
           <div className="mt-4 space-y-5">
             {gruppiere(alle).map(([gruppe, zeilen]) => (
@@ -95,7 +99,9 @@ export function Getraenkekarte({ shot }: { shot: Shot }) {
 
       {gewaehlt && (
         <Sheet title={gewaehlt.name} onClose={() => setGewaehlt(null)}>
-          <Rezeptblatt r={rezept(gewaehlt, shot)} />
+          <Rezeptblatt
+            r={ausShot ? rezept(gewaehlt, basis) : bruehrezept(gewaehlt, basis.roastLevel)}
+          />
         </Sheet>
       )}
     </>
@@ -123,40 +129,7 @@ function Rezeptblatt({ r }: { r: Rezept }) {
   const d = r.getraenk
   return (
     <div className="space-y-4">
-      <div>
-        <Zeile name="Espresso" menge={`${gramm(r.kaffeeG)} g`} />
-        {r.zutaten.map((z, i) => (
-          <Zeile
-            key={i}
-            name={ZUTATNAME[z.kind]}
-            menge={`${gramm(z.massG)} g`}
-            unten={[
-              z.kind === 'milk' && r.milchEingiessenG !== undefined
-                ? `${gramm(r.milchEingiessenG)} g eingießen`
-                : null,
-              z.tempC !== undefined ? `${z.tempC} °C` : null,
-              z.foamClass ? SCHAUM[z.foamClass] : null,
-              d.overrunPct !== undefined && z.kind === 'milk' ? `${d.overrunPct} % Overrun` : null,
-              d.foamHeightCm !== undefined && z.kind === 'milk'
-                ? `${num(d.foamHeightCm)} cm Schaum`
-                : null,
-              z.note ?? null,
-            ]
-              .filter(Boolean)
-              .join(' · ')}
-          />
-        ))}
-        <div className="mt-2 flex items-baseline justify-between border-t border-line pt-2">
-          <span className="text-lg font-semibold">Im Glas</span>
-          <span className="text-lg font-semibold">{num(r.gesamtG, 0)} g</span>
-        </div>
-        <p className="mt-1 text-sm text-faint">
-          Glas {d.glassMl[0]}–{d.glassMl[1]} ml
-          {r.intensitaetPct !== undefined && ` · Stärke ${num(r.intensitaetPct, 2)} %`}
-          {r.faktor !== 1 && ` · auf deinen Shot gerechnet`}
-          {d.scalable === false && ` · feste Rezeptur`}
-        </p>
-      </div>
+      {r.sorte === 'eigene-bruehung' ? <Bruehteil r={r} /> : <Glasteil r={r} />}
 
       {d.pourOrder && (
         <div className="border-t border-line pt-3">
@@ -192,6 +165,131 @@ function Rezeptblatt({ r }: { r: Rezept }) {
       )}
     </div>
   )
+}
+
+/**
+ * Was ins Glas kommt — bei allem, was aus einem fertigen Shot entsteht.
+ */
+function Glasteil({ r }: { r: Rezept }) {
+  const d = r.getraenk
+  return (
+      <div>
+        <Zeile name="Espresso" menge={`${gramm(r.kaffeeG)} g`} />
+        {r.zutaten.map((z, i) => (
+          <Zeile
+            key={i}
+            name={ZUTATNAME[z.kind]}
+            menge={`${gramm(z.massG)} g`}
+            unten={[
+              z.kind === 'milk' && r.milchEingiessenG !== undefined
+                ? `${gramm(r.milchEingiessenG)} g eingießen`
+                : null,
+              z.tempC !== undefined ? `${z.tempC} °C` : null,
+              z.foamClass ? SCHAUM[z.foamClass] : null,
+              d.overrunPct !== undefined && z.kind === 'milk' ? `${d.overrunPct} % Overrun` : null,
+              d.foamHeightCm !== undefined && z.kind === 'milk'
+                ? `${num(d.foamHeightCm)} cm Schaum`
+                : null,
+              z.note ?? null,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+          />
+        ))}
+        <div className="mt-2 flex items-baseline justify-between border-t border-line pt-2">
+          <span className="text-lg font-semibold">Im Glas</span>
+          <span className="text-lg font-semibold">{num(r.gesamtG, 0)} g</span>
+        </div>
+        <p className="mt-1 text-sm text-faint">
+          Glas {d.glassMl[0]}–{d.glassMl[1]} ml
+          {r.intensitaetPct !== undefined && ` · Stärke ${num(r.intensitaetPct, 2)} %`}
+          {r.faktor !== 1 && ` · auf deinen Shot gerechnet`}
+          {d.scalable === false && ` · feste Rezeptur`}
+        </p>
+      </div>
+  )
+}
+
+/**
+ * Was in die Kanne kommt — bei einer eigenen Brühung.
+ *
+ * Andere Zahlen, andere Reihenfolge: Hier steht nicht, was man
+ * zusammenschüttet, sondern was man einwiegt, wie fein, wie heiß und wie
+ * lange. Die Wissensbasis führt das als Abweichung vom Normalfall
+ * („1 Schritt feiner"), und genau so steht es auch hier — eine absolute
+ * Mikrometerzahl wäre für die eigene Mühle ohnehin falsch.
+ */
+function Bruehteil({ r }: { r: Rezept }) {
+  const d = r.getraenk
+  const stunden = d.steepHours ? `${d.steepHours[0]}–${d.steepHours[1]} h` : null
+  return (
+    <div>
+      {r.einwaageG !== undefined && (
+        <Zeile
+          name="Einwaage"
+          menge={`${gramm(r.einwaageG)} g`}
+          unten={`1:${num(d.baseRatio, Number.isInteger(d.baseRatio) ? 0 : 1)}`}
+        />
+      )}
+      {r.wasserG !== undefined && (
+        <Zeile
+          name="Wasser"
+          menge={`${gramm(r.wasserG)} g`}
+          {...(r.eisG !== undefined && r.heissWasserG !== undefined
+            ? { unten: `${gramm(r.heissWasserG)} g heiß aufgießen · ${gramm(r.eisG)} g Eis in die Kanne` }
+            : {})}
+        />
+      )}
+      {d.grindOffset !== undefined && d.grindOffset !== 0 && (
+        <Zeile name="Mahlgrad" menge={mahlgrad(d.grindOffset)} />
+      )}
+      {d.tempOffset !== undefined && d.tempOffset !== 0 && (
+        <Zeile
+          name="Temperatur"
+          menge={`${d.tempOffset > 0 ? '+' : ''}${d.tempOffset} °C`}
+          unten={d.tempOffset > 0 ? 'heißer als sonst' : 'kühler als sonst'}
+        />
+      )}
+      {stunden && (
+        <Zeile
+          name="Ziehzeit"
+          menge={stunden}
+          {...(d.steepTempC !== undefined ? { unten: `bei ${d.steepTempC} °C` } : {})}
+        />
+      )}
+
+      <div className="mt-2 flex items-baseline justify-between border-t border-line pt-2">
+        <span className="text-lg font-semibold">Ergebnis</span>
+        <span className="text-lg font-semibold">{num(r.gesamtG, 0)} g</span>
+      </div>
+      {/* Zusammengesetzt statt aneinandergehängt: Cold Brew hat weder
+          Glas noch Stärkeangabe, und drei einzeln bedingte Fragmente
+          hätten dort einen führenden Trenner stehen lassen. */}
+      <p className="mt-1 text-sm text-faint">
+        {[
+          d.glassMl ? `Glas ${d.glassMl[0]}–${d.glassMl[1]} ml` : null,
+          r.intensitaetPct !== undefined ? `Stärke ${num(r.intensitaetPct, 2)} %` : null,
+          d.expectedTdsPct !== undefined ? `Konzentrat, TDS ≈ ${num(d.expectedTdsPct)} %` : null,
+        ]
+          .filter(Boolean)
+          .join(' · ')}
+      </p>
+
+      {(d.dilutionRatio !== undefined || d.shelfLifeDays !== undefined) && (
+        <p className="mt-2 border-t border-line pt-2 text-base leading-snug text-mute">
+          {d.dilutionRatio !== undefined &&
+            `Verdünnen: 1 Teil auf ${num(d.dilutionRatio)} Teile Wasser oder Milch. `}
+          {d.shelfLifeDays !== undefined && `Hält ${d.shelfLifeDays} Tage gekühlt.`}
+        </p>
+      )}
+    </div>
+  )
+}
+
+/** „1 Schritt feiner" statt einer Mikrometerzahl, die nur für fremde Mühlen gilt. */
+function mahlgrad(offset: number): string {
+  const n = Math.abs(offset)
+  return `${n} ${n === 1 ? 'Schritt' : 'Schritte'} ${offset < 0 ? 'feiner' : 'gröber'}`
 }
 
 function Zeile({ name, menge, unten }: { name: string; menge: string; unten?: string }) {

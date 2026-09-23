@@ -1,5 +1,14 @@
 import { describe, it, expect } from 'vitest'
-import { basisKaffeeG, rezept, karte, PRUEFUNGEN_AKTIV, PRUEFUNGEN_KONSTANT } from './getraenke'
+import {
+  basisKaffeeG,
+  rezept,
+  karte,
+  bruehrezept,
+  bruehkarte,
+  fuer,
+  PRUEFUNGEN_AKTIV,
+  PRUEFUNGEN_KONSTANT,
+} from './getraenke'
 import { getDrink, DRINK_PRUEFUNGEN, ausEspresso } from '@/kb'
 
 const BEZUG = { doseG: 18, yieldG: 36, roastLevel: 'medium' } as const
@@ -146,5 +155,94 @@ describe('Prüfregeln der Datei', () => {
   it('nimmt die Meldungstexte aus der Datei', () => {
     const r = rezept(d('cortado'), { doseG: 18, yieldG: 54, roastLevel: 'medium' })
     expect(r.hinweise[0]).toContain(DRINK_PRUEFUNGEN['intensityLow']?.message)
+  })
+})
+
+describe('Eigene Brühungen', () => {
+  it('führt Japanese Iced am V60', () => {
+    const ids = bruehkarte('v60', 'medium').map((r) => r.getraenk.id)
+    expect(ids).toContain('japanese-iced')
+    expect(ids).toContain('pour-over')
+    expect(ids).toContain('pour-over-strong')
+    // Batch Brew ist das Getränk der Filtermaschine, nicht des Handfilters.
+    expect(ids).not.toContain('batch-brew')
+  })
+
+  it('führt Batch Brew an der Filtermaschine', () => {
+    expect(bruehkarte('batchbrew', 'medium').map((r) => r.getraenk.id)).toEqual(['batch-brew'])
+  })
+
+  it('führt Cold Brew sowohl am AeroPress als auch an der French Press', () => {
+    // In der Datei hängt Cold Brew am AeroPress, weil beides Immersion
+    // ist. Gemacht wird er zu Hause meist in der French Press — die
+    // hätte sonst gar kein Getränk.
+    const ap = bruehkarte('aeropress', 'medium').map((r) => r.getraenk.id)
+    const fp = bruehkarte('frenchpress', 'medium').map((r) => r.getraenk.id)
+    expect(ap).toContain('cold-brew-concentrate')
+    expect(fp).toContain('cold-brew-concentrate')
+    expect(fp).toContain('nitro-cold-brew')
+    // Der AeroPress-Standard gehört nicht in die French Press.
+    expect(fp).not.toContain('aeropress-standard')
+  })
+
+  it('kennt für Espresso keine eigene Brühung', () => {
+    expect(bruehkarte('espresso', 'medium')).toHaveLength(0)
+  })
+
+  it('rechnet das Wasser aus Einwaage und Ratio', () => {
+    const r = bruehrezept(d('japanese-iced'), 'light')
+    expect(r.einwaageG).toBe(20)
+    expect(r.wasserG).toBe(300)
+    // Das Eis liegt vorher in der Kanne, der Rest geht heiß durch.
+    expect(r.eisG).toBe(120)
+    expect(r.heissWasserG).toBe(180)
+    expect(r.gesamtG).toBe(260)
+  })
+
+  it('rundet das Brühwasser auf fünf Gramm', () => {
+    // 18 g auf 1:16,7 sind rechnerisch 300,6 g — die Wissensbasis
+    // schreibt 300, und die Nachkommastelle stammt allein aus der
+    // gerundeten Ratio.
+    expect(bruehrezept(d('pour-over'), 'medium').wasserG).toBe(300)
+  })
+
+  it('skaliert nicht — eine Rezeptur ist kein Durchgang', () => {
+    const hell = bruehrezept(d('cold-brew-concentrate'), 'medium')
+    expect(hell.faktor).toBe(1)
+    expect(hell.einwaageG).toBe(100)
+    expect(hell.wasserG).toBe(800)
+  })
+
+  it('warnt vor Cold Brew mit heller Röstung', () => {
+    const r = bruehrezept(d('cold-brew-concentrate'), 'light')
+    expect(r.hinweise.join(' ')).toMatch(/Säurestruktur/)
+    // Und trägt die Lebensmittelwarnung der Datei mit.
+    expect(r.hinweise.join(' ')).toMatch(/16 h/)
+  })
+
+  it('nennt das nötige Zubehör', () => {
+    expect(bruehrezept(d('nitro-cold-brew'), 'medium').hinweise.join(' ')).toMatch(/Stickstoff/)
+  })
+
+  it('kommt ohne Einwaage aus, wo die Datei keine nennt', () => {
+    const r = bruehrezept(d('nitro-cold-brew'), 'medium')
+    expect(r.einwaageG).toBeUndefined()
+    expect(r.wasserG).toBeUndefined()
+    expect(r.gesamtG).toBe(300)
+  })
+})
+
+describe('Welche Frage die Seite stellt', () => {
+  it('fragt nach dem Espresso, was daraus wird', () => {
+    const { titel, rezepte } = fuer({ method: 'espresso', ...BEZUG })
+    expect(titel).toBe('Was wird daraus?')
+    expect(rezepte.every((r) => r.sorte === 'aus-shot')).toBe(true)
+  })
+
+  it('fragt nach dem Filter, was sonst noch geht', () => {
+    const { titel, rezepte } = fuer({ method: 'v60', doseG: 18, yieldG: 0, roastLevel: 'light' })
+    expect(titel).toBe('Was geht noch?')
+    expect(rezepte.every((r) => r.sorte === 'eigene-bruehung')).toBe(true)
+    expect(rezepte.length).toBeGreaterThan(0)
   })
 })

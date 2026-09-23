@@ -5,17 +5,26 @@ Kein Versprechen, nur ein Merkzettel.
 
 ---
 
-## Getränkekatalog aus `data/drinks.json` — **umgesetzt am 23.09.2026**
+## Getränkekatalog aus `data/drinks.json` — **umgesetzt am 23./24.09.2026**
 
-Der Datensatz ist keine Leiche mehr: 23 der 35 Rezepturen erscheinen als
-Getränkekarte auf der Ergebnisseite, auf den gelaufenen Shot gerechnet.
-Was bleibt, ist der zweite Teil des Katalogs — die zwölf Getränke, die
-eine eigene Brühung sind (Pour Over, Batch Brew, Japanese Iced, Cold Brew
-in drei Ausführungen, Nitro). Sie beantworten nicht „was mache ich aus
-diesem Shot", sondern „was brühe ich heute anders", und das ist eine
-Frage für den Brühbildschirm, nicht für die Ergebnisseite. Besonders
-`japanese-iced` wäre naheliegend: eine V60-Variante mit `grindOffset`,
-`tempOffset` und einem Eisanteil, die die App rechnen könnte.
+Der Datensatz ist keine Leiche mehr: Alle 35 Rezepturen sind in der App
+angekommen. 23 davon als Getränkekarte nach einem Espresso, auf den
+gelaufenen Shot gerechnet; die übrigen als eigene Brührezepturen bei der
+Methode, zu der sie gehören.
+
+Zwei Zuordnungen mussten dafür in den Daten geradegezogen werden:
+
+- `batch-brew` hing am V60. Ein Liter Handaufguss macht niemand — das
+  Getränk gehört zur Filtermaschine, und die App hat diese Methode.
+- Cold Brew hängt am AeroPress, weil beides Immersion ist. Das bleibt so;
+  dazugekommen ist `alsoFor: ["frenchpress"]`, denn zu Hause steht Cold
+  Brew meist in der French Press, und die hatte bis dahin gar kein
+  Getränk. Eine zweite Adresse statt einer umgeschriebenen Herkunft.
+
+Offen bleibt `servedOverIce` aus kb/13 §2.5: Wer zusätzlich Eiswürfel ins
+Glas gibt, sollte den Eisanteil des Flash Chill auf 30–35 % senken, sonst
+wird es wässrig. Die Wissensbasis fordert die Abfrage ausdrücklich; die
+App führt den Eisanteil bisher fest mit 40 %.
 
 ---
 

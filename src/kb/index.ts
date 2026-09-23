@@ -999,6 +999,15 @@ export interface Getraenk {
   name: string
   category: Getraenkeart
   baseMethod: string
+  /**
+   * Weitere Methoden der App, unter denen die Rezeptur ebenfalls steht.
+   *
+   * Cold Brew ist in der Datei am AeroPress aufgehängt, weil beides
+   * Immersion ist — gemacht wird er zu Hause aber meist in der French
+   * Press, und die hätte sonst gar kein Getränk. Statt die Herkunft
+   * umzuschreiben, kommt die zweite Adresse dazu.
+   */
+  alsoFor?: string[]
   baseRatio: number
   /** Nur bei Filtergetränken: die Einwaage, auf die sich `baseRatio` bezieht. */
   doseG?: number
@@ -1088,4 +1097,18 @@ export function getDrink(id: string): Getraenk | undefined {
  */
 export function ausEspresso(): Getraenk[] {
   return DRINKS.filter((d) => d.baseMethod === 'espresso' && d.components.length > 0)
+}
+
+/**
+ * Was man mit dieser Methode sonst noch brühen kann.
+ *
+ * Die Gegenrichtung zu `ausEspresso`: keine Weiterverarbeitung eines
+ * fertigen Getränks, sondern eigenständige Rezepturen — Japanese Iced
+ * am V60, Cold Brew in der Immersion, Batch Brew in der Maschine. Sie
+ * werden deshalb auch nicht auf einen Durchgang umgerechnet; wer sie
+ * ansieht, hat noch nichts in der Hand.
+ */
+export function zurMethode(method: string): Getraenk[] {
+  if (method === 'espresso') return []
+  return DRINKS.filter((d) => d.baseMethod === method || d.alsoFor?.includes(method))
 }
