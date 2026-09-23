@@ -346,9 +346,6 @@ export default function SageGrindDial({ value, onChange, max, step, highlight, d
         <div className="pb-3" />
       </div>
 
-      <p className="mt-2 text-center text-sm text-faint">
-        Rad waagerecht ziehen — die Skala läuft stufenlos.
-      </p>
     </div>
   )
 }

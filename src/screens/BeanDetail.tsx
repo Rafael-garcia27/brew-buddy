@@ -194,7 +194,7 @@ export function BeanDetail({
 
       {/* 1 + 2 — Karte und Legende. Der einzige Teil dieses Bildschirms,
           den man ohne Lesen erfasst, steht deshalb zuerst. */}
-      <Section title="Herkunft">
+      <Section>
         <Card>
           {/* Beiwerk mit eigenem Netz: Der Kartenbrocken wird nachgeladen
               und kann nach einer Aktualisierung fehlen. Ohne diese Grenze
@@ -218,7 +218,7 @@ export function BeanDetail({
       {/* 3 + 4 — die zwei Werte mit einer echten Skala. Zusammen in einem
           Abschnitt, weil sie zusammen gelesen werden: Ein helles Natural
           und ein dunkles Washed sind zwei verschiedene Kaffees. */}
-      <Section title="Charakter">
+      <Section>
         <Card>
           <RoastScale bean={bean} />
         </Card>
@@ -235,7 +235,7 @@ export function BeanDetail({
           Liste, in der die French Press unter dem Espresso saß und
           trotzdem „gut geeignet" hieß — sichtbar widersprüchlich in
           einem einzigen Blick. */}
-      <Section title="Fit" action={<span className="text-xs text-faint">nach Empfehlung</span>}>
+      <Section>
         <Card>
           <p className="mb-3 text-2xs leading-snug text-faint">
             Balken: wo die Bohne ihre Stärken ausspielt. Wort: wie leicht die Methode zu treffen
@@ -291,7 +291,7 @@ export function BeanDetail({
 
       {/* 6 — die trockenen Fakten. Schmucklos ist hier die Absicht: Sie
           konkurrieren nicht mit den Grafiken darüber. */}
-      <Section title="Fakten">
+      <Section>
         <Card>
           <FactTable facts={fakten} />
         </Card>
@@ -302,7 +302,6 @@ export function BeanDetail({
           eine davon (kb/05 §4). Ohne diesen Zusatz stünde eine Tageszahl
           über einer Liste, die fünf verschiedene richtig macht. */}
       <Section
-        title="Bags"
         action={
           <div className="flex items-baseline gap-2">
             {bags.length > 0 && (

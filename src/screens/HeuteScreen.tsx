@@ -23,16 +23,14 @@
 import { useState } from 'react'
 import type { Route } from '@/router'
 import type { BrewMethod } from '@domain'
-import { useStore, selectActiveWater, grinderFor } from '@/store'
-import type { EngineContext } from '@/domain'
+import { useStore } from '@/store'
 import { daysOffRoast } from '@/domain'
 import { heuteVorschlag } from '@/engine/heute'
 import { bestBeansFor } from '@/engine/suitability'
-import { startingPoint } from '@/engine/starting'
 import { getMethod } from '@/kb'
 import { METHOD_LABEL, METHOD_SHORT, METHODS } from '@/labels'
 import { MethodIcon } from '@/components/methodicons'
-import { Screen, Section, Card, Button, Empty, FreshnessRing, GearButton, LogButton, num } from '@/components/ui'
+import { Screen, Section, Card, Button, Empty, FreshnessRing, GearButton, LogButton } from '@/components/ui'
 import { BackupBanner, SetupNudge } from '@/components/system'
 
 interface Props {
@@ -112,20 +110,6 @@ export default function HeuteScreen({ navigate }: Props) {
   const gewaehlt = liste.find((r) => r.bean.id === bohneGewaehlt) ?? liste[0]
   if (!gewaehlt) return null
 
-  const ctx: EngineContext = {
-    bean: gewaehlt.bean,
-    bag: gewaehlt.bag,
-    method,
-    grinder: grinderFor(s, method),
-    water: selectActiveWater(s),
-    settings: s.settings,
-    learned: s.learned,
-    beanHistory: s.brews.filter((b) => b.beanId === gewaehlt.bean.id && b.method === method),
-    methodHistory: s.brews.filter((b) => b.method === method),
-    allBeans: s.beans,
-    today: new Date(),
-  }
-  const sp = startingPoint(ctx)
 
   return (
     <Screen>
@@ -137,7 +121,17 @@ export default function HeuteScreen({ navigate }: Props) {
           Reiter. Scrollt man die Bohnen, bleiben sie stehen, und man
           sieht jederzeit, worauf sich die Liste bezieht.
         */}
-        <div className="flex gap-2 overflow-x-auto px-4 pb-2.5">
+        {/*
+          Mittig, solange sie passen — sonst scrollend ab links.
+
+          `justify-center` allein schneidet bei Überlauf die erste
+          Methode ab, weil der Inhalt dann links aus dem Sichtfeld
+          ragt und nicht mehr erreichbar ist. Eine innere Reihe mit
+          `w-max mx-auto` zentriert, solange Platz ist, und lässt die
+          Ränder los, sobald es eng wird.
+        */}
+        <div className="overflow-x-auto px-4 pb-2.5">
+        <div className="mx-auto flex w-max gap-2">
           {methoden.map((m) => {
             const aktiv = m === method
             return (
@@ -156,6 +150,7 @@ export default function HeuteScreen({ navigate }: Props) {
               </button>
             )
           })}
+        </div>
         </div>
       </Kopf>
 
@@ -225,12 +220,6 @@ export default function HeuteScreen({ navigate }: Props) {
           <MethodIcon icon={getMethod(method).icon ?? method} className="h-6 w-6" />
           {METHOD_LABEL[method]} brühen
         </Button>
-        <p className="mt-1.5 text-center text-sm text-mute">
-          {gewaehlt.bean.name} · {num(sp.proposal.doseG)} g → {num(sp.proposal.yieldG)} g
-          {sp.proposal.targetTimeS
-            ? ` in ${sp.proposal.targetTimeS[0]}–${sp.proposal.targetTimeS[1]} s`
-            : ''}
-        </p>
       </div>
     </Screen>
   )

@@ -169,10 +169,6 @@ export function WerteAnpassen({
                   </p>
                 </Field>
               )}
-              <p className="border-t border-line pt-3 text-sm leading-snug text-faint">
-                Der Mahlgrad hat sein eigenes Rad auf der Seite darunter — dort sieht man, wo er
-                in der Skala der Mühle liegt.
-              </p>
             </div>
           </Sheet>
   )

@@ -159,10 +159,6 @@ export function PhaseLaufkontrolle({
             />
           ))}
         </div>
-        <p className="mt-2 text-sm leading-snug text-faint">
-          Deckt sich dein Eindruck mit der Uhr, steigt die Konfidenz der Empfehlung.
-          Widerspricht er ihr, ist genau das der Befund.
-        </p>
       </Section>
 
       {/* Befund und Empfehlung in einer Karte: Getrennt stünde über

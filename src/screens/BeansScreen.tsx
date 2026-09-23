@@ -376,12 +376,6 @@ export default function BeansScreen({ route, navigate, onDeleted }: Props) {
             </Section>
           )}
 
-          {!selected && sichtbar.length > 0 && (
-            <p className="px-4 pt-4 text-sm leading-snug text-faint">
-              Bohne antippen — dann kannst du sie brühen, ihr Profil ansehen
-              oder ihre Protokolle durchgehen.
-            </p>
-          )}
         </>
       )}
 
@@ -474,35 +468,39 @@ function BohnenKarte({
           {bean.roaster ? `${bean.roaster} · ` : ''}
           {ROAST_LABEL[bean.roastLevel]} · {PROCESS_LABEL[bean.process]}
         </p>
-        {/* Eine Aussage je Bohne, und zwar die dringendere: „überaltert"
-            neben „am besten als V60" würde sich für den Leser
-            widersprechen. */}
-        {fresh.state === 'stale' ? (
-          <p className="mt-1 truncate text-xs text-bad">
-            {fresh.short} — die Bag gibt nichts mehr her
-          </p>
-        ) : bag?.remainingGrams !== undefined && bag.remainingGrams < 20 ? (
-          <p className="mt-1 truncate text-xs text-warn">
-            Nur noch {num(bag.remainingGrams, 0)} g in der Bag
-          </p>
-        ) : (
-          <>
-            {/* `short` statt `label`: Die Tageszahl steht einen Zentimeter
-                weiter links im Ring, und zweimal dieselbe Zahl in einer
-                Zeile liest sich wie zwei verschiedene Angaben. */}
-            {/* Bei „noch zu frisch" gehört der Tag dazu, ab dem es
-                losgeht. Sonst steht im Regal eine Absage ohne Termin —
-                und man fragt sich jeden Morgen aufs Neue. */}
+        {/* Geschlossen steht hier nur die Empfehlung.
+            Die Liste beantwortet eine Frage — „welche Bohne?" —, und dafür
+            reichen Name, Röster, Röstung, Aufbereitung und wofür sie
+            taugt. Frische und Zähler beantworten schon die nächste Frage
+            und stehen deshalb erst in der aufgeklappten Karte; als
+            Reserve trägt der Ring die Frische ohnehin sichtbar mit. */}
+        <p className="mt-1 truncate text-xs text-crema">
+          Am besten als {METHOD_LABEL[best]}
+        </p>
+        {/* Aufgeklappt kommt die Lage dazu, und zwar die dringendere
+            Aussage zuerst: „überaltert" neben einem Zähler würde sich
+            für den Leser widersprechen. */}
+        {aktiv &&
+          (fresh.state === 'stale' ? (
+            <p className="mt-1 truncate text-xs text-bad">
+              {fresh.short} — die Bag gibt nichts mehr her
+            </p>
+          ) : bag?.remainingGrams !== undefined && bag.remainingGrams < 20 ? (
+            <p className="mt-1 truncate text-xs text-warn">
+              Nur noch {num(bag.remainingGrams, 0)} g in der Bag
+            </p>
+          ) : (
+            /* `short` statt `label`: Die Tageszahl steht einen Zentimeter
+               weiter links im Ring, und zweimal dieselbe Zahl in einer
+               Zeile liest sich wie zwei verschiedene Angaben. Bei „noch zu
+               frisch" gehört der Tag dazu, ab dem es losgeht — sonst steht
+               dort eine Absage ohne Termin. */
             <p className="mt-1 truncate text-xs text-faint">
               {fresh.short}
               {fresh.state === 'too-fresh' && abTag !== null && ` · ab Tag ${abTag}`}
               {count > 0 && ` · ${count}× gebrüht`}
             </p>
-            <p className="mt-0.5 truncate text-xs text-crema">
-              Am besten als {METHOD_LABEL[best]}
-            </p>
-          </>
-        )}
+          ))}
       </div>
       <span className={aktiv ? 'text-crema' : 'text-faint'}>{aktiv ? '✕' : '›'}</span>
     </div>

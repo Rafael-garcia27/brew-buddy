@@ -121,9 +121,6 @@ export function Trefferzeile({ bilanz }: { bilanz: Trefferbilanz }) {
         {bilanz.eingeloest} von {geprueft}
       </b>{' '}
       Vorhersagen sind bisher eingetroffen.
-      {bilanz.quote >= 0.7
-        ? ' Die Zahlen hier sind belastbar.'
-        : ' Nimm die Zahlen unten als Richtung, nicht als Zusage.'}
     </p>
   )
 }

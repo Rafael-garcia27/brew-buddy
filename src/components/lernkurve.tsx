@@ -111,18 +111,14 @@ export function Lernkurve({ brews, band, alsUhr }: KurveProps) {
         </g>
       </svg>
 
-      <p className="mt-1 text-sm leading-snug text-mute">
-        {imBand !== null && (
-          <>
-            <b className="font-semibold text-ink">
-              {imBand} von {brews.length}
-            </b>{' '}
-            im Zielband.{' '}
-          </>
-        )}
-        Gefüllte Punkte sind gut bewertete Durchgänge, der große ist deine Referenz.
-        <span className="text-faint"> Achse gekürzt, Nullpunkt unterdrückt.</span>
-      </p>
+      {imBand !== null && (
+        <p className="mt-1 text-sm leading-snug text-mute">
+          <b className="font-semibold text-ink">
+            {imBand} von {brews.length}
+          </b>{' '}
+          im Zielband.
+        </p>
+      )}
     </div>
   )
 }
