@@ -239,6 +239,18 @@ textarea {
   padding-bottom: max(calc(env(safe-area-inset-bottom) - 6px), 0px);
 }
 
+/**
+ * Wie hoch die Reiterleiste baut — Inhalt plus gekürzte Sicherheitszone.
+ *
+ * Steht hier und nicht in der Komponente, weil etwas anderes es braucht:
+ * Der schwebende Brüh-Knopf auf „Heute" liegt fest über dem Inhalt und
+ * muss wissen, wo die Leiste anfängt. Ohne diese Zahl müsste er sie
+ * raten — und bei jeder Änderung an der Leiste verrutschen.
+ */
+:root {
+  --nav-h: calc(46px + max(calc(env(safe-area-inset-bottom) - 6px), 0px));
+}
+
 .h-safe-bottom {
   height: env(safe-area-inset-bottom);
 }
