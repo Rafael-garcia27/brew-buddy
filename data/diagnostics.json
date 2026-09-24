@@ -262,6 +262,18 @@
       "confidence": "medium"
     },
     {
+      "id": "D-09",
+      "stage": 0,
+      "priority": 3,
+      "scope": ["espresso"],
+      "when": "abs(yieldG - plannedYieldG) / plannedYieldG > 0.15",
+      "cause": "Der Shot wurde nicht bis zum geplanten Ertrag gezogen",
+      "action": { "variable": "ratio", "direction": "adjust" },
+      "explanation": "Bei gleicher Einwaage entscheidet der Ertrag, wie viel Gelöstes in der Tasse landet. Ein deutlich kürzerer Shot schmeckt sauer, auch wenn die Zeit stimmt — und ein deutlich längerer dünn. Bevor der Mahlgrad drankommt, muss der Ertrag stimmen.",
+      "blocks": ["ALL_GRIND"],
+      "confidence": "high"
+    },
+    {
       "id": "D-10",
       "stage": 1,
       "priority": 1,

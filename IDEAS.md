@@ -60,6 +60,54 @@ wären sie nützlich.
 
 ---
 
+## Was die echten Logdaten sonst noch gezeigt haben (24.09.2026)
+
+Vier Befunde sind behoben (siehe CHANGELOG). Diese vier sind es nicht:
+
+**`onboardingDone` ist ein totes Feld.** Steht im Typ `Settings`, wird auf
+`false` gesetzt und danach nirgends gelesen oder geschrieben. Im Bestand
+des Nutzers steht nach vier Wochen und fünfzehn Durchgängen immer noch
+`false`. Entweder es gibt ein Onboarding, dann soll das Feld es steuern —
+oder es gibt keines, dann gehört das Feld weg.
+
+**Zwei identische Durchgänge zwei Minuten auseinander.** Am 22.09. stehen
+zweimal dieselben Werte (18 → 39 g, 23 s, Mahlgrad 7) mit derselben
+Bewertung im Log. Entweder zwei tatsächlich identische Shots oder ein
+Doppelschreiber beim Abschließen. Aus den Daten allein nicht zu
+entscheiden; beim nächsten Export vergleichen.
+
+**Zwei Messpunkte werden als Streuung ausgegeben.** `learned.process.aeropress`
+meldet `consistencyS: 24` aus genau zwei Durchgängen (105 s und 139 s),
+`preference.aeropress.ratioBias: −1,56` ebenso. Die Konfidenz steht zwar
+bei 0,1, die Zahl selbst tritt aber wie ein Befund auf. Unter drei
+Messpunkten sollte gar keine Streuung berechnet werden.
+
+**Die App korrigiert Tassen, die geschmeckt haben.** Zwei Durchgänge mit
+vier Sternen, ohne Fehler, Fluss normal — und die Engine antwortet „Zu
+wenig extrahiert, 1 Klick feiner", weil die Zeit eine Sekunde unter dem
+Band lag. Die Frage dahinter ist grundsätzlich: Soll das Zielband auch
+dann gelten, wenn der Nutzer zufrieden ist? Kein Fehler, aber eine
+Entscheidung, die bisher niemand getroffen hat.
+
+---
+
+## Zur Personalisierung — eine Korrektur an der eigenen Analyse
+
+Die erste Lesart der Logdaten lautete: „Der persönliche Startpunkt wird
+nie erreicht, weil drei gut bewertete Durchgänge je Bohne nötig sind und
+der Nutzer nur je zwei hat." Das stimmt nicht. `startingPoint` nimmt die
+eigene Referenz schon ab dem ERSTEN Durchgang mit vier Sternen
+(`source: 'personal'`), und das ist in den Logdaten auch mehrfach
+passiert.
+
+Was tatsächlich nie erreicht wurde, ist `learned.perBean` — und dessen
+einzige Wirkung war das Referenzalter für die Alterskorrektur F-32. Die
+ist jetzt behoben, indem die Zahl aus dem Referenz-Shot selbst kommt.
+Die Schwelle von drei guten Durchgängen bleibt also stehen; sie schadet
+nicht mehr.
+
+---
+
 ## Weitere Notizen
 
 *(wird gefüllt, sobald unterwegs etwas auffällt)*

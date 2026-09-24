@@ -36,6 +36,21 @@ export interface Diagnosis {
   checklist?: string[]
   escalation?: string[]
   saveAsReference?: boolean
+  /**
+   * Was an diesem Durchgang die Aussage einschränkt, ohne sie aufzuheben.
+   *
+   * Vorher war „noch zu frisch" eine Sperre: Die App sagte gar nichts
+   * mehr. In echten Logdaten hat das ein Drittel aller Durchgänge
+   * stillgelegt — wer am Röstdatum kauft und am selben Tag brüht,
+   * bekam einen Monat lang keine einzige Empfehlung, und damit auch
+   * keine Vorhersage, keine Trefferquote und keine Lernkurve.
+   *
+   * Der Einwand bleibt trotzdem richtig: Eine Bohne an Tag 1 gast aus
+   * und verschiebt sich täglich. Also steht er jetzt als Vorbehalt
+   * DANEBEN statt DAVOR — die Empfehlung kommt, aber mit dem Hinweis,
+   * dass sie für heute gilt und nicht als Einstellung taugt.
+   */
+  vorbehalt?: string
   /** Berechnete Kennzahlen zur Anzeige */
   metrics?: { ey?: number; tds?: number; flowRateGs?: number }
   /**
@@ -52,6 +67,15 @@ export interface DiagnoseInput {
   measurement?: Measurement
   tasting?: Tasting
   targetTimeS?: [number, number]
+  /**
+   * Was die App für diesen Durchgang vorgeschlagen hatte.
+   *
+   * Ohne den Plan kann die Diagnose nicht sehen, dass jemand bei 27,9 g
+   * gestoppt hat, wo 41 g vorgesehen waren — und redet dann über den
+   * Mahlgrad, während die Ursache der Abbruch war. Optional, weil eine
+   * Diagnose auch ohne Vorschlag möglich bleiben muss.
+   */
+  plan?: { yieldG?: number; waterG?: number }
 }
 
 const CONF_MAP: Record<string, Confidence> = {
@@ -145,7 +169,123 @@ function clampTemp(method: BrewMethod, t: number): number {
 
 // ── Hauptfunktion ─────────────────────────────────────────────────────
 
+/**
+ * Fluss, TDS und Extraktion — auch eine Sperre soll sie zeigen können.
+ *
+ * Stand vorher nur im Rumpf der Diagnose. Eine Sperre, die vor dem Rumpf
+ * greift, hätte die Zahlen sonst verloren, obwohl sie ohne Diagnose
+ * berechenbar sind.
+ */
+function kennzahlen(input: DiagnoseInput): Diagnosis['metrics'] {
+  const { ctx, actual, measurement: meas } = input
+  const isEspresso = ctx.method === 'espresso'
+  const lrr = lrrFor(ctx.method, actual.inverted)
+  const bevG =
+    meas?.beverageMassG ??
+    (isEspresso ? actual.yieldG : actual.waterG ? beverageMass(actual.waterG, actual.doseG, lrr) : undefined)
+  const ey = meas && bevG ? extractionYield(meas.tdsPct, bevG, actual.doseG) : undefined
+  return {
+    ey: ey ? Math.round(ey * 10) / 10 : undefined,
+    tds: meas?.tdsPct,
+    flowRateGs:
+      isEspresso && actual.yieldG ? Math.round(flowRate(actual.yieldG, actual.timeS) * 100) / 100 : undefined,
+  }
+}
+
+/**
+ * Die Frische als Vorbehalt, nicht als Sperre.
+ *
+ * Belegt an echten Logdaten vom 24.09.2026: Von 15 Durchgängen endeten
+ * acht ohne jede Aussage, fünf davon allein an „noch zu frisch". Die
+ * Folge war nicht nur eine fehlende Empfehlung — ohne Empfehlung gibt es
+ * auch keine Wette, keine Vorhersage und keine Trefferquote. Das
+ * Herzstück von 2.0 hatte in einem Monat kein einziges Mal etwas
+ * aufgezeichnet.
+ *
+ * Fachlich bleibt der Einwand stehen (kb/05 §3): Bis zum Ende des
+ * Ruhefensters verdrängt CO₂ das Wasser, die Ergebnisse verschieben sich
+ * täglich. Deshalb wird die Empfehlung nicht verschwiegen, sondern
+ * eingeordnet — und ihre Konfidenz auf „Versuch" gedeckelt. Was heute
+ * gilt, gilt morgen nicht.
+ *
+ * Überaltert sperrt weiterhin — aber nur, wenn es etwas zu reparieren
+ * gibt. Eine 83 Tage alte Bohne, die mit fünf Sternen bewertet wurde,
+ * braucht keine Korrektur; sie als Fehlerfall abzuweisen hieß, dem
+ * Nutzer den besten Durchgang seines Logs auszureden.
+ */
+function frischeVorbehalt(
+  input: DiagnoseInput,
+): { sperre: Diagnosis } | { vorbehalt?: string; deckel?: Confidence } {
+  const { ctx, tasting } = input
+  const days = daysOffRoast(ctx.bag, ctx.today)
+  if (days === null) return {}
+
+  const gutGelaufen = (tasting?.rating ?? 0) >= 4 && (tasting?.defects.length ?? 0) === 0
+
+  if (days > 60) {
+    if (!gutGelaufen) {
+      return {
+        sperre: blocked(
+          'D-04',
+          'Bohne überaltert',
+          `${tage(days)} nach Röstung. Aromaverlust und oxidierte Fette lassen sich durch keine Einstellung reparieren.`,
+        ),
+      }
+    }
+    return {
+      vorbehalt: `${tage(days)} nach Röstung — dass es trotzdem schmeckt, ist ein gutes Zeichen. Als Referenz taugt die Einstellung nur bedingt: Eine frische Tüte derselben Bohne verhält sich anders.`,
+      deckel: 'Versuch',
+    }
+  }
+
+  const zuFrisch = zuFrischVorbehalt(ctx)
+  return zuFrisch ? { vorbehalt: zuFrisch, deckel: 'Versuch' } : {}
+}
+
+/**
+ * Der Vorbehalt zur zu frischen Bohne, für alle, die ihn brauchen.
+ *
+ * Die Laufkontrolle zeigt schon eine Empfehlung, bevor überhaupt
+ * verkostet wurde — dort gilt der Vorbehalt genauso. Er stand vorher als
+ * eigener Satz in `runcheck.ts`, und als der Vorbehalt dazukam, las man
+ * dieselbe Einschränkung zweimal in zwei Formulierungen. Jetzt gibt es
+ * einen Satz und eine Quelle.
+ */
+export function zuFrischVorbehalt(ctx: EngineContext): string | undefined {
+  const days = daysOffRoast(ctx.bag, ctx.today)
+  if (days === null || days > 60) return undefined
+  const win = restWindow(ctx.method, ctx.bean.roastLevel, !!ctx.bean.isDecaf)
+  if (days >= win.min) return undefined
+  const rest = win.min - days
+  return (
+    `Erst ${tage(days)} nach Röstung. Bis Tag ${win.min} verdrängt das CO₂ das Wasser — was heute passt, passt morgen schon nicht mehr. ` +
+    `Nimm das hier für diese Tasse, nicht als deine Einstellung; ab Tag ${win.min} wird es stabil (noch ${rest} Tag${rest === 1 ? '' : 'e'}).`
+  )
+}
+
+const KONFIDENZ_RANG: Record<Confidence, number> = { sicher: 2, wahrscheinlich: 1, Versuch: 0 }
+
+/** Eine Empfehlung darf nicht sicherer klingen, als der Vorbehalt zulässt. */
+function deckle(s: Suggestion[], deckel: Confidence): Suggestion[] {
+  return s.map((x) =>
+    KONFIDENZ_RANG[x.confidence] > KONFIDENZ_RANG[deckel] ? { ...x, confidence: deckel } : x,
+  )
+}
+
 export function diagnose(input: DiagnoseInput): Diagnosis {
+  const f = frischeVorbehalt(input)
+  if ('sperre' in f) return { ...f.sperre, metrics: kennzahlen(input) }
+
+  const d = diagnoseKern(input)
+  if (!f.vorbehalt) return d
+  return {
+    ...d,
+    vorbehalt: f.vorbehalt,
+    ...(f.deckel ? { suggestions: deckle(d.suggestions, f.deckel) } : {}),
+  }
+}
+
+function diagnoseKern(input: DiagnoseInput): Diagnosis {
   const { ctx, actual, observations: obs, measurement: meas, tasting } = input
   const defects = tasting?.defects
   const method = ctx.method
@@ -159,12 +299,7 @@ export function diagnose(input: DiagnoseInput): Diagnosis {
     meas?.beverageMassG ??
     (isEspresso ? actual.yieldG : actual.waterG ? beverageMass(actual.waterG, actual.doseG, lrr) : undefined)
   const ey = meas && bevG ? extractionYield(meas.tdsPct, bevG, actual.doseG) : undefined
-  const metrics = {
-    ey: ey ? Math.round(ey * 10) / 10 : undefined,
-    tds: meas?.tdsPct,
-    flowRateGs:
-      isEspresso && actual.yieldG ? Math.round(flowRate(actual.yieldG, actual.timeS) * 100) / 100 : undefined,
-  }
+  const metrics = kennzahlen(input)
 
   const targetT = input.targetTimeS
   const targetMid = targetT ? (targetT[0] + targetT[1]) / 2 : undefined
@@ -228,6 +363,60 @@ export function diagnose(input: DiagnoseInput): Diagnosis {
     )
   }
 
+  // D-09 Ertrag weit neben dem Plan
+  //
+  // Aus echten Logdaten vom 24.09.2026: 18 g eingewogen, 41 g
+  // vorgeschlagen, bei 27,9 g gestoppt — also 1:1,55 statt 1:2,3. Der
+  // Shot schmeckte sauer und lief 30 s. Die App meldete „Zeit und
+  // Geschmack widersprechen sich" und sperrte ab. Dass ein Drittel des
+  // geplanten Ertrags fehlte, stand nirgends.
+  //
+  // Bei gleicher Einwaage ist der Ertrag die Menge Gelöstes in der
+  // Tasse. Fehlt er, fehlt die Süße, und es schmeckt sauer — unabhängig
+  // vom Mahlgrad. Deshalb steht diese Prüfung vor allen Regeln, die am
+  // Mahlgrad drehen würden.
+  const plan = isEspresso ? input.plan?.yieldG : input.plan?.waterG
+  const ist = isEspresso ? actual.yieldG : actual.waterG
+  if (plan && ist && plan > 0) {
+    const ab = (ist - plan) / plan
+    const zuKurz = ab < -0.15 && hasAny(defects, 'sour', 'salty', 'shortFinish')
+    const zuLang = ab > 0.15 && hasAny(defects, 'thin', 'flat', 'bitter')
+    if (zuKurz || zuLang) {
+      const wort = zuKurz ? 'zu früh gestoppt' : 'zu weit laufen lassen'
+      return {
+        stage: 0,
+        blocked: false,
+        headline: zuKurz ? 'Der Shot war zu kurz' : 'Der Shot lief zu weit',
+        summary:
+          `${de(ist, 1)} g statt der geplanten ${de(plan, 1)} g — ${wort}. ` +
+          `Das sind 1:${de(ist / actual.doseG, 1)} statt 1:${de(plan / actual.doseG, 1)}. ` +
+          ruleText('D-09', ''),
+        suggestions: [
+          {
+            ruleId: 'D-09',
+            what: `Bis ${de(plan, 0)} g laufen lassen`,
+            // Die Zahlen gehören hierher, nicht in `summary`: Sobald eine
+            // Empfehlung da ist, zeigt die Ergebnisseite die
+            // Zusammenfassung nicht mehr an. Der Vergleich ist aber der
+            // ganze Befund — ohne ihn steht dort eine Anweisung ohne Grund.
+            why:
+              `${de(ist, 1)} g statt der geplanten ${de(plan, 1)} g — das sind ` +
+              `1:${de(ist / actual.doseG, 1)} statt 1:${de(plan / actual.doseG, 1)}. ` +
+              `Bei gleicher Einwaage entscheidet der Ertrag, wie viel Gelöstes in der Tasse landet.`,
+            expectation: zuKurz
+              ? 'Mehr Süße und weniger Säure, ohne am Mahlgrad zu drehen.'
+              : 'Mehr Körper und weniger Verdünnung, ohne am Mahlgrad zu drehen.',
+            confidence: ruleConf('D-09'),
+            variable: 'yieldG',
+            direction: zuKurz ? 'increase' : 'decrease',
+            newValue: Math.round(plan * 10) / 10,
+          },
+        ],
+        metrics,
+      }
+    }
+  }
+
   // D-02 Sauer UND bitter
   if (has(defects, 'sour', 'bitter') || has(defects, 'sour', 'astringent')) {
     const r = getRule('D-02')
@@ -239,27 +428,9 @@ export function diagnose(input: DiagnoseInput): Diagnosis {
     )
   }
 
-  // D-03 / D-04 Frische
-  const days = daysOffRoast(ctx.bag, ctx.today)
-  if (days !== null) {
-    const win = restWindow(method, ctx.bean.roastLevel, !!ctx.bean.isDecaf)
-    if (days > 60) {
-      return blocked(
-        'D-04',
-        'Bohne überaltert',
-        `${tage(days)} nach Röstung. Aromaverlust und oxidierte Fette lassen sich durch keine Einstellung reparieren.`,
-        { metrics },
-      )
-    }
-    if (days < win.min) {
-      return blocked(
-        'D-03',
-        'Noch zu frisch',
-        `Erst ${tage(days)} nach Röstung. Bis Tag ${win.min} verdrängt das CO₂ das Wasser — die Ergebnisse sind nicht stabil. Warte noch ${win.min - days} Tag${win.min - days === 1 ? '' : 'e'}.`,
-        { metrics },
-      )
-    }
-  }
+  // D-03 und D-04 (Frische) stehen nicht mehr hier: Sie sperren nicht
+  // mehr, sondern begleiten das Ergebnis als Vorbehalt. Siehe `diagnose`
+  // weiter unten.
 
   // D-06 Wasserverdacht: Extraktion objektiv gut, schmeckt trotzdem flach
   if (

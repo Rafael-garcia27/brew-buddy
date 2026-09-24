@@ -339,7 +339,7 @@ export function checkRun(input: RunCheckInput): RunCheck {
       ? `Geplant waren ${fmtDauer(mid!)}, gelaufen ${fmtDauer(actual.timeS)}. ${runText('D-96')}`
       : null
     if (zeitSatz && sug) notes.push({ tone: 'info', text: zeitSatz })
-    pushKnowledgeNotes(notes, { ctx, actual, obs, band, days, win, zuFrisch, alt, isEspresso })
+    pushKnowledgeNotes(notes, { ctx, actual, obs, band, days, win, alt, isEspresso })
 
     /**
      * Warum die Zeit hier nichts sagt — und was stattdessen zu prüfen ist.
@@ -459,7 +459,7 @@ export function checkRun(input: RunCheckInput): RunCheck {
 
   // ── Perkolation: hier trägt die Zeit ──
 
-  pushKnowledgeNotes(notes, { ctx, actual, obs, band, days, win, zuFrisch, alt, isEspresso })
+  pushKnowledgeNotes(notes, { ctx, actual, obs, band, days, win, alt, isEspresso })
 
   // Streuung senkt die Konfidenz, unterdrückt die Empfehlung aber nicht:
   // „mach es erst wiederholbar" ist richtig, hilft aber niemandem, dessen
@@ -784,19 +784,17 @@ function pushKnowledgeNotes(
     band: TimeBand
     days: number | null
     win: { min: number; max: number }
-    zuFrisch: boolean
     alt: boolean
     isEspresso: boolean
   },
 ): void {
-  const { ctx, actual, obs, band, days, win, zuFrisch, alt } = a
+  const { ctx, actual, obs, band, days, win, alt } = a
 
-  if (zuFrisch && days !== null) {
-    notes.push({
-      tone: 'warn',
-      text: `Erst ${tage(days)} nach Röstung — das Ruhefenster beginnt bei Tag ${win.min}. Bis dahin sind Zeiten nicht stabil.`,
-    })
-  } else if (alt && days !== null && !ZU_SCHNELL.includes(band)) {
+  // „Zu frisch" steht seit dem 24.09.2026 als Vorbehalt über dem ganzen
+  // Ergebnis (siehe `diagnose`). Ihn hier zu wiederholen hieße, dieselbe
+  // Einschränkung zweimal in zwei Formulierungen zu lesen — und die
+  // zweite stünde tiefer und klänge dringender als die erste.
+  if (alt && days !== null && !ZU_SCHNELL.includes(band)) {
     notes.push({
       tone: 'info',
       text: `${tage(days)} nach Röstung, das Fenster endet bei Tag ${win.max}. Ein Teil der Abweichung kann Entgasung sein (F-32).`,

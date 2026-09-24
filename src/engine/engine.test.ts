@@ -227,15 +227,62 @@ describe('G4 — Frische-Drift korrigiert den Referenzpunkt', () => {
 })
 
 describe('G5 — zu frische Bohne wird nicht eingemessen', () => {
-  it('blockiert bei 3 Tagen nach Röstung', () => {
+  /**
+   * G5 verlangt „Warnung, kein Einmessen empfohlen" — nicht Schweigen.
+   *
+   * Bis zum 24.09.2026 sperrte die App hier vollständig. An echten
+   * Logdaten hat sich gezeigt, was das kostet: fünf von fünfzehn
+   * Durchgängen ohne jede Aussage, und weil ohne Empfehlung auch keine
+   * Wette entsteht, blieb die gesamte Vorhersage-Bilanz einen Monat
+   * lang leer. Die Warnung steht jetzt als Vorbehalt neben dem
+   * Ergebnis, und die Konfidenz ist gedeckelt.
+   */
+  it('sperrt bei 3 Tagen nicht mehr, warnt aber', () => {
     const d = diagnose({
       ctx: ctx({ bag: bag({ roastDate: daysAgo(3) }) }),
       actual: { doseG: 18, yieldG: 36, timeS: 22 },
       tasting: { rating: 2, defects: ['sour'], characters: [], wouldRepeat: false },
       targetTimeS: [26, 30],
     })
+    expect(d.blocked).toBe(false)
+    expect(d.vorbehalt).toContain('CO₂')
+    expect(d.vorbehalt).toContain('nicht als deine Einstellung')
+  })
+
+  it('deckelt die Konfidenz einer Empfehlung aus einer zu frischen Bohne', () => {
+    const d = diagnose({
+      ctx: ctx({ bag: bag({ roastDate: daysAgo(3) }) }),
+      actual: { doseG: 18, yieldG: 36, timeS: 22 },
+      tasting: { rating: 2, defects: ['sour'], characters: [], wouldRepeat: false },
+      targetTimeS: [26, 30],
+    })
+    // Was sich täglich verschiebt, darf nicht „sicher" heißen.
+    for (const s of d.suggestions) expect(s.confidence).toBe('Versuch')
+  })
+
+  it('überaltert sperrt weiter, solange es etwas zu reparieren gibt', () => {
+    const d = diagnose({
+      ctx: ctx({ bag: bag({ roastDate: daysAgo(83) }) }),
+      actual: { doseG: 18, yieldG: 36, timeS: 22 },
+      tasting: { rating: 2, defects: ['sour'], characters: [], wouldRepeat: false },
+      targetTimeS: [26, 30],
+    })
     expect(d.blocked).toBe(true)
-    expect(d.headline).toContain('frisch')
+    expect(d.headline).toContain('überaltert')
+  })
+
+  it('überaltert sperrt nicht, wenn die Tasse gut war', () => {
+    // Echter Fall aus den Logdaten: 83 Tage alte Bohne, fünf Sterne,
+    // keine Fehler — und die App wies den besten Durchgang des ganzen
+    // Logs als Fehlerfall ab.
+    const d = diagnose({
+      ctx: ctx({ bag: bag({ roastDate: daysAgo(83) }) }),
+      actual: { doseG: 18, yieldG: 36, timeS: 27 },
+      tasting: { rating: 5, defects: [], characters: [], wouldRepeat: true },
+      targetTimeS: [26, 30],
+    })
+    expect(d.blocked).toBe(false)
+    expect(d.vorbehalt).toContain('Referenz')
   })
 
   it('Ruhefenster: Espresso braucht länger als V60', () => {

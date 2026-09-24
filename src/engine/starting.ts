@@ -6,7 +6,7 @@
  * Vertrauen — und ohne Vertrauen folgt niemand einer Empfehlung.
  */
 import formulas from '@data/formulas.json'
-import type { BrewMethod, Brew, Bean, RoastLevel } from '@domain'
+import type { BrewMethod, Brew, BrewActual, Bean, RoastLevel } from '@domain'
 import { targetYield } from '@domain'
 import type { EngineContext } from '@/domain'
 import { beanKey, daysOffRoast } from '@/domain'
@@ -21,7 +21,7 @@ import {
   maxWaterG,
 } from '@/kb'
 import { assessFreshness, driftCorrection } from './freshness'
-import { suggestedSetting, roundToStep } from './grinder'
+import { suggestedSetting, roundToStep, uebertrageSetting } from './grinder'
 import { LEARN_THRESHOLDS } from '@/config'
 import { gewicht, streuung, stufe, type Sicherheitsstufe } from './ueberzeugung'
 import { ratioOf } from './learn'
@@ -408,6 +408,26 @@ function methodBase(ctx: EngineContext): Proposal {
   return p
 }
 
+/**
+ * Der Mahlgrad einer Referenz, umgerechnet auf die Mühle von heute.
+ *
+ * `undefined` heißt ausdrücklich „dazu sage ich nichts": Entweder ist
+ * die Mühle der Referenz unbekannt, oder ihr Wert liegt außerhalb des
+ * Verstellwegs der aktuellen. Eine Zahl zu nennen, die man nicht
+ * einstellen kann, ist schlechter als keine.
+ */
+function uebertragenerMahlgrad(
+  gs: BrewActual['grindSetting'],
+  ctx: EngineContext,
+): number | undefined {
+  if (!gs) return undefined
+  const aktuell = ctx.grinder
+  if (!aktuell) return gs.value
+  if (gs.equipmentId === aktuell.id) return gs.value
+  const von = ctx.grinders?.find((g) => g.id === gs.equipmentId)
+  return uebertrageSetting(gs.value, von, aktuell)
+}
+
 function proposalFromBrew(b: Brew, ctx: EngineContext): Proposal {
   const a = b.actual
   const ratio = a.yieldG ? a.yieldG / a.doseG : a.waterG ? a.waterG / a.doseG : 2
@@ -418,7 +438,11 @@ function proposalFromBrew(b: Brew, ctx: EngineContext): Proposal {
     yieldG: a.yieldG ?? Math.round(a.doseG * ratio * 10) / 10,
     waterG: a.waterG,
     waterTempC: a.waterTempC ?? getMethodDefaults(ctx.method, ctx.bean.roastLevel).waterTempC,
-    grindSetting: a.grindSetting?.value,
+    // Nicht die nackte Zahl: Die Referenz kann von einer anderen Mühle
+    // stammen, und dann ist sie an dieser hier bedeutungslos. Welche es
+    // war, steht in `equipmentId` — bis zum 24.09.2026 hat das niemand
+    // gelesen (siehe `uebertrageSetting`).
+    grindSetting: uebertragenerMahlgrad(a.grindSetting, ctx),
     targetTimeS:
       targetTimeRange(ctx.method, a.doseG, ctx.bean.roastLevel, a.yieldG) ??
       [Math.round(b.actual.timeS * 0.93), Math.round(b.actual.timeS * 1.07)],
@@ -496,8 +520,25 @@ export function startingPoint(ctx: EngineContext): StartingPoint {
       kind: 'source',
     })
 
+    /**
+     * Wie alt die Bohne beim Referenz-Shot war.
+     *
+     * Stand bis zum 24.09.2026 ausschließlich im gelernten Modell —
+     * und das entsteht erst ab drei gut bewerteten Durchgängen JE
+     * BOHNE. In echten Logdaten war `perBean` nach einem Monat und
+     * fünfzehn Durchgängen leer: drei Bohnen mit je drei Durchgängen,
+     * davon je zwei gut. Die Alterskorrektur F-32 war damit zwar
+     * implementiert und verdrahtet, hat aber nie gefeuert.
+     *
+     * Dabei steht die Zahl längst da: `ref` IST der Referenz-Shot, und
+     * seine Tüte kennt ihr Röstdatum. Das gelernte Modell bleibt als
+     * Quelle erhalten — es mittelt über mehrere gute Durchgänge und ist
+     * damit belastbarer, sobald es existiert.
+     */
     const learned = ctx.learned.perBean[beanKey(ctx.bean.id, ctx.method)]
-    const drift = driftCorrection(ctx.method, learned?.refDaysOffRoast ?? null, nowDays)
+    const refBag = ctx.bags?.find((b) => b.id === ref.bagId) ?? (ref.bagId === ctx.bag?.id ? ctx.bag : undefined)
+    const refAlter = learned?.refDaysOffRoast ?? daysOffRoast(refBag, new Date(ref.createdAt))
+    const drift = driftCorrection(ctx.method, refAlter, nowDays)
     if (drift.steps !== 0 && p.grindSetting !== undefined) {
       p = { ...p, grindSetting: Math.max(0, p.grindSetting + drift.steps) }
       lines.push({ text: drift.reason!, kind: 'modifier' })

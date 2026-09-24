@@ -355,6 +355,44 @@ export function grindPlausibility(
  * die der Sage Barista Express kennt beliebige Zwischenwerte — dort auf
  * ganze Zahlen zu runden würde die Hälfte des Verstellwegs wegwerfen.
  */
+/**
+ * Dieselbe Partikelgröße, auf einer anderen Mühle abgelesen.
+ *
+ * Belegt an echten Logdaten vom 24.09.2026: Der Nutzer wechselte für
+ * Espresso von der Mylo SG2 (Skala 0–100) auf die Sage Barista Express
+ * (Skala 0–18). Die Referenz einer ähnlichen Bohne wurde danach
+ * unverändert übernommen — vier Sitzungen lang stand „Mahlgrad 26,5"
+ * auf einer Maschine, deren Rädchen bei 18 endet.
+ *
+ * Die Ursache war nicht ein Rechenfehler, sondern ein blinder Fleck:
+ * `Brew.actual.grindSetting` trägt die `equipmentId` mit sich, und die
+ * Engine hat sie nirgends gelesen. Eine Skalenzahl ohne ihre Mühle ist
+ * aber keine Angabe — 26 heißt an der einen Maschine fein und an der
+ * anderen gar nichts.
+ *
+ * Der Weg führt über Mikrometer, denn nur die sind mühlenunabhängig:
+ * Einstellung → µm auf der alten Mühle → Einstellung auf der neuen.
+ *
+ * Zweimal gibt es bewusst gar keine Zahl statt einer falschen:
+ * wenn die Herkunftsmühle unbekannt ist (dann fehlt die Skala, auf die
+ * sich der Wert bezieht), und wenn das Ergebnis außerhalb des
+ * Verstellwegs läge. Beides ist keine Einstellung, sondern eine Absage.
+ */
+export function uebertrageSetting(
+  setting: number,
+  von: Grinder | undefined,
+  nach: Grinder | undefined,
+): number | undefined {
+  if (!nach) return undefined
+  if (von?.id === nach.id) return setting
+  if (!von) return undefined
+  const micron = settingToMicron(setting, von)
+  const roh = (micron - nach.zeroPointOffsetMicron) / Math.max(1, nach.micronPerStep)
+  const wert = roundToStep(roh, nach)
+  const [min, max] = nach.usableRange ?? [0, Number.POSITIVE_INFINITY]
+  return wert < min || wert > max ? undefined : wert
+}
+
 export function roundToStep(value: number, grinder?: Grinder): number {
   const st = grinder?.scaleType === 'stepless' ? (grinder.step ?? 0.1) : 1
   const r = Math.round(value / st) * st

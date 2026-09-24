@@ -70,9 +70,12 @@ export function PhaseLaufkontrolle({
   uebernehmen,
   weiter,
   auswerten,
+  vorbehalt,
 }: {
   method: BrewMethod
   run: RunCheck
+  /** Gilt schon hier, nicht erst im Ergebnis: siehe `zuFrischVorbehalt`. */
+  vorbehalt?: string
   elapsed: number
   ratioLive: number
   zielZeit: Zielzeit
@@ -91,6 +94,16 @@ export function PhaseLaufkontrolle({
 
   return (
     <>
+      {/* Ganz oben, aus demselben Grund wie im Ergebnis: Er sagt, wie
+          weit die Zahlen darunter tragen. */}
+      {vorbehalt && (
+        <Section>
+          <Card tone="warn">
+            <p className="text-base leading-snug">{vorbehalt}</p>
+          </Card>
+        </Section>
+      )}
+
       <Section title="Der Durchlauf">
         <Card>
           <Triad
@@ -420,6 +433,17 @@ export function PhaseErgebnis({
       {kreis && (
         <Section>
           <Kreiswarnung befund={kreis} />
+        </Section>
+      )}
+
+      {/* Aus demselben Grund darüber: Der Vorbehalt sagt, wie weit die
+          Empfehlung trägt. Darunter gelesen käme er zu spät — dann steht
+          die Zahl schon als Einstellung im Kopf. */}
+      {result.vorbehalt && (
+        <Section>
+          <Card tone="warn">
+            <p className="text-base leading-snug">{result.vorbehalt}</p>
+          </Card>
         </Section>
       )}
       {/* Stufe eins bleibt sichtbar. Ohne sie stünde auf der

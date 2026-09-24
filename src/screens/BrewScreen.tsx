@@ -13,7 +13,7 @@ import type {
 } from '@domain'
 import type { EngineContext } from '@/domain'
 import { startingPoint } from '@/engine/starting'
-import { diagnose, type Diagnosis } from '@/engine/diagnose'
+import { diagnose, zuFrischVorbehalt, type Diagnosis } from '@/engine/diagnose'
 import { alsEmpfehlung, trefferquote, imKreis } from '@/engine/wette'
 import { checkRun, type RunCheck } from '@/engine/runcheck'
 import { fmtSpanne } from '@/engine/text'
@@ -128,11 +128,11 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
   const ctx: EngineContext | null = useMemo(() => {
     if (!bean) return null
     return {
-      bean, bag, method, grinder, water,
+      bean, bag, method, grinder, water, grinders: s.grinders, bags: s.bags,
       settings: s.settings, learned: s.learned,
       beanHistory, methodHistory, allBeans: s.beans, today: new Date(),
     }
-  }, [bean, bag, method, grinder, water, s.settings, s.learned, beanHistory, methodHistory, s.beans])
+  }, [bean, bag, method, grinder, water, s.grinders, s.bags, s.settings, s.learned, beanHistory, methodHistory, s.beans])
 
   const sp = useMemo(() => (ctx ? startingPoint(ctx) : null), [ctx])
 
@@ -441,7 +441,17 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
   }
 
   const runDiagnosis = () => {
-    const d = diagnose({ ctx, actual, observations, tasting, targetTimeS: targetT })
+    // Der Vorschlag gehört zur Diagnose: Ohne ihn kann sie nicht
+    // erkennen, dass der Shot weit vor dem geplanten Ertrag gestoppt
+    // wurde, und redet dann über den Mahlgrad (D-09).
+    const d = diagnose({
+      ctx,
+      actual,
+      observations,
+      tasting,
+      targetTimeS: targetT,
+      plan: { yieldG: sp.proposal.yieldG, waterG: sp.proposal.waterG },
+    })
     setResult(d)
     setGemesseneZeit(elapsed)
 
@@ -952,6 +962,7 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
           uebernehmen={uebernehmen}
           weiter={() => setPhase('taste')}
           auswerten={runDiagnosis}
+          {...(zuFrischVorbehalt(ctx) ? { vorbehalt: zuFrischVorbehalt(ctx) } : {})}
         />
       )}
 

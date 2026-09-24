@@ -10,6 +10,36 @@ der Git-Historie.
 
 ## 2.0 — Unveröffentlicht
 
+### Aus echten Logdaten (24.09.2026)
+
+Fünfzehn Durchgänge aus vier Wochen wurden gegen die Engine
+nachgerechnet — jeder mit dem Wissensstand, den die App damals hatte.
+Acht davon endeten ohne jede Aussage. Was daraus folgte:
+
+- **Die Frische sperrt nicht mehr, sie steht daneben.** „Noch zu frisch"
+  hat ein Drittel aller Durchgänge stillgelegt: Wer am Röstdatum kauft
+  und am selben Tag brüht, bekam einen Monat lang keine Empfehlung —
+  und weil ohne Empfehlung auch keine Wette entsteht, blieb die ganze
+  Vorhersage-Bilanz leer. Jetzt kommt die Empfehlung, mit einem
+  Vorbehalt darüber und gedeckelter Konfidenz. Der Einwand bleibt
+  richtig, er ist nur keine Sperre mehr. „Überaltert" sperrt weiterhin —
+  aber nicht mehr, wenn die Tasse gut bewertet wurde.
+- **Mahlgrade gehören zu ihrer Mühle.** Beim Wechsel von der Mylo SG2
+  (Skala 0–100) auf die Sage Barista Express (Skala 0–18) hat die App
+  die Referenzzahl unverändert übernommen und viermal „Mahlgrad 26,5"
+  an einer Maschine vorgeschlagen, deren Rädchen bei 18 endet.
+  Umgerechnet wird jetzt über Mikrometer; was außerhalb des Verstellwegs
+  läge, wird gar nicht erst genannt.
+- **Der Ertrag ist ein eigener Befund (D-09).** 18 g eingewogen, 41 g
+  vorgeschlagen, bei 27,9 g gestoppt — sauer. Die App redete über Zeit
+  und Geschmack und erwähnte nicht, dass ein Drittel des geplanten
+  Ertrags fehlte. Jetzt steht das zuerst da, bevor irgendwer am
+  Mahlgrad dreht.
+- **Die Alterskorrektur (F-32) feuert überhaupt.** Sie hing am
+  gelernten Modell, das drei gut bewertete Durchgänge JE BOHNE braucht —
+  nach vier Wochen war es leer. Das Alter des Referenz-Shots steht aber
+  längst in seiner Tüte und wird jetzt von dort genommen.
+
 ### Neu
 - **Ein Einstieg statt zwei.** „Heute" beantwortet die Frage „welche
   Bohne, welche Methode" vorweg — aus der zuletzt gebrühten Bohne, der

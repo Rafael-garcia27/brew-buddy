@@ -303,6 +303,22 @@ export interface EngineContext {
   bag?: Bag
   method: BrewMethod
   grinder?: Grinder
+  /**
+   * Alle bekannten Mühlen — um die Referenz einer ANDEREN umzurechnen.
+   *
+   * Ohne sie ist eine Mahlgradzahl aus der Historie nicht deutbar: Sie
+   * trägt zwar ihre `equipmentId`, aber ohne die zugehörige Mühle fehlt
+   * die Skala, auf die sie sich bezieht.
+   */
+  grinders?: Grinder[]
+  /**
+   * Alle bekannten Tüten — um das Alter eines Referenz-Shots zu kennen.
+   *
+   * `bag` ist die Tüte von heute. Der Referenz-Shot kann aus einer
+   * anderen stammen, und ohne deren Röstdatum lässt sich nicht sagen,
+   * wie viele Tage zwischen damals und heute liegen (F-32).
+   */
+  bags?: Bag[]
   water?: Water
   settings: Settings
   learned: LearnedModels

@@ -187,3 +187,18 @@ describe('Glossar', () => {
     expect(new Set(ids).size).toBe(ids.length)
   })
 })
+
+describe('Mühlenkatalog', () => {
+  /**
+   * Die Sage Barista Express trug `confidence: "derived"` — ein Wert,
+   * den der Typ `Grinder` nicht kennt (estimated | measured | vendor).
+   * `grinderFromCatalog` reicht das Feld unverändert durch, also stand
+   * es anschließend im Bestand des Nutzers und der Typ log.
+   */
+  it('nennt nur Vertrauensstufen, die der Typ kennt', () => {
+    const erlaubt = ['estimated', 'measured', 'vendor']
+    for (const g of GRINDER_CATALOG) {
+      expect(erlaubt, `${g.id} führt „${g.confidence}"`).toContain(g.confidence)
+    }
+  })
+})
