@@ -108,7 +108,7 @@ export function RoastScale({ bean }: { bean: Pick<Bean, 'roastLevel' | 'agtron'>
         <p className="shrink-0 text-right text-xs leading-snug">
           {gemessen ? (
             <>
-              <span className="tnum font-semibold text-crema">Agtron {lesung.agtron}</span>
+              <span className="tnum font-semibold text-crema-ink">Agtron {lesung.agtron}</span>
               <br />
               <span className="text-faint">gemessen</span>
             </>
@@ -339,7 +339,7 @@ export function ProcessMark({ process }: { process: Process }) {
   return (
     <div>
       <div className="flex items-start gap-3">
-        <span className="shrink-0 text-crema">
+        <span className="shrink-0 text-crema-ink">
           <ProcessSymbol symbol={familie.symbol} className="h-9 w-9" />
         </span>
         <div className="min-w-0 flex-1">

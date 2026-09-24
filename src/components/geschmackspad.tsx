@@ -97,7 +97,7 @@ export default function Geschmackspad({ wert, onChange }: Props) {
       <div
         role="group"
         aria-label="Geschmack"
-        className="rounded-2xl focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-crema"
+        className="rounded-card focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-crema"
       >
       <div
         ref={box}
@@ -110,7 +110,7 @@ export default function Geschmackspad({ wert, onChange }: Props) {
         onPointerMove={(e) => zieht && setzen(e)}
         onPointerUp={() => setZieht(false)}
         onPointerCancel={() => setZieht(false)}
-        className="relative aspect-square w-full touch-none rounded-2xl border border-line bg-raised select-none"
+        className="relative aspect-square w-full touch-none rounded-card border border-line bg-raised select-none"
       >
         {/* Kreuz durch die Mitte — die Ruhelage muss sichtbar sein. */}
         <div className="pointer-events-none absolute inset-x-3 top-1/2 h-px bg-line" />

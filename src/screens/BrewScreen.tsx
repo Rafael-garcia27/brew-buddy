@@ -524,7 +524,7 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
                   darüber: „Von einer ähnlichen Bohne" ist eine Aussage
                   ÜBER diese Zahlen, keine Abschnittsüberschrift. Außerhalb
                   gelesen wirkte sie wie ein eigener Bereich. */}
-              <p className="mb-3 text-xs font-medium tracking-wider text-crema uppercase">
+              <p className="mb-3 text-xs font-medium tracking-wider text-crema-ink uppercase">
                 {sp.headline}
               </p>
 
@@ -630,7 +630,7 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
                     type="button"
                     onClick={() => setZeigeHerleitung((z) => !z)}
                     aria-expanded={zeigeHerleitung}
-                    className="-ml-0.5 self-start text-sm font-medium text-crema"
+                    className="-ml-0.5 self-start text-sm font-medium text-crema-ink"
                   >
                     {zeigeHerleitung ? 'Weniger' : 'Woher die Zahlen kommen'}
                   </button>
@@ -642,7 +642,7 @@ export default function BrewScreen({ method, bean, navigate, back }: Props) {
                       <p
                         key={i}
                         className={`text-sm leading-snug ${
-                          r.kind === 'learning' ? 'text-crema' : 'text-mute'
+                          r.kind === 'learning' ? 'text-crema-ink' : 'text-mute'
                         }`}
                       >
                         {r.text}

@@ -141,7 +141,7 @@ export default function HeuteScreen({ navigate }: Props) {
                 onClick={() => setMethode(m)}
                 aria-pressed={aktiv}
                 aria-label={METHOD_LABEL[m]}
-                className={`flex min-w-[64px] shrink-0 flex-col items-center gap-1 rounded-2xl px-3 py-2 transition-colors ${
+                className={`flex min-w-[64px] shrink-0 flex-col items-center gap-1 rounded-card px-3 py-2 transition-colors ${
                   aktiv ? 'bg-crema text-on-crema' : 'text-mute active:bg-raised'
                 }`}
               >
@@ -185,7 +185,7 @@ export default function HeuteScreen({ navigate }: Props) {
                       {r.note ?? r.freshness.label}
                     </p>
                   </div>
-                  {aktiv && <span className="shrink-0 text-lg text-crema">✓</span>}
+                  {aktiv && <span className="shrink-0 text-lg text-crema-ink">✓</span>}
                 </div>
               </Card>
             )
@@ -243,7 +243,7 @@ function Kopf({
   return (
     <header className="pt-safe sticky top-0 z-20 border-b border-line bg-paper/90 backdrop-blur-xl">
       <div className="flex h-[58px] items-center gap-3 px-4">
-        <h1 className="flex-1 truncate text-3xl leading-tight font-bold tracking-tight">Heute</h1>
+        <h1 className="titel flex-1 truncate text-3xl leading-tight">Heute</h1>
         <LogButton onClick={() => navigate({ tab: 'log' })} />
         <GearButton onClick={() => navigate({ tab: 'setup' })} />
       </div>

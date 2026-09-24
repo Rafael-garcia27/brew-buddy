@@ -159,7 +159,7 @@ export function Versuchskette({ empfehlungen, alsUhr, methodLabel }: KetteProps)
         const el = e.einloesung!
         const v = e.vorhersage!
         return (
-          <div key={e.id} className="rounded-2xl border border-line bg-card px-4 py-3">
+          <div key={e.id} className="rounded-card border border-line bg-card px-4 py-3">
             <div className="flex items-baseline justify-between text-2xs text-faint">
               <span>
                 {new Date(e.at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })} ·{' '}
@@ -177,7 +177,7 @@ export function Versuchskette({ empfehlungen, alsUhr, methodLabel }: KetteProps)
                     : '—'}
                 </div>
               </div>
-              <div className="shrink-0 text-center text-sm text-crema">
+              <div className="shrink-0 text-center text-sm text-crema-ink">
                 <div className="font-mono text-2xs">{e.titel.split('(')[0]!.trim()}</div>→
               </div>
               <div className="flex-1 text-right">

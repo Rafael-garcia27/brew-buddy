@@ -142,7 +142,7 @@ export function Kreiswarnung({ befund }: { befund: Kreisbefund }) {
           ? 'an der Temperatur'
           : 'an der Dosis'
   return (
-    <div className="rounded-2xl border border-bad/40 bg-bad/10 px-4 py-3">
+    <div className="rounded-card border border-bad/40 bg-bad/10 px-4 py-3">
       <p className="text-lg font-semibold">Hör auf zu drehen.</p>
       <p className="mt-1 text-base leading-relaxed text-mute">
         {befund.anzahl} Korrekturen {wort} hintereinander, keine hat getroffen. Dann liegt es

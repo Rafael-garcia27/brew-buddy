@@ -37,6 +37,8 @@ export const PRO_FEATURES = [
   { id: 'glossary', label: 'Glossar', hint: 'Alle Fachbegriffe zum Nachschlagen' },
 ] as const
 
+export type Theme = 'light' | 'dark' | 'organic'
+
 export interface Settings {
   activeSetupId?: string
   activeGrinderId?: string
@@ -52,7 +54,15 @@ export interface Settings {
   mode: AppMode
   /** TDS/EY-Felder anzeigen. Nur im Pro-Modus verfügbar. */
   showMeasurements: boolean
-  theme: 'dark' | 'light'
+  /**
+   * Hell, Dunkel — oder „Organic".
+   *
+   * Die dritte Variante ist kein Farbwechsel, sondern ein eigenes
+   * Formvokabular: Pillen statt Rechtecke, weichere Karten, eigene
+   * Schriften. Sie hängt trotzdem an derselben Einstellung, weil sie
+   * dasselbe beantwortet — wie die App aussieht.
+   */
+  theme: Theme
   /** Personalisierbarer Zielkorridor (Briefing B1) */
   targetEy: [number, number]
   targetEySource: 'standard' | 'learned'

@@ -204,7 +204,7 @@ export function BeanDetail({
           <Suspense
             fallback={
               <div>
-                <div className="aspect-[360/116] w-full rounded-xl border border-line bg-paper" />
+                <div className="aspect-[360/116] w-full rounded-input border border-line bg-paper" />
                 <div className="mt-2.5 h-[17px]" />
               </div>
             }
@@ -386,7 +386,7 @@ export function BeanDetail({
                   {brew.actual.timeS} s
                   {brew.actual.grindSetting ? ` · Mahlgrad ${brew.actual.grindSetting.value}` : ''}
                 </p>
-                <p className="mt-1 text-sm text-crema">{'★'.repeat(brew.tasting?.rating ?? 0)}</p>
+                <p className="mt-1 text-sm text-crema-ink">{'★'.repeat(brew.tasting?.rating ?? 0)}</p>
               </Card>
             ))}
           </div>

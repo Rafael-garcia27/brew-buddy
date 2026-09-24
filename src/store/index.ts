@@ -6,7 +6,7 @@
  * testbar (Solution Design §4).
  */
 import { create } from 'zustand'
-import type { AppState, Settings, AppMode, BeanTrash, Empfehlung } from '@/domain'
+import type { AppState, Settings, AppMode, BeanTrash, Empfehlung, Theme } from '@/domain'
 import type { Bean, Bag, Brew, Grinder, Water, BrewMethod } from '@domain'
 import { emptyState } from '@/domain'
 import { SCHEMA_VERSION } from '@/config'
@@ -21,8 +21,14 @@ import { recompute } from '@/engine/learn'
  * zugeschaltet. Reihenfolge nicht umdrehen — die Palette in index.css
  * hängt daran.
  */
-export function applyTheme(theme: 'dark' | 'light'): void {
-  document.documentElement.classList.toggle('dark', theme === 'dark')
+export function applyTheme(theme: Theme): void {
+  // Beide Klassen ausdrücklich setzen statt umzuschalten: Wer von
+  // „Organic" auf „Dunkel" wechselt, muss die alte auch wieder los
+  // werden — sonst gelten zwei Paletten gleichzeitig, und welche
+  // gewinnt, entscheidet die Reihenfolge im Stylesheet.
+  const c = document.documentElement.classList
+  c.toggle('dark', theme === 'dark')
+  c.toggle('organic', theme === 'organic')
 }
 
 export const uid = (): string =>
@@ -61,7 +67,7 @@ interface StoreActions {
 
   setSettings: (patch: Partial<Settings>) => void
   setMode: (m: AppMode) => void
-  setTheme: (t: 'dark' | 'light') => void
+  setTheme: (t: Theme) => void
 
   replaceState: (s: AppState) => void
   resetAll: () => void

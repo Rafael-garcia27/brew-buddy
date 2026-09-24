@@ -134,7 +134,7 @@ function BohnenZeile({
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-2">
             <p className="truncate text-xl leading-tight font-semibold">{bean.name}</p>
-            {erste && <span className="shrink-0 text-2xs text-crema">beste Wahl</span>}
+            {erste && <span className="shrink-0 text-2xs text-crema-ink">beste Wahl</span>}
           </div>
           {/* Nur die Identität der Bohne. Das Urteil steht eine Zeile
               tiefer und begründet sich dort auch — hier machte es die

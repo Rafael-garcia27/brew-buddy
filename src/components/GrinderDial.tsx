@@ -128,7 +128,7 @@ export default function GrinderDial({
           aria-label="ein Klick feiner"
           disabled={disabled}
           onClick={() => onChange(clamp(clicks - 1))}
-          className="h-11 w-11 shrink-0 rounded-xl border border-line bg-raised text-xl text-crema active:bg-line disabled:opacity-40"
+          className="h-11 w-11 shrink-0 rounded-input border border-line bg-raised text-xl text-crema-ink active:bg-line disabled:opacity-40"
         >
           −
         </button>
@@ -147,7 +147,7 @@ export default function GrinderDial({
           aria-label="ein Klick gröber"
           disabled={disabled}
           onClick={() => onChange(clamp(clicks + 1))}
-          className="h-11 w-11 shrink-0 rounded-xl border border-line bg-raised text-xl text-crema active:bg-line disabled:opacity-40"
+          className="h-11 w-11 shrink-0 rounded-input border border-line bg-raised text-xl text-crema-ink active:bg-line disabled:opacity-40"
         >
           +
         </button>

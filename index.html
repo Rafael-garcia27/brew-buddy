@@ -22,6 +22,14 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Café" />
+    <!-- Die beiden Schnitte, die das dritte Thema („Organic") sofort
+         braucht. Vorgeladen statt nachgefordert: Ohne sie zeichnet der
+         Browser erst in der Systemschrift und tauscht dann aus — bei
+         einer Anzeigeschrift wie Caprasimo springt dabei die ganze
+         Überschrift. `crossorigin` ist Pflicht, auch bei eigenem
+         Ursprung, sonst lädt der Browser die Datei zweimal. -->
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/figtree-var.woff2" crossorigin />
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/caprasimo-400.woff2" crossorigin />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 

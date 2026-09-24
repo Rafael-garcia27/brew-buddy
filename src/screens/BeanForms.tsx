@@ -336,7 +336,7 @@ function CountryAdd({ onAdd }: { onAdd: (name: string) => void }) {
   }
 
   return (
-    <div className="mt-2 rounded-xl border border-line bg-raised p-3">
+    <div className="mt-2 rounded-input border border-line bg-raised p-3">
       <TextInput value={eingabe} onChange={setEingabe} placeholder="z. B. Bolivien" />
       {!leer && !treffer && (
         <p className="mt-2 text-sm leading-snug text-bad">

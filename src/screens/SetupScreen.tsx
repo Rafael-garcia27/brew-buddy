@@ -86,7 +86,7 @@ export default function SetupScreen({ route, back }: Props) {
             <ul className="mt-2 space-y-1.5">
               {PRO_FEATURES.map((f) => (
                 <li key={f.id} className="text-base leading-snug">
-                  <span className="text-crema">{f.label}</span>
+                  <span className="text-crema-ink">{f.label}</span>
                   <span className="text-mute"> — {f.hint}</span>
                 </li>
               ))}
@@ -151,7 +151,7 @@ export default function SetupScreen({ route, back }: Props) {
               ))}
 
             {grinder.confidence !== 'measured' && (
-              <div className="mt-4 rounded-xl border border-crema/30 bg-crema/5 p-3">
+              <div className="mt-4 rounded-input border border-crema/30 bg-crema/5 p-3">
                 <p className="text-base leading-snug">
                   Diese Schrittweite ist ein Startwert. Zwei Shots reichen, um sie für{' '}
                   <em>deine</em> Mühle exakt zu bestimmen — danach kommen alle Empfehlungen in
@@ -242,10 +242,21 @@ export default function SetupScreen({ route, back }: Props) {
       {/* ── Darstellung ── */}
       <Section title="Darstellung">
         <Card>
-          <Toggle
-            checked={s.settings.theme === 'dark'}
-            onChange={(v) => s.setTheme(v ? 'dark' : 'light')}
-            label="Dunkler Modus"
+          {/* Drei Varianten passen nicht mehr in einen Schalter.
+              „Organic" ist auch keine dritte Helligkeit, sondern ein
+              eigenes Formvokabular — es gehört gleichberechtigt neben
+              die beiden anderen, nicht als Zusatz darunter. */}
+          {/* Ohne eigene Beschriftung: Der Abschnitt darüber heißt
+              „Darstellung", und ein zweites Schild „Erscheinungsbild"
+              unmittelbar darunter sagt dasselbe noch einmal. */}
+          <SegmentedControl
+            options={[
+              { value: 'light', label: 'Hell' },
+              { value: 'dark', label: 'Dunkel' },
+              { value: 'organic', label: 'Organic' },
+            ]}
+            value={s.settings.theme}
+            onChange={(t) => s.setTheme(t)}
           />
           {isPro && (
             <div className="mt-2 border-t border-line pt-2">
@@ -331,7 +342,7 @@ export default function SetupScreen({ route, back }: Props) {
       </Section>
 
       {toast && (
-        <div className="pb-safe fixed inset-x-4 bottom-24 z-40 rounded-2xl bg-raised px-4 py-3 text-center text-lg shadow-lg">
+        <div className="pb-safe fixed inset-x-4 bottom-24 z-40 rounded-card bg-raised px-4 py-3 text-center text-lg shadow-lg">
           {toast}
         </div>
       )}
@@ -436,12 +447,12 @@ function CalibrateSheet({ onClose }: { onClose: () => void }) {
       </p>
 
       <div className="mt-5 space-y-4">
-        <div className="rounded-2xl border border-line p-3">
+        <div className="rounded-card border border-line p-3">
           <p className="mb-3 text-sm font-semibold text-mute">Shot 1 — feiner</p>
           <Field label="Grind-Einstellung"><Stepper value={s1} onChange={setS1} min={0} max={200} /></Field>
           <div className="mt-3"><Field label="Laufzeit"><Stepper value={t1} onChange={setT1} min={5} max={90} unit="s" /></Field></div>
         </div>
-        <div className="rounded-2xl border border-line p-3">
+        <div className="rounded-card border border-line p-3">
           <p className="mb-3 text-sm font-semibold text-mute">Shot 2 — gröber</p>
           <Field label="Grind-Einstellung"><Stepper value={s2} onChange={setS2} min={0} max={200} /></Field>
           <div className="mt-3"><Field label="Laufzeit"><Stepper value={t2} onChange={setT2} min={5} max={90} unit="s" /></Field></div>
@@ -449,10 +460,10 @@ function CalibrateSheet({ onClose }: { onClose: () => void }) {
       </div>
 
       {err && (
-        <div className="mt-4 rounded-xl border border-bad/40 bg-bad/10 p-3 text-base text-bad">{err}</div>
+        <div className="mt-4 rounded-input border border-bad/40 bg-bad/10 p-3 text-base text-bad">{err}</div>
       )}
       {res && (
-        <div className="mt-4 rounded-xl border border-ok/40 bg-ok/10 p-3">
+        <div className="mt-4 rounded-input border border-ok/40 bg-ok/10 p-3">
           <p className="text-base leading-snug">{res}</p>
           <p className="mt-2 text-sm text-mute">
             Ab jetzt kommen alle Empfehlungen in echten Klicks deiner Mühle.
@@ -505,7 +516,7 @@ function WaterSheet({ onClose }: { onClose: () => void }) {
         </Field>
       </div>
       {kh > 80 && (
-        <div className="mt-4 rounded-xl border border-warn/40 bg-warn/10 p-3 text-base text-warn">
+        <div className="mt-4 rounded-input border border-warn/40 bg-warn/10 p-3 text-base text-warn">
           Bei dieser Karbonathärte schmeckt Kaffee flach, auch wenn Mahlgrad und Zeit stimmen.
           Das ist die häufigste unerkannte Fehlerursache überhaupt.
         </div>
@@ -592,7 +603,7 @@ function ImportSheet({ onClose }: { onClose: () => void }) {
     const plan = importplan(selectSnapshot(useStore.getState()), neu)
     return (
       <Sheet title="Wirklich ersetzen?" onClose={onClose}>
-        <div className="rounded-2xl border border-line bg-raised px-4 py-3">
+        <div className="rounded-card border border-line bg-raised px-4 py-3">
           <p className="text-sm text-mute">Jetzt auf diesem Gerät</p>
           <p className="mt-0.5 text-xl">{bestandssatz(plan.alt)}</p>
           <p className="mt-3 text-sm text-mute">Wird ersetzt durch</p>
@@ -600,7 +611,7 @@ function ImportSheet({ onClose }: { onClose: () => void }) {
         </div>
 
         {plan.warnung && (
-          <p className="mt-3 rounded-2xl border border-bad/40 bg-bad/10 px-4 py-3 text-base leading-relaxed">
+          <p className="mt-3 rounded-card border border-bad/40 bg-bad/10 px-4 py-3 text-base leading-relaxed">
             {plan.warnung}
           </p>
         )}
@@ -629,7 +640,7 @@ function ImportSheet({ onClose }: { onClose: () => void }) {
         Wähle eine zuvor gesicherte Datei. Bevor etwas ersetzt wird, siehst du, was geht
         und was kommt.
       </p>
-      <label className="mt-5 flex h-32 cursor-pointer items-center justify-center rounded-2xl border border-dashed border-line text-lg text-mute">
+      <label className="mt-5 flex h-32 cursor-pointer items-center justify-center rounded-card border border-dashed border-line text-lg text-mute">
         Datei wählen
         <input
           type="file"

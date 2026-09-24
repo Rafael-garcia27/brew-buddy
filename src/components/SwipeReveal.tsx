@@ -47,7 +47,7 @@ export default function SwipeReveal({
   actions,
   onSwipeAway,
   swipeAwayLabel,
-  className = 'rounded-2xl',
+  className = 'rounded-card',
   children,
 }: {
   actions: SwipeAction[]
@@ -239,7 +239,7 @@ export default function SwipeReveal({
                 opacity: `clamp(0.2, calc(0.2 + 0.8 * (var(--ab, 0) - var(--start)) / ${AKTION_PX}), 1)`,
               } as React.CSSProperties
             }
-            className={`flex flex-1 flex-col items-center justify-center gap-1 rounded-xl text-sm font-medium ${
+            className={`flex flex-1 flex-col items-center justify-center gap-1 rounded-input text-sm font-medium ${
               a.tone === 'bad' ? 'bg-bad text-white' : 'bg-raised text-ink'
             }`}
           >

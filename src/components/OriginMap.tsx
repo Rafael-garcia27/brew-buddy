@@ -222,7 +222,7 @@ export default function OriginMap({
 
   return (
     <div className={className}>
-      <div className="overflow-hidden rounded-xl border border-line bg-paper">
+      <div className="overflow-hidden rounded-input border border-line bg-paper">
         <svg viewBox={WORLD_MAP.viewBox} className="block w-full" role="img" aria-label={kurz}>
           {/* Landmasse mit sichtbaren Grenzen. non-scaling-stroke, damit
               die Linie 0,6 px bleibt, egal wie breit die Karte gerade

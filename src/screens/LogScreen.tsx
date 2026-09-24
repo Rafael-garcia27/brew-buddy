@@ -297,7 +297,7 @@ export default function LogScreen({ route, navigate, back }: Props) {
                         <p className="truncate font-medium">
                           {gefilterteBohne ? METHOD_LABEL[b.method] : beanName(b.beanId)}
                         </p>
-                        {b.isBest && <span className="shrink-0 text-2xs text-crema">REFERENZ</span>}
+                        {b.isBest && <span className="shrink-0 text-2xs text-crema-ink">REFERENZ</span>}
                       </div>
                       <p className="mt-0.5 text-sm text-mute">
                         {!gefilterteBohne && `${METHOD_LABEL[b.method]} · `}
@@ -314,7 +314,7 @@ export default function LogScreen({ route, navigate, back }: Props) {
                           : ''}
                       </p>
                     </div>
-                    <span className="shrink-0 text-sm text-crema">
+                    <span className="shrink-0 text-sm text-crema-ink">
                       {'★'.repeat(b.tasting?.rating ?? 0)}
                     </span>
                   </div>
@@ -393,7 +393,7 @@ function BrewDetail({ brewId, onBack }: { brewId: string; onBack: () => void }) 
       {brew.tasting && (
         <Section title="Tasting">
           <Card>
-            <p className="text-2xl text-crema">{'★'.repeat(brew.tasting.rating)}</p>
+            <p className="text-2xl text-crema-ink">{'★'.repeat(brew.tasting.rating)}</p>
             {brew.tasting.defects.length > 0 && (
               <div className="mt-3">
                 <p className="text-xs text-mute">Was störte</p>

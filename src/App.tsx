@@ -236,7 +236,7 @@ export default function App() {
                 onClick={() => navigate({ tab: t.id })}
                 aria-current={aktiv ? 'page' : undefined}
                 className={`flex h-[46px] flex-1 flex-col items-center justify-center gap-0.5 ${
-                  aktiv ? 'text-crema' : 'text-faint'
+                  aktiv ? 'text-crema-ink' : 'text-faint'
                 }`}
               >
                 <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden>

@@ -193,7 +193,7 @@ export default function SageGrindDial({ value, onChange, max, step, highlight, d
           aria-label="feiner"
           disabled={disabled}
           onClick={() => schieben(-step)}
-          className="h-11 w-11 shrink-0 rounded-xl border border-line bg-raised text-xl text-crema active:bg-line disabled:opacity-40"
+          className="h-11 w-11 shrink-0 rounded-input border border-line bg-raised text-xl text-crema-ink active:bg-line disabled:opacity-40"
         >
           −
         </button>
@@ -212,7 +212,7 @@ export default function SageGrindDial({ value, onChange, max, step, highlight, d
           aria-label="gröber"
           disabled={disabled}
           onClick={() => schieben(step)}
-          className="h-11 w-11 shrink-0 rounded-xl border border-line bg-raised text-xl text-crema active:bg-line disabled:opacity-40"
+          className="h-11 w-11 shrink-0 rounded-input border border-line bg-raised text-xl text-crema-ink active:bg-line disabled:opacity-40"
         >
           +
         </button>

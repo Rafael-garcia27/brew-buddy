@@ -251,14 +251,14 @@ export default function SessionLauf({
         <button
           type="button"
           onClick={onAbbruch}
-          className="h-14 flex-1 rounded-2xl border border-white/25 text-lg"
+          className="h-14 flex-1 rounded-card border border-white/25 text-lg"
         >
           Abbrechen
         </button>
         <button
           type="button"
           onClick={() => onStopp(sek)}
-          className="h-14 flex-[2] rounded-2xl bg-[#f7efe3] text-lg font-semibold text-[#14100e]"
+          className="h-14 flex-[2] rounded-card bg-[#f7efe3] text-lg font-semibold text-[#14100e]"
         >
           Stopp
         </button>

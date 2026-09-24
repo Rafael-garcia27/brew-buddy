@@ -62,7 +62,7 @@ export function Header({
           <button
             onClick={onBack}
             aria-label="Zurück"
-            className="-ml-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-crema active:bg-raised"
+            className="-ml-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-crema-ink active:bg-raised"
           >
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
               <path
@@ -77,9 +77,7 @@ export function Header({
         )}
         <div className="min-w-0 flex-1">
           <h1
-            className={`truncate leading-tight font-semibold tracking-tight ${
-              large ? 'text-3xl' : 'text-2xl'
-            }`}
+            className={`titel truncate leading-tight ${large ? 'text-3xl' : 'text-2xl'}`}
           >
             {title}
           </h1>
@@ -193,7 +191,7 @@ export function Card({
 }) {
   const tones = {
     default: 'bg-card border-line',
-    accent: 'bg-card border-crema/40',
+    accent: 'bg-card-accent border-crema/40',
     warn: 'bg-card border-warn/40',
     bad: 'bg-card border-bad/40',
   }
@@ -201,7 +199,7 @@ export function Card({
   return (
     <Comp
       onClick={onClick}
-      className={`w-full rounded-2xl border ${tones[tone]} p-4 text-left ${onClick ? 'active:scale-[0.99] transition-transform' : ''} ${className}`}
+      className={`w-full rounded-card border ${tones[tone]} p-4 text-left ${onClick ? 'active:scale-[0.99] transition-transform' : ''} ${className}`}
     >
       {children}
     </Comp>
@@ -228,15 +226,15 @@ export function Button({
   className?: string
 }) {
   const variants = {
-    primary: 'bg-crema text-on-crema font-semibold active:bg-crema/85',
+    primary: 'bg-crema text-on-crema font-semibold shadow-soft active:bg-crema/85',
     secondary: 'bg-raised text-ink border border-line active:bg-line',
-    ghost: 'text-crema active:bg-raised',
+    ghost: 'text-crema-ink active:bg-raised',
     danger: 'bg-bad/15 text-bad border border-bad/30 active:bg-bad/25',
   }
   const sizes = {
-    sm: 'h-11 px-3 text-base rounded-xl',
-    md: 'h-12 px-5 text-xl rounded-2xl',
-    lg: 'h-14 px-6 text-xl rounded-2xl',
+    sm: 'h-11 px-3 text-base rounded-btn',
+    md: 'h-12 px-5 text-xl rounded-btn',
+    lg: 'h-14 px-6 text-xl rounded-btn',
   }
   return (
     <button
@@ -268,7 +266,7 @@ export function Chip({
       ? 'bg-bad/20 border-bad/50 text-bad font-medium'
       : tone === 'good'
         ? 'bg-ok/20 border-ok/50 text-ok font-medium'
-        : 'bg-crema/20 border-crema/50 text-crema font-medium'
+        : 'bg-crema/20 border-crema/50 text-crema-ink font-medium'
   return (
     <button type="button" onClick={onClick} className={`${base} ${active ? on : off}`}>
       {label}
@@ -321,13 +319,13 @@ export function SegmentedControl<T extends string>({
   const mitSymbol = options.some((o) => o.icon)
   const eng = options.length > 3
   return (
-    <div className="flex gap-1 rounded-2xl bg-raised p-1">
+    <div className="flex gap-1 rounded-btn bg-raised p-1">
       {options.map((o) => (
         <button
           key={o.value}
           onClick={() => onChange(o.value)}
           aria-current={value === o.value ? 'true' : undefined}
-          className={`min-w-0 flex-1 rounded-xl px-1 transition-colors ${
+          className={`min-w-0 flex-1 rounded-btn px-1 transition-colors ${
             mitSymbol ? 'flex h-[52px] flex-col items-center justify-center gap-0.5' : 'h-11 truncate'
           } ${eng && !mitSymbol ? 'text-sm' : mitSymbol ? '' : 'text-lg'} ${
             value === o.value ? 'bg-crema font-semibold text-on-crema' : 'text-mute active:bg-line'
@@ -369,7 +367,7 @@ export function Field({
 }
 
 const inputCls =
-  'w-full rounded-xl border border-line bg-raised px-3.5 py-3 text-ink outline-none focus:border-crema/60'
+  'w-full rounded-input border border-line bg-raised px-3.5 py-3 text-ink outline-none focus:border-crema/60'
 
 export function TextInput({
   value,
@@ -515,14 +513,14 @@ export function Stepper({
         onPointerLeave={stopHold}
         onPointerCancel={stopHold}
         onClick={() => onChange(clamp(value - step))}
-        className="h-14 w-14 shrink-0 rounded-2xl border border-line bg-raised text-2xl text-crema active:bg-line"
+        className="h-14 w-14 shrink-0 rounded-input border border-line bg-raised text-2xl text-crema-ink active:bg-line"
       >
         −
       </button>
 
       {/* Der Wert ist ein Eingabefeld, kein Text: Große Sprünge tippt man,
           statt vierzigmal auf Plus zu drücken. */}
-      <div className="flex flex-1 items-center justify-center rounded-2xl border border-line bg-raised focus-within:border-crema">
+      <div className="flex flex-1 items-center justify-center rounded-input border border-line bg-raised focus-within:border-crema">
         <input
           type="text"
           inputMode={clock ? 'numeric' : 'decimal'}
@@ -566,7 +564,7 @@ export function Stepper({
         onPointerLeave={stopHold}
         onPointerCancel={stopHold}
         onClick={() => onChange(clamp(value + step))}
-        className="h-14 w-14 shrink-0 rounded-2xl border border-line bg-raised text-2xl text-crema active:bg-line"
+        className="h-14 w-14 shrink-0 rounded-input border border-line bg-raised text-2xl text-crema-ink active:bg-line"
       >
         +
       </button>
@@ -642,7 +640,7 @@ export function InfoDot({ termId }: { termId: string }) {
           <p className="text-xl leading-snug">{term.short}</p>
           <p className="mt-3 text-lg leading-relaxed text-mute">{term.long}</p>
           {term.warning && (
-            <p className="mt-3 rounded-xl border border-warn/40 bg-warn/10 p-3 text-base text-warn">
+            <p className="mt-3 rounded-input border border-warn/40 bg-warn/10 p-3 text-base text-warn">
               {term.warning}
             </p>
           )}
@@ -702,9 +700,9 @@ export function Sheet({
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="scroll-area relative max-h-[88dvh] overflow-y-auto rounded-t-3xl border-t border-line bg-card">
+      <div className="scroll-area relative max-h-[88dvh] overflow-y-auto rounded-t-sheet border-t border-line bg-card shadow-float">
         <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-line bg-card px-4 py-3">
-          <h3 className="text-xl font-semibold">{title}</h3>
+          <h3 className="titel text-xl">{title}</h3>
           <button
             type="button"
             onClick={onClose}

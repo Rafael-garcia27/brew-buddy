@@ -22,10 +22,34 @@ import { readFileSync } from 'node:fs'
 
 /** Untergründe, auf denen in der App Text steht. */
 const GRUND = ['--c-paper', '--c-card', '--c-raised']
-/** Alles, was als Textfarbe benutzt wird. */
-const TEXT = ['--c-ink', '--c-mute', '--c-faint', '--c-crema', '--c-ok', '--c-warn', '--c-bad']
+/**
+ * Alles, was als Textfarbe benutzt wird.
+ *
+ * `--c-crema` stand hier, solange es beides war: Akzentfläche UND
+ * Akzenttext. Mit dem dritten Thema geht das nicht mehr zusammen — ein
+ * Terracotta, das auf Creme als Fläche funktioniert, erreicht als
+ * 13-px-Schrift keine 4,5:1. Seitdem gibt es `--c-crema-ink` für Text,
+ * und `--c-crema` trägt nur noch Flächen, Ränder und Icons. Die Liste
+ * hier folgt dieser Trennung; sonst prüfte sie eine Verwendung, die es
+ * nicht mehr gibt, und verböte eine Palette, die richtig ist.
+ */
+const TEXT = ['--c-ink', '--c-mute', '--c-faint', '--c-crema-ink', '--c-ok', '--c-warn', '--c-bad']
+/**
+ * Nicht-Text: WCAG 1.4.11 verlangt für Bedienelemente 3:1.
+ *
+ * Nur der Akzent steht hier, und zwar genau deshalb, weil er seine Rolle
+ * gewechselt hat: Er trägt keinen Text mehr, aber weiterhin Icons,
+ * Ränder und den Fokusring. Für diese Rolle gilt 3:1 statt 4,5:1.
+ *
+ * `--c-line` und `--c-crema-dim` bleiben bewusst draußen. Haarlinien
+ * zwischen Zeilen und abgeblendete Varianten sind nach 1.4.11 kein
+ * Bedienelement; sie hier aufzunehmen hieße, drei Paletten wegen einer
+ * Trennlinie umzubauen. Das wäre eine eigene Entscheidung.
+ */
+const NICHT_TEXT = ['--c-crema']
 /** WCAG 2.1 AA für Fließtext. Die App hat viel Text unter 18 px. */
 const MINDEST = 4.5
+const MINDEST_UI = 3
 
 const css = readFileSync(new URL('../src/index.css', import.meta.url), 'utf8')
 
@@ -52,6 +76,7 @@ let durchgefallen = 0
 for (const [name, block] of [
   ['HELL — Milchkaffee', ':root'],
   ['DUNKEL — Espresso', 'html\\.dark'],
+  ['ORGANIC', 'html\\.organic'],
 ]) {
   const t = tokens(block)
   console.log(`\n${name}`)
@@ -63,6 +88,16 @@ for (const [name, block] of [
       return (v.toFixed(2) + (v < MINDEST ? ' !' : '  ')).padStart(10)
     })
     console.log('  ' + f.slice(4).padEnd(12) + zellen.join(''))
+  }
+  // Ränder und Icons brauchen weniger, aber nicht nichts.
+  for (const f of NICHT_TEXT) {
+    const zellen = GRUND.map((g) => {
+      if (f === g) return '—'.padStart(10)
+      const v = verhaeltnis(t[f], t[g])
+      if (v < MINDEST_UI) durchgefallen++
+      return (v.toFixed(2) + (v < MINDEST_UI ? ' !' : '  ')).padStart(10)
+    })
+    console.log('  ' + (f.slice(4) + ' ·').padEnd(12) + zellen.join(''))
   }
 }
 

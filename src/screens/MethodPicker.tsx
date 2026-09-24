@@ -234,7 +234,7 @@ export default function MethodPicker({ bean, navigate, back }: Props) {
       {erklaert && (
         <Sheet title={erklaert.label} onClose={() => setErklaert(null)}>
           <div className="flex items-start gap-3">
-            <span className="shrink-0 text-crema">
+            <span className="shrink-0 text-crema-ink">
               <MethodIcon icon={erklaert.icon} className="h-10 w-10" />
             </span>
             <p className="text-lg leading-snug">{erklaert.teaser}</p>
@@ -276,14 +276,14 @@ function MethodenZeile({
   return (
     <Card tone={beste || zuletzt ? 'accent' : 'default'} onClick={onClick}>
       <div className={`flex items-start gap-3 ${gedaempft ? 'opacity-70' : ''}`}>
-        <span className={`shrink-0 ${beste || zuletzt ? 'text-crema' : 'text-mute'}`}>
+        <span className={`shrink-0 ${beste || zuletzt ? 'text-crema-ink' : 'text-mute'}`}>
           <MethodIcon icon={profil.icon ?? eintrag.method} />
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-2">
             <p className="text-xl leading-tight font-semibold">{METHOD_LABEL[eintrag.method]}</p>
-            {beste && <span className="shrink-0 text-2xs text-crema">beste Wahl</span>}
-            {zuletzt && <span className="shrink-0 text-2xs text-crema">zuletzt</span>}
+            {beste && <span className="shrink-0 text-2xs text-crema-ink">beste Wahl</span>}
+            {zuletzt && <span className="shrink-0 text-2xs text-crema-ink">zuletzt</span>}
           </div>
 
           {/* Mit Bohne trägt die Zeile das Urteil, ohne Bohne den Kurztext

@@ -19,6 +19,29 @@
   --color-ok: var(--c-ok);
   --color-warn: var(--c-warn);
   --color-bad: var(--c-bad);
+  --color-crema-ink: var(--c-crema-ink);
+  --color-card-accent: var(--c-card-accent);
+
+  /* ── Formen ─────────────────────────────────────────────────────────
+     Radien als Token, nicht als feste Klasse.
+
+     Ein drittes Thema ist nicht nur eine andere Farbe: „Organic" ist ein
+     anderes Formvokabular — Pillen statt abgerundeter Rechtecke, weiche
+     24-px-Karten statt 16 px. Klassen wie `rounded-2xl` stehen aber im
+     gemeinsamen Baum und gelten für alle drei Themen. Also wandert die
+     Form dorthin, wo das Thema sie erreichen kann: in eine Variable.
+
+     Hell und Dunkel tragen hier genau die Werte, die Tailwind vorher
+     eingesetzt hat (2xl = 16 px, xl = 12 px) — die beiden sehen deshalb
+     aus wie zuvor. */
+  --radius-card: var(--r-card);
+  --radius-panel: var(--r-panel);
+  --radius-btn: var(--r-btn);
+  --radius-input: var(--r-input);
+  --radius-sheet: var(--r-sheet);
+
+  --shadow-soft: var(--sh-soft);
+  --shadow-float: var(--sh-float);
 
   /* ── Schriftskala ───────────────────────────────────────────────────
      Vorher standen 17 verschiedene Pixelwerte als Einzelangaben im Code
@@ -65,9 +88,8 @@
   --text-4xl: 34px;
   --text-4xl--line-height: inherit;
 
-  --font-sans:
-    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui,
-    sans-serif;
+  --font-sans: var(--ff-sans);
+  --font-display: var(--ff-display);
   --font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', monospace;
 }
 
@@ -118,6 +140,31 @@
   --c-origin-4: #2f6b7a;   /* Waschkanal */
   --c-origin-5: #7a5c96;   /* Fermentation */
 
+  /* Akzent als TEXT braucht mehr Kontrast als Akzent als Fläche. Bis
+     hierher gab es nur einen Ton für beides; `--c-crema` erreicht auf
+     Papier 4,5:1 knapp, in 13-px-Schrift ist das die Untergrenze. */
+  --c-crema-ink: #8c5a2b;  /* hier identisch mit --c-crema */
+  /* Die hervorgehobene Karte bleibt weiß und zeigt ihren Rang am Rand. */
+  --c-card-accent: var(--c-card);
+
+  /* Formen: exakt das, was Tailwind vorher eingesetzt hat. */
+  --r-card: 1rem;          /* war rounded-2xl */
+  --r-panel: 1rem;
+  --r-btn: 1rem;           /* war rounded-2xl an Button md/lg */
+  --r-input: 0.75rem;      /* war rounded-xl */
+  --r-sheet: 1.5rem;       /* war rounded-t-3xl */
+  --sh-soft: none;
+  --sh-float: none;
+
+  --ff-sans:
+    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui,
+    sans-serif;
+  /* Ohne eigenes Thema gibt es keine Anzeigeschrift — Überschriften
+     stehen in derselben Familie, nur schwerer. */
+  --ff-display: var(--ff-sans);
+  --fw-display: 600;
+  --ls-display: -0.02em;
+
   color-scheme: light;
 }
 
@@ -154,7 +201,106 @@ html.dark {
   --c-origin-4: #6fa9ba;
   --c-origin-5: #ab8fc7;
 
+  --c-crema-ink: #d9a566;  /* hier identisch mit --c-crema */
+  --c-card-accent: var(--c-card);
+
   color-scheme: dark;
+}
+
+/* Organic — die dritte Variante ────────────────────────────────────────
+   Nicht bloß eine andere Farbe: ein anderes Formvokabular.
+
+   Cremefarbener Grund, Terracotta als Akzent, Salbei für „im Fenster",
+   Caprasimo für Überschriften und Figtree für alles andere. Flächen sind
+   stärker gerundet, Schaltflächen sind Pillen, der Primärknopf trägt
+   einen weichen Schatten — Karten nicht, die haben nur einen Rand.
+
+   Warum das hier vollständig geht: Die Oberfläche liest Farbe, Radius,
+   Schrift und Schatten ausschließlich über Variablen. Ein Thema kann
+   deshalb die Form mitbringen, ohne dass eine einzige Komponente weiß,
+   welches Thema gerade gilt.
+
+   Die Röst- und Herkunftsfarben bleiben die der hellen Palette: Sie
+   bedeuten etwas (Agtron-Bänder, Herkunftsachsen) und sind keine
+   Dekoration, die ein Thema umfärben dürfte. */
+html.organic {
+  --c-paper: #f5ead8;
+  --c-card: #f9f4ed;
+  --c-raised: #ebddc5;
+  --c-line: #dcd3c4;
+  --c-ink: #201e1d;
+  --c-mute: #645c50;
+  /* Beide gegenüber der Vorlage einen Schritt dunkler: Auf `raised`
+     (#ebddc5) lagen sie bei 4,42 bzw. 4,17 und damit unter AA. Die
+     Rampe bleibt, nur der Punkt darauf wandert. */
+  --c-faint: #655e51;
+  --c-crema: #b2622d;      /* Akzent als Fläche und Icon, NICHT als Text */
+  --c-on-crema: #fff2eb;
+  --c-crema-dim: #f6a06b;
+  --c-ok: #56633f;         /* Salbei */
+  --c-warn: #875716;
+  --c-bad: #a6402f;
+
+  --c-crema-ink: #8c491a;  /* Akzent als Text, dunkler für AA */
+  /* Hier trägt die hervorgehobene Karte den Akzent als Fläche — der
+     Wert ist die Karte mit zehn Prozent Terracotta darüber, ausgerechnet
+     statt durchsichtig gelegt: Eine halbtransparente Fläche sähe je
+     nach Untergrund anders aus. */
+  --c-card-accent: #f4e7db;
+
+  --r-card: 24px;
+  --r-panel: 28px;
+  --r-btn: 9999px;
+  --r-input: 16px;
+  --r-sheet: 32px;
+  --sh-soft: 0 3px 10px rgba(46, 43, 37, 0.16);
+  --sh-float: 0 12px 32px rgba(46, 43, 37, 0.22);
+
+  --ff-sans: 'Figtree', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --ff-display: 'Caprasimo', ui-rounded, system-ui, serif;
+  /* Caprasimo gibt es nur in 400. Ein `font-bold` daneben ließe den
+     Browser einen Fettschnitt ausrechnen, den es nicht gibt. */
+  --fw-display: 400;
+  --ls-display: -0.01em;
+
+  color-scheme: light;
+}
+
+/* ── Schriften ────────────────────────────────────────────────────────
+   Selbst gehostet, nicht vom CDN: Die App muss offline laufen, und der
+   Dienstarbeiter kann nur ausliefern, was im eigenen Ursprung liegt.
+
+   Figtree kommt als variable Schrift — eine Datei für 300 bis 900 statt
+   vier Schnitte. Caprasimo hat nur 400; überall, wo sie steht, darf
+   deshalb kein `font-bold` danebenstehen, sonst rechnet der Browser
+   einen falschen Fettschnitt aus. */
+@font-face {
+  font-family: 'Figtree';
+  font-weight: 300 900;
+  font-style: normal;
+  font-display: swap;
+  src: url('/fonts/figtree-var.woff2') format('woff2-variations');
+}
+@font-face {
+  font-family: 'Caprasimo';
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url('/fonts/caprasimo-400.woff2') format('woff2');
+}
+
+/* ── Überschriften ────────────────────────────────────────────────────
+   Eine Klasse statt dreier Tailwind-Angaben je Titel.
+
+   Familie, Gewicht und Laufweite gehören zusammen und hängen am Thema:
+   Caprasimo kennt nur 400, die Systemschrift braucht 600, damit ein
+   Titel wie ein Titel aussieht. Als drei einzelne Klassen im Baum wäre
+   das nicht umschaltbar — die Komponente müsste wissen, welches Thema
+   gerade gilt, und genau das soll sie nicht. */
+.titel {
+  font-family: var(--ff-display);
+  font-weight: var(--fw-display);
+  letter-spacing: var(--ls-display);
 }
 
 /* ── Basis ──────────────────────────────────────────────────────────── */

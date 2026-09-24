@@ -474,7 +474,7 @@ function BohnenKarte({
             taugt. Frische und Zähler beantworten schon die nächste Frage
             und stehen deshalb erst in der aufgeklappten Karte; als
             Reserve trägt der Ring die Frische ohnehin sichtbar mit. */}
-        <p className="mt-1 truncate text-xs text-crema">
+        <p className="mt-1 truncate text-xs text-crema-ink">
           Am besten als {METHOD_LABEL[best]}
         </p>
         {/* Aufgeklappt kommt die Lage dazu, und zwar die dringendere
@@ -502,7 +502,7 @@ function BohnenKarte({
             </p>
           ))}
       </div>
-      <span className={aktiv ? 'text-crema' : 'text-faint'}>{aktiv ? '✕' : '›'}</span>
+      <span className={aktiv ? 'text-crema-ink' : 'text-faint'}>{aktiv ? '✕' : '›'}</span>
     </div>
   )
 

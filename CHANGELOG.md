@@ -10,6 +10,24 @@ der Git-Historie.
 
 ## 2.0 — Unveröffentlicht
 
+### Neu: eine dritte Darstellung
+
+**„Organic" steht in den Optionen neben Hell und Dunkel.** Cremefarbener
+Grund, Terracotta als Akzent, Salbei für „im Fenster", Caprasimo für
+Überschriften und Figtree für alles andere — und nicht nur andere
+Farben, sondern ein anderes Formvokabular: Pillen statt abgerundeter
+Rechtecke, 24er-Karten statt 16er, ein weicher Schatten unter dem
+Primärknopf.
+
+Damit das ein Thema und kein Umbau ist, liest die Oberfläche jetzt auch
+Radius, Schrift und Schatten über Variablen — so wie bisher schon die
+Farben. Hell und Dunkel tragen dort exakt die Werte, die vorher fest im
+Code standen; sie sehen deshalb aus wie zuvor. Nur der große Titel auf
+„Heute" steht statt in 700 jetzt in 600 wie jeder andere Titel auch.
+
+Die Schriften liegen selbst gehostet unter `public/fonts/` und werden
+vom Dienstarbeiter mitgecacht — die App bleibt offline vollständig.
+
 ### Aus echten Logdaten (24.09.2026)
 
 Fünfzehn Durchgänge aus vier Wochen wurden gegen die Engine

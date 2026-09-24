@@ -277,7 +277,7 @@ export function PhaseVerkosten({
         setRating(bewertung)
       }}
       aria-pressed={gewaehlt === id}
-      className={`w-full rounded-2xl border px-4 py-4 text-left transition-colors ${
+      className={`w-full rounded-card border px-4 py-4 text-left transition-colors ${
         gewaehlt === id ? 'border-crema bg-crema/10' : 'border-line bg-card'
       }`}
     >
@@ -289,7 +289,7 @@ export function PhaseVerkosten({
   return (
     <>
       <Section>
-        <h2 className="text-2xl font-semibold tracking-tight">Wie war er?</h2>
+        <h2 className="titel text-2xl">Wie war er?</h2>
       </Section>
 
       <Section>
@@ -305,7 +305,7 @@ export function PhaseVerkosten({
           type="button"
           onClick={() => setGenauer((g) => !g)}
           aria-expanded={genauer}
-          className="text-base font-medium text-crema"
+          className="text-base font-medium text-crema-ink"
         >
           {genauer ? 'Weniger' : 'Genauer'}
         </button>
@@ -324,8 +324,8 @@ export function PhaseVerkosten({
                   key={n}
                   onClick={() => setRating(n)}
                   aria-label={`${n} von 5`}
-                  className={`flex h-14 w-14 items-center justify-center rounded-2xl text-3xl transition-colors ${
-                    n <= rating ? 'text-crema' : 'text-line'
+                  className={`flex h-14 w-14 items-center justify-center rounded-card text-3xl transition-colors ${
+                    n <= rating ? 'text-crema-ink' : 'text-line'
                   }`}
                 >
                   ★
@@ -471,7 +471,7 @@ export function PhaseErgebnis({
             <ol className="mt-3 space-y-1.5 border-t border-line pt-3">
               {result.techniqueSteps.map((t, i) => (
                 <li key={i} className="flex gap-2 text-base leading-snug">
-                  <span className="text-crema">{i + 1}.</span>
+                  <span className="text-crema-ink">{i + 1}.</span>
                   <span>{t}</span>
                 </li>
               ))}
@@ -594,7 +594,7 @@ function RunCard({
         <ol className="mt-3 space-y-1.5 border-t border-line pt-3">
           {run.techniqueSteps.map((t, i) => (
             <li key={i} className="flex gap-2 text-base leading-snug">
-              <span className="text-crema">{i + 1}.</span>
+              <span className="text-crema-ink">{i + 1}.</span>
               <span>{t}</span>
             </li>
           ))}
@@ -651,9 +651,9 @@ function SuggestionCard({
       {kicker && (
         <p className="mb-1 text-sm font-medium tracking-wide text-mute uppercase">{kicker}</p>
       )}
-      <p className="text-2xl leading-tight font-semibold text-crema">{s.what}</p>
+      <p className="text-2xl leading-tight font-semibold text-crema-ink">{s.what}</p>
       <p className="mt-2 text-lg leading-relaxed">{s.why}</p>
-      <div className="mt-3 rounded-xl border border-line bg-raised p-3">
+      <div className="mt-3 rounded-input border border-line bg-raised p-3">
         <p className="text-xs font-medium tracking-wide text-mute uppercase">Erwartung</p>
         <p className="mt-1 text-base leading-snug">{s.expectation}</p>
       </div>
