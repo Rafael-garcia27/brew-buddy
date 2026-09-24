@@ -108,6 +108,8 @@ export function BeanDetail({
     deleteBag(b.id)
   }
   const [showBag, setShowBag] = useState(false)
+  /** Gesetzt: diese Tüte wird bearbeitet. */
+  const [editBag, setEditBag] = useState<Bag | undefined>()
 
   /**
    * Der Fit, nach Eignung sortiert.
@@ -341,7 +343,10 @@ export function BeanDetail({
                  */
                 <SwipeReveal
                   key={bag.id}
-                  actions={[{ label: 'Löschen', tone: 'bad', onClick: () => bagLoeschen(bag) }]}
+                  actions={[
+                    { label: 'Edit', onClick: () => setEditBag(bag) },
+                    { label: 'Löschen', tone: 'bad', onClick: () => bagLoeschen(bag) },
+                  ]}
                   onSwipeAway={() => bagLoeschen(bag)}
                   swipeAwayLabel="Loslassen zum Löschen"
                 >
@@ -415,6 +420,20 @@ export function BeanDetail({
           onSave={(b) => {
             addBag({ beanId: bean.id, ...b })
             setShowBag(false)
+          }}
+        />
+      )}
+
+      {/* Dasselbe Blatt, andere Richtung. Ein vertipptes Röstdatum war
+          bisher nur durch Löschen und Neuanlegen zu korrigieren — und
+          die Tüte nimmt ihre Protokolle mit. */}
+      {editBag && (
+        <BagSheet
+          bag={editBag}
+          onClose={() => setEditBag(undefined)}
+          onSave={(b) => {
+            updateBag(editBag.id, b)
+            setEditBag(undefined)
           }}
         />
       )}

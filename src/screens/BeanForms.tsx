@@ -10,7 +10,7 @@
  */
 import { useMemo, useState } from 'react'
 import { useStore } from '@/store'
-import type { Bean, RoastLevel, Process } from '@domain'
+import type { Bean, Bag, RoastLevel, Process } from '@domain'
 import {
   getOrigin,
   BLEND,
@@ -45,6 +45,26 @@ function typicalAltitude(country: string): number | null {
  * die erste Tüte fehlt beim Bearbeiten: Röstdatum und Menge gehören zur
  * Tüte, nicht zur Bohne, und werden unten im Profil eigens verwaltet.
  */
+/**
+ * Die Vorgabe für ein Röstdatum: vor einer Woche, nicht heute.
+ *
+ * „Heute" war die bequemste Vorgabe und die teuerste. Wer sie stehen
+ * lässt — und das passiert, weil das Feld unten im Formular steht —, hat
+ * eine Bohne im Bestand, die laut App am Kauftag geröstet wurde. Dann
+ * ist die Frische falsch, das Ruhefenster ist falsch, und die App hält
+ * einen ganz normalen Durchgang für einen an Tag 0.
+ *
+ * Eine Woche ist der ehrlichere Standardfall: Zwischen Röstung und
+ * Kauftheke liegen bei Spezialitätenkaffee typischerweise fünf bis zehn
+ * Tage (kb/05 §3). Wer es genau weiß, trägt es ein; wer es vergisst,
+ * liegt damit näher an der Wahrheit als mit „heute".
+ */
+function standardRoestdatum(): string {
+  const d = new Date()
+  d.setDate(d.getDate() - 7)
+  return d.toISOString().slice(0, 10)
+}
+
 export function BeanSheet({
   bean,
   onClose,
@@ -58,7 +78,30 @@ export function BeanSheet({
   const addBean = useStore((s) => s.addBean)
   const addBag = useStore((s) => s.addBag)
   const updateBean = useStore((s) => s.updateBean)
+  const updateBag = useStore((s) => s.updateBag)
+  const bags = useStore((s) => s.bags)
   const bearbeiten = !!bean
+
+  /**
+   * Die Tüte, auf die sich das Röstdatum beim Bearbeiten bezieht.
+   *
+   * Das Datum gehört zur Tüte, nicht zur Bohne — deshalb stand es beim
+   * Bearbeiten bisher gar nicht da. Das war formal richtig und praktisch
+   * eine Sackgasse: Wer sich beim Anlegen vertippt hat (oder die Vorgabe
+   * stehen ließ), kam an die Zahl nur noch heran, indem er die Tüte
+   * löschte und neu anlegte — mitsamt ihren Protokollen.
+   *
+   * Angeboten wird deshalb genau EINE: die neueste offene. Bei mehreren
+   * gleichzeitig ist nicht entscheidbar, welche gemeint ist; wer die
+   * anderen ändern will, findet sie im Profil. Steht keine offen, bleibt
+   * das Feld weg — sonst schriebe es in eine leere Tüte.
+   */
+  const offeneTuete = useMemo(() => {
+    if (!bean) return undefined
+    return bags
+      .filter((b) => b.beanId === bean.id && !b.depleted)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]
+  }, [bags, bean])
 
   // Rohwert abonnieren, Vorgabe DANACH setzen: `?? []` im Selektor gibt
   // bei jedem Rendern eine neue Referenz zurück, und der Store vergleicht
@@ -106,7 +149,7 @@ export function BeanSheet({
   const [altitudeTouched, setAltitudeTouched] = useState(false)
   const [notes, setNotes] = useState(bean?.flavorNotes?.join(', ') ?? '')
   const [decaf, setDecaf] = useState(!!bean?.isDecaf)
-  const [roastDate, setRoastDate] = useState(new Date().toISOString().slice(0, 10))
+  const [roastDate, setRoastDate] = useState(() => offeneTuete?.roastDate ?? standardRoestdatum())
   const [grams, setGrams] = useState(250)
 
   const save = () => {
@@ -136,6 +179,11 @@ export function BeanSheet({
 
     if (bean) {
       updateBean(bean.id, felder)
+      // Nur schreiben, wenn sich wirklich etwas geändert hat: Ein
+      // Ereignis „Tüte geändert" ohne Änderung bläht den Strom auf.
+      if (offeneTuete && roastDate && roastDate !== offeneTuete.roastDate) {
+        updateBag(offeneTuete.id, { roastDate })
+      }
       onClose()
       return
     }
@@ -291,20 +339,26 @@ export function BeanSheet({
         </Field>
         <Toggle checked={decaf} onChange={setDecaf} label="Decaf" />
 
-        {/* Nur beim Anlegen: Röstdatum und Menge gehören zur Tüte, nicht
-            zur Bohne. Beim Bearbeiten stünde hier ein Feld, das eine
-            bestehende Tüte still überschreiben würde. */}
-        {!bearbeiten && (
+        {/* Röstdatum und Menge gehören zur Tüte, nicht zur Bohne — beim
+            Anlegen zur ersten, beim Bearbeiten zur offenen. Die Menge
+            bleibt dem Anlegen vorbehalten: Sie zählt sich beim Brühen
+            herunter, und ein Formularfeld, das sie zurücksetzt, wäre
+            keine Korrektur, sondern ein Datenverlust. */}
+        {(!bearbeiten || offeneTuete) && (
           <div className="border-t border-line pt-4">
-            <p className="mb-3 text-sm font-semibold tracking-wide text-mute uppercase">Erste Bag</p>
+            <p className="mb-3 text-sm font-semibold tracking-wide text-mute uppercase">
+              {bearbeiten ? 'Offene Bag' : 'Erste Bag'}
+            </p>
             <Field label="Roast Date" hint="Ohne dieses Datum kann ich die Frische nicht mitführen">
               <TextInput value={roastDate} onChange={setRoastDate} type="date" />
             </Field>
-            <div className="mt-4">
-              <Field label="Menge">
-                <Stepper value={grams} onChange={setGrams} step={50} min={50} max={2000} unit="g" />
-              </Field>
-            </div>
+            {!bearbeiten && (
+              <div className="mt-4">
+                <Field label="Menge">
+                  <Stepper value={grams} onChange={setGrams} step={50} min={50} max={2000} unit="g" />
+                </Field>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -441,29 +495,53 @@ function OriginMulti({
 }
 
 export function BagSheet({
+  bag,
   onClose,
   onSave,
 }: {
+  /** Gesetzt: bearbeiten. Fehlt: anlegen. */
+  bag?: Bag
   onClose: () => void
   onSave: (b: { roastDate?: string; purchasedGrams?: number; remainingGrams?: number; storage?: 'ambient' | 'frozen'; frozenAt?: string }) => void
 }) {
-  const [roastDate, setRoastDate] = useState(new Date().toISOString().slice(0, 10))
-  const [grams, setGrams] = useState(250)
-  const [frozen, setFrozen] = useState(false)
+  const bearbeiten = !!bag
+  const [roastDate, setRoastDate] = useState(bag?.roastDate ?? standardRoestdatum())
+  const [grams, setGrams] = useState(bag?.remainingGrams ?? bag?.purchasedGrams ?? 250)
+  const [frozen, setFrozen] = useState(bag?.storage === 'frozen')
 
   return (
     <Sheet
-      title="Neuer Bag"
+      title={bearbeiten ? 'Bag bearbeiten' : 'Neuer Bag'}
       onClose={onClose}
       footer={
         <Button
           className="w-full"
           size="lg"
           onClick={() =>
-            onSave({ roastDate, purchasedGrams: grams, remainingGrams: grams, storage: frozen ? 'frozen' : 'ambient', frozenAt: frozen ? new Date().toISOString() : undefined })
+            onSave(
+              bearbeiten
+                ? {
+                    roastDate,
+                    // Beim Bearbeiten wandert nur der Rest: Was
+                    // ursprünglich in der Tüte war, ist Vergangenheit und
+                    // hat sich nicht geändert.
+                    remainingGrams: grams,
+                    storage: frozen ? 'frozen' : 'ambient',
+                    ...(frozen && bag?.storage !== 'frozen'
+                      ? { frozenAt: new Date().toISOString() }
+                      : {}),
+                  }
+                : {
+                    roastDate,
+                    purchasedGrams: grams,
+                    remainingGrams: grams,
+                    storage: frozen ? 'frozen' : 'ambient',
+                    frozenAt: frozen ? new Date().toISOString() : undefined,
+                  },
+            )
           }
         >
-          Hinzufügen
+          {bearbeiten ? 'Änderungen speichern' : 'Hinzufügen'}
         </Button>
       }
     >
@@ -471,8 +549,8 @@ export function BagSheet({
         <Field label="Roast Date">
           <TextInput value={roastDate} onChange={setRoastDate} type="date" />
         </Field>
-        <Field label="Menge">
-          <Stepper value={grams} onChange={setGrams} step={50} min={50} max={2000} unit="g" />
+        <Field label={bearbeiten ? 'Rest' : 'Menge'}>
+          <Stepper value={grams} onChange={setGrams} step={50} min={0} max={2000} unit="g" />
         </Field>
         <Toggle
           checked={frozen}

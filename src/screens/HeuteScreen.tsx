@@ -22,8 +22,9 @@
  */
 import { useState } from 'react'
 import type { Route } from '@/router'
-import type { BrewMethod } from '@domain'
+import type { Bean, BrewMethod } from '@domain'
 import { useStore } from '@/store'
+import type { BeanTrash } from '@/domain'
 import { daysOffRoast } from '@/domain'
 import { heuteVorschlag } from '@/engine/heute'
 import { bestBeansFor } from '@/engine/suitability'
@@ -32,14 +33,32 @@ import { METHOD_LABEL, METHOD_SHORT, METHODS } from '@/labels'
 import { MethodIcon } from '@/components/methodicons'
 import { Screen, Section, Card, Button, Empty, FreshnessRing, GearButton, LogButton } from '@/components/ui'
 import { BackupBanner, SetupNudge } from '@/components/system'
+import SwipeReveal from '@/components/SwipeReveal'
+import { BeanSheet } from './BeanForms'
 
 interface Props {
   route: Route
   navigate: (r: Route, replace?: boolean) => void
+  /** Damit eine hier gelöschte Bohne dieselbe Rücknahme bekommt wie im Regal. */
+  onDeleted?: (t: BeanTrash) => void
 }
 
-export default function HeuteScreen({ navigate }: Props) {
+export default function HeuteScreen({ navigate, onDeleted }: Props) {
   const s = useStore()
+  /**
+   * Bearbeiten und Löschen gehören auch hierher.
+   *
+   * Die Liste zeigt dieselben Bohnen wie das Regal, mit denselben
+   * Angaben — nur war sie bisher schreibgeschützt. Wer hier ein falsches
+   * Röstdatum sieht, musste erst ins Regal wechseln, um es zu ändern.
+   * Dieselbe Geste, dieselben zwei Aktionen, dieselbe Rücknahme.
+   */
+  const [editBean, setEditBean] = useState<Bean | undefined>()
+  const loeschen = (bean: Bean) => {
+    const papierkorb = s.deleteBean(bean.id)
+    if (bean.id === bohneGewaehlt) setBohne(undefined)
+    if (papierkorb && onDeleted) onDeleted(papierkorb)
+  }
   const heute = heuteVorschlag({
     beans: s.beans,
     bags: s.bags,
@@ -163,8 +182,16 @@ export default function HeuteScreen({ navigate }: Props) {
             const aktiv = r.bean.id === gewaehlt.bean.id
             const tage = daysOffRoast(r.bag, new Date())
             return (
-              <Card
+              <SwipeReveal
                 key={r.bean.id}
+                actions={[
+                  { label: 'Edit', onClick: () => setEditBean(r.bean) },
+                  { label: 'Löschen', tone: 'bad', onClick: () => loeschen(r.bean) },
+                ]}
+                onSwipeAway={() => loeschen(r.bean)}
+                swipeAwayLabel="Loslassen zum Löschen"
+              >
+              <Card
                 onClick={() => setBohne(r.bean.id)}
                 className={aktiv ? 'border-crema bg-crema/5' : ''}
               >
@@ -188,6 +215,7 @@ export default function HeuteScreen({ navigate }: Props) {
                   {aktiv && <span className="shrink-0 text-lg text-crema-ink">✓</span>}
                 </div>
               </Card>
+              </SwipeReveal>
             )
           })}
         </div>
@@ -221,6 +249,8 @@ export default function HeuteScreen({ navigate }: Props) {
           {METHOD_LABEL[method]} brühen
         </Button>
       </div>
+
+      {editBean && <BeanSheet bean={editBean} onClose={() => setEditBean(undefined)} />}
     </Screen>
   )
 }
@@ -243,7 +273,7 @@ function Kopf({
   return (
     <header className="pt-safe sticky top-0 z-20 border-b border-line bg-paper/90 backdrop-blur-xl">
       <div className="flex h-[58px] items-center gap-3 px-4">
-        <h1 className="titel flex-1 truncate text-3xl leading-tight">Heute</h1>
+        <h1 className="titel flex-1 truncate text-3xl leading-tight">Brühen</h1>
         <LogButton onClick={() => navigate({ tab: 'log' })} />
         <GearButton onClick={() => navigate({ tab: 'setup' })} />
       </div>

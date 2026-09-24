@@ -419,9 +419,15 @@ export interface Fact {
 export function FactTable({ facts }: { facts: Fact[] }) {
   if (!facts.length) return null
   return (
-    <dl className="divide-y divide-line">
+    /*
+      Ohne Trennlinien. Zwei Angaben untereinander brauchen keine Regel
+      dazwischen — der Zeilenumbruch trennt sie bereits, und die Linie
+      macht aus einer Aufzählung ein Formular. Abstand gruppiert, Linien
+      trennen; man braucht eines von beidem, nicht beides.
+    */
+    <dl>
       {facts.map((f) => (
-        <div key={f.label} className="flex items-baseline gap-4 py-2 first:pt-0 last:pb-0">
+        <div key={f.label} className="flex items-baseline gap-4 py-1.5 first:pt-0 last:pb-0">
           <dt className="w-28 shrink-0 text-sm text-mute">{f.label}</dt>
           <dd className="min-w-0 flex-1 text-base leading-snug">{f.value}</dd>
         </div>

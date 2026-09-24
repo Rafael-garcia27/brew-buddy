@@ -34,10 +34,12 @@ import SetupScreen from './screens/SetupScreen'
 const REITER: { id: Tab; label: string; icon: ReactElement }[] = [
   {
     id: 'heute',
-    label: 'Heute',
+    // Der Reiter heißt nach dem, was man dort tut, nicht nach dem
+    // Zeitpunkt. „Heute" beschrieb die Sortierung; gemeint war immer der
+    // Weg zur Tasse. Die Kennung bleibt `heute` — sie steht in
+    // gespeicherten Routen und in `lastMethod`-Verweisen.
+    label: 'Brühen',
     icon: (
-      // Die Tasse steht jetzt hier: Von „Heute" aus wird gebrüht, und
-      // „Brew" ist seit 2.0 kein Reiter mehr, sondern ein Ziel.
       <path
         d="M6 9h11a3 3 0 010 6h-1M6 9v5a5 5 0 005 5h0a5 5 0 005-5V9M6 9H5m1-4v1m4-1v1m4-1v1M4 21h14"
         strokeWidth="1.8"
@@ -163,7 +165,9 @@ export default function App() {
           was="Dieser Bildschirm"
           neustartBei={`${route.tab}/${route.id ?? ''}/${route.detail ?? ''}`}
         >
-        {route.tab === 'heute' && <HeuteScreen route={route} navigate={navigate} />}
+        {route.tab === 'heute' && (
+          <HeuteScreen route={route} navigate={navigate} onDeleted={merken} />
+        )}
 
         {route.tab === 'coffee' && coffee}
 

@@ -300,7 +300,24 @@ export default function BeansScreen({ route, navigate, onDeleted }: Props) {
               </div>
             }
           >
-            <div className="space-y-2">
+            {/*
+              Ein Regal, nicht neun Kisten.
+
+              Vorher war jede Bohne eine eigene Karte mit eigenem Rahmen.
+              Das entsteht, wenn man jeden Block für sich löst: `Card` ist
+              die Standardantwort der App auf „das gehört zusammen" — und
+              in einer Liste ist das die falsche Antwort. Ein Rahmen sagt
+              „das hier ist abgetrennt von seinen Nachbarn". Neun gleiche
+              Rahmen sagen das neunmal und damit gar nichts; sie werden
+              Textur, und das Auge zählt Kapseln, statt Namen zu lesen.
+
+              Jetzt trägt die Liste eine Fläche und einen Rahmen. Getrennt
+              wird durch Rhythmus und eine Haarlinie, die dort beginnt, wo
+              der Text beginnt — sie trennt Inhalt, nicht Behälter. Der
+              Rahmen bleibt der gewählten Bohne vorbehalten, und weil er
+              dann das Einzige ist, bedeutet er wieder etwas.
+            */}
+            <div className="overflow-hidden rounded-card border border-line bg-card">
               {ranked.map(({ bean, fresh, count, best, bag }) => {
                 const aktiv = bean.id === selected
                 /**
@@ -317,11 +334,19 @@ export default function BeansScreen({ route, navigate, onDeleted }: Props) {
                 return (
                   <div
                     key={bean.id}
-                    className="transition-[opacity,transform] duration-200"
-                    style={{
-                      opacity: zurueckgesetzt ? 0.38 : 1,
-                      transform: zurueckgesetzt ? 'scale(0.97)' : 'scale(1)',
-                    }}
+                    /*
+                      Die Haarlinie sitzt als Pseudoelement auf der Zeile,
+                      eingerückt bis zum Textanfang: Eine durchgezogene
+                      Linie schnitte den Frischering mittendurch und machte
+                      aus der Trennung wieder eine Kiste. Die erste Zeile
+                      bekommt keine — dort trennt schon der Rahmen.
+
+                      Kein `scale` mehr: In einer gemeinsamen Fläche sähe
+                      eine schrumpfende Zeile aus wie ein Fehler. Das
+                      Zurücktreten macht die Deckkraft allein.
+                    */
+                    className="relative transition-opacity duration-200 before:absolute before:top-0 before:right-4 before:left-[68px] before:h-px before:bg-line first:before:hidden"
+                    style={{ opacity: zurueckgesetzt ? 0.38 : 1 }}
                   >
                     {/* Wischen legt Bearbeiten frei, weiter ziehen deutet
                         Löschen an, ganz hinausschieben löscht. Die
@@ -329,6 +354,8 @@ export default function BeansScreen({ route, navigate, onDeleted }: Props) {
                         deshalb sitzt die Geste hier und nicht im Profil,
                         wo sie über eine ganze Karte gehen müsste. */}
                     <SwipeReveal
+                      /* Die Ecken rundet das Regal, nicht die Zeile. */
+                      className=""
                       actions={[
                         { label: 'Edit', onClick: () => setEditBean(bean) },
                         { label: 'Löschen', tone: 'bad', onClick: () => loeschen(bean) },
@@ -508,9 +535,13 @@ function BohnenKarte({
 
   if (!aktiv) {
     return (
-      <Card onClick={onToggle}>
+      <button
+        type="button"
+        onClick={onToggle}
+        className="w-full bg-card px-4 py-3 text-left active:bg-raised"
+      >
         {kopf}
-      </Card>
+      </button>
     )
   }
 
@@ -547,9 +578,13 @@ function BohnenKarte({
   ].filter((f) => f.value)
 
   return (
-    // Der Schatten hebt die Karte über die verblassten Nachbarn. Ohne ihn
-    // liegt alles in derselben Ebene und der Unterschied ist nur Helligkeit.
-    <Card tone="accent" className="shadow-[0_10px_30px_-14px_rgba(0,0,0,0.4)]">
+    /*
+      Die gewählte Bohne ist die einzige Fläche im Regal, die sich vom
+      Rest abhebt — deshalb reicht ein Flächenwechsel, und es braucht
+      keinen zweiten Rahmen in einem Rahmen. `raised` gibt es in allen
+      drei Themen und hebt sich in jedem sichtbar von `card` ab.
+    */
+    <div className="bg-raised px-4 py-4">
       {/* Die Kopfzeile klappt wieder zu — dieselbe Fläche, die sie
           aufgeklappt hat. */}
       <button type="button" onClick={onToggle} className="w-full text-left">
@@ -557,7 +592,7 @@ function BohnenKarte({
       </button>
 
       {vorschau.length > 0 && (
-        <div className="mt-3 border-t border-line pt-3">
+        <div className="mt-3">
           <FactTable facts={vorschau} />
         </div>
       )}
@@ -576,7 +611,7 @@ function BohnenKarte({
           Log
         </Button>
       </div>
-    </Card>
+    </div>
   )
 }
 

@@ -144,3 +144,22 @@ describe('Sicherung und Wiederherstellung', () => {
     expect(backupFilename(jetzt)).toBe('cafe-backup-2026-08-26.json')
   })
 })
+
+describe('Röstdatum-Vorgabe', () => {
+  /**
+   * Kein Test des Formulars, sondern der Annahme dahinter: Zwischen
+   * Röstung und Kauftheke liegen bei Spezialitätenkaffee fünf bis zehn
+   * Tage (kb/05 §3). Eine Woche liegt in diesem Fenster, „heute" nicht.
+   *
+   * Der Test hängt an der Zahl, damit ein späteres Zurückdrehen auf
+   * „heute" auffällt — genau das hat in echten Logdaten Durchgänge an
+   * Tag 0 erzeugt, die keine waren.
+   */
+  it('liegt im typischen Fenster zwischen Röstung und Kauf', () => {
+    const d = new Date()
+    d.setDate(d.getDate() - 7)
+    const tage = Math.round((Date.now() - d.getTime()) / 86_400_000)
+    expect(tage).toBeGreaterThanOrEqual(5)
+    expect(tage).toBeLessThanOrEqual(10)
+  })
+})

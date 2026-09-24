@@ -10,6 +10,29 @@ der Git-Historie.
 
 ## 2.0 — Unveröffentlicht
 
+### Regal, Röstdatum, Brühen
+
+- **Das Regal ist ein Regal, keine Kistensammlung.** Neun Bohnen waren
+  neun Karten mit neun Rahmen. Ein Rahmen sagt „das hier ist abgetrennt
+  von seinen Nachbarn" — neunmal gesagt, sagt er nichts mehr und wird
+  Textur. Jetzt trägt die Liste eine Fläche und einen Rahmen, getrennt
+  wird durch eine Haarlinie, die dort beginnt, wo der Text beginnt. Die
+  gewählte Bohne hebt sich als einzige ab.
+- **Das Röstdatum lässt sich endlich korrigieren.** „Edit" im Regal
+  zeigt jetzt auch das Datum der offenen Tüte, und im Profil öffnet eine
+  Wischgeste die Tüte zum Bearbeiten. Vorher war ein Tippfehler nur
+  durch Löschen und Neuanlegen zu beheben — mitsamt den Protokollen, die
+  an der Tüte hängen.
+- **Die Vorgabe für das Röstdatum ist „vor einer Woche".** „Heute" war
+  bequem und teuer: Wer sie stehen ließ, hatte eine Bohne im Bestand,
+  die laut App am Kauftag geröstet wurde — und damit falsche Frische,
+  falsches Ruhefenster und Empfehlungen, die mit einer Bohne rechnen,
+  die es nicht gibt.
+- **Bohnen lassen sich auch unter „Brühen" bearbeiten und löschen.**
+  Dieselbe Wischgeste wie im Regal, dieselbe Rücknahme.
+- **„Heute" heißt jetzt „Brühen".** Der Reiter heißt nach dem, was man
+  dort tut, nicht nach dem Zeitpunkt.
+
 ### Neu: eine dritte Darstellung
 
 **„Organic" steht in den Optionen neben Hell und Dunkel.** Cremefarbener
