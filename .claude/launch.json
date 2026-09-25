@@ -2,7 +2,7 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "cafe",
+      "name": "brew-buddy",
       "runtimeExecutable": "npm",
       "runtimeArgs": [
         "run",
@@ -11,7 +11,7 @@
       "port": 5173
     },
     {
-      "name": "cafe-preview",
+      "name": "brew-buddy-preview",
       "runtimeExecutable": "npm",
       "runtimeArgs": [
         "run",

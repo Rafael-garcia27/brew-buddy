@@ -1,4 +1,4 @@
-export const APP_NAME = 'Café'
+export const APP_NAME = 'Brew Buddy'
 
 /**
  * Welcher Stand läuft.

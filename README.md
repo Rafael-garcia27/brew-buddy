@@ -1,12 +1,12 @@
-# Café
+# Brew Buddy
 
 **Persönliches Dial-in-Werkzeug für Espresso, V60, AeroPress,
 French Press und Filterkaffeemaschine.**
 Läuft als PWA auf dem iPhone. Vollständig offline, ohne Konto, ohne Cloud.
 
-### → **[cafe.garciahub.de](https://cafe.garciahub.de/)**
+### → **[brewbuddy.garciahub.de](https://brewbuddy.garciahub.de/)**
 
-> Nicht noch eine Rezeptdatenbank. Café lernt, wie **du** brühst und was
+> Nicht noch eine Rezeptdatenbank. Brew Buddy lernt, wie **du** brühst und was
 > **dir** schmeckt — und sagt ehrlich, wenn das Problem gar nicht in den
 > Parametern liegt.
 
@@ -21,35 +21,35 @@ ein, kann man auch der Geschmacksaussage glauben.
 
 **2 · Sie hält den Mund, wenn Raten schädlich wäre.**
 Bei Kanalbildung ist die gemessene Zeit physikalisch bedeutungslos — ein Teil
-des Wassers ist gar nicht durch den Kaffee gelaufen. Café sperrt dann **jede**
+des Wassers ist gar nicht durch den Kaffee gelaufen. Brew Buddy sperrt dann **jede**
 Mahlgradempfehlung und verweist auf die Verteilung. Genauso bei „sauer *und*
 bitter": das ist ungleichmäßige Extraktion, kein Mahlgradproblem.
 
 **3 · Sie rechnet die Frische mit.**
 Kaffee gast wochenlang CO₂ aus, das Bett bietet weniger Widerstand, der Shot
-läuft schneller — ohne dass sich am Rezept etwas geändert hätte. Café kennt
+läuft schneller — ohne dass sich am Rezept etwas geändert hätte. Brew Buddy kennt
 das Röstdatum deines letzten guten Shots und korrigiert automatisch:
 *„Die Bohne ist 14 Tage älter — einen Klick feiner."*
 
 **4 · Sie kennt die Grenze deiner Bohne.**
 Ein heller kenianischer Washed ergibt selten einen ausgewogenen Espresso. Das
-ist kein Anwenderfehler, sondern eine Materialeigenschaft — und Café sagt es
+ist kein Anwenderfehler, sondern eine Materialeigenschaft — und Brew Buddy sagt es
 **vorher**, statt dich in eine aussichtslose Schleife laufen zu lassen.
 
 **5 · Sie hört auf, wenn Weiterdrehen nichts bringt.**
 Dreimal feiner ohne Besserung, dafür jetzt auch bitter? Das ist das Muster
-einer unterentwickelten Röstung. Café bricht ab und benennt es.
+einer unterentwickelten Röstung. Brew Buddy bricht ab und benennt es.
 
 ---
 
 ## Installation auf dem iPhone
 
-1. **[cafe.garciahub.de](https://cafe.garciahub.de/)** in **Safari** öffnen
+1. **[brewbuddy.garciahub.de](https://brewbuddy.garciahub.de/)** in **Safari** öffnen
 2. Unten auf **Teilen** tippen (Quadrat mit Pfeil nach oben)
 3. Nach unten wischen zu **Zum Home-Bildschirm**
 4. Oben rechts auf **Hinzufügen**
 
-Danach startet Café im Vollbild und funktioniert ohne Internet.
+Danach startet Brew Buddy im Vollbild und funktioniert ohne Internet.
 
 > **Wichtig:** iOS löscht die Daten einer Web-App nach längerer Nichtnutzung.
 > Die App erinnert an die Sicherung — bitte ernst nehmen, die Historie ist der

@@ -56,7 +56,7 @@ export function rettungsdatei(roh: unknown, jetzt: Date): Rettungsdatei | null {
 
   try {
     const json = JSON.stringify(
-      { app: 'cafe', schemaVersion: version, exportedAt: jetzt.toISOString(), state: roh },
+      { app: 'brew-buddy', schemaVersion: version, exportedAt: jetzt.toISOString(), state: roh },
       null,
       2,
     )
@@ -79,7 +79,7 @@ export function rettungsdatei(roh: unknown, jetzt: Date): Rettungsdatei | null {
  */
 function dateiname(jetzt: Date): string {
   const p = (n: number) => String(n).padStart(2, '0')
-  return `cafe-rettung-${jetzt.getFullYear()}-${p(jetzt.getMonth() + 1)}-${p(jetzt.getDate())}.json`
+  return `brew-buddy-rettung-${jetzt.getFullYear()}-${p(jetzt.getMonth() + 1)}-${p(jetzt.getDate())}.json`
 }
 
 /** Eine Zeile, die sagt, was passiert ist. Geworfen werden kann alles. */

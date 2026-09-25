@@ -66,8 +66,8 @@ export function migrate(state: AppState): AppState {
 // ── Sicherungsformat ──────────────────────────────────────────────────
 
 export interface BackupFile {
-  /** Seit der Umbenennung 'cafe'. Alte Sicherungen tragen 'dialed'. */
-  app: 'cafe' | 'dialed'
+  /** Seit der Umbenennung 'brew-buddy'. Ältere Sicherungen tragen 'cafe' oder 'dialed'. */
+  app: 'brew-buddy' | 'cafe' | 'dialed'
   schemaVersion: number
   exportedAt: string
   state: AppState
@@ -75,7 +75,7 @@ export interface BackupFile {
 
 export function buildBackup(state: AppState, now: Date): BackupFile {
   return {
-    app: 'cafe',
+    app: 'brew-buddy',
     schemaVersion: SCHEMA_VERSION,
     exportedAt: now.toISOString(),
     state,
@@ -84,16 +84,16 @@ export function buildBackup(state: AppState, now: Date): BackupFile {
 
 export function backupFilename(now: Date): string {
   const p = (n: number) => String(n).padStart(2, '0')
-  return `cafe-backup-${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())}.json`
+  return `brew-buddy-backup-${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())}.json`
 }
 
 export function parseBackup(text: string): { state: AppState } | { error: string } {
   try {
     const parsed = JSON.parse(text) as BackupFile
-    // Beide Kennungen akzeptieren: Sicherungen von vor der Umbenennung
-    // müssen sich weiterhin einspielen lassen.
-    if ((parsed.app !== 'cafe' && parsed.app !== 'dialed') || !parsed.state)
-      return { error: 'Das ist keine Café-Sicherung.' }
+    // Alle drei Kennungen akzeptieren: Sicherungen von vor den Umbenennungen
+    // (Dialed → Café → Brew Buddy) müssen sich weiterhin einspielen lassen.
+    if (!['brew-buddy', 'cafe', 'dialed'].includes(parsed.app) || !parsed.state)
+      return { error: 'Das ist keine Brew-Buddy-Sicherung.' }
     return { state: migrate(parsed.state) }
   } catch {
     return { error: 'Die Datei ließ sich nicht lesen.' }

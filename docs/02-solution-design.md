@@ -21,6 +21,13 @@ Umbenennen jederzeit an einer Stelle möglich (`src/config.ts`).
 > Der Name der IndexedDB-Datenbank bleibt ebenfalls `dialed`. Er ist ein
 > interner Schlüssel: Eine Umbenennung würde alle gespeicherten Daten
 > verwaisen lassen.
+>
+> **Nachtrag 24.09.2026:** Umbenannt in **Brew Buddy**, erreichbar unter
+> `brewbuddy.garciahub.de`. Der Datenbankname `dialed` bleibt. Weil die
+> Daten im Browser an die Domain gebunden sind, startet die App unter der
+> neuen Adresse leer: Umzug per Sicherung aus der alten Adresse.
+> Sicherungsdateien tragen jetzt die Kennung `brew-buddy`, ältere mit `cafe`
+> oder `dialed` werden weiter angenommen.
 
 ---
 

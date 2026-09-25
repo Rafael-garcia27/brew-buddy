@@ -1,6 +1,6 @@
 # Changelog
 
-Alle nennenswerten Änderungen an Café. Neueste zuerst.
+Alle nennenswerten Änderungen an Brew Buddy (bis September 2026: Café). Neueste zuerst.
 
 Das Format ist bewusst schlicht: Was hat sich für jemanden geändert, der
 die App benutzt — nicht, welche Dateien angefasst wurden. Die stehen in
@@ -9,6 +9,17 @@ der Git-Historie.
 ---
 
 ## 2.0 — Unveröffentlicht
+
+### Neuer Name: Brew Buddy
+
+- **Die App heißt jetzt Brew Buddy.** Neu ist der Name unter dem Icon, in
+  der Titelzeile und in den Sicherungsdateien (`brew-buddy-backup-….json`).
+  Alle Daten bleiben erhalten. Sicherungen aus der Café- und der
+  Dialed-Zeit lassen sich weiterhin einspielen.
+- **Neue Adresse: brewbuddy.garciahub.de.** Die Daten liegen im Browser
+  und gehören zur alten Adresse. Umzug: in der alten App eine Sicherung
+  machen, die neue Adresse in Safari öffnen, zum Home-Bildschirm
+  hinzufügen, Sicherung einspielen, altes Icon löschen. Die Daten gehen dabei nicht verloren.
 
 ### Regal, Röstdatum, Brühen
 

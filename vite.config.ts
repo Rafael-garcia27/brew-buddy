@@ -26,7 +26,7 @@ function commit(): string {
   }
 }
 
-// Eigene Domain (cafe.garciahub.de) → die App liegt im Wurzelverzeichnis.
+// Eigene Domain (brewbuddy.garciahub.de) → die App liegt im Wurzelverzeichnis.
 // DEPLOY_BASE bleibt als Notausgang, falls wieder unter /<repo>/ ausgeliefert
 // werden muss.
 const BASE = process.env.DEPLOY_BASE ?? '/'
@@ -47,8 +47,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Café — dein Dial-in',
-        short_name: 'Café',
+        name: 'Brew Buddy — dein Dial-in',
+        short_name: 'Brew Buddy',
         description: 'Persönliches Dial-in-Werkzeug für Espresso, V60, AeroPress und French Press',
         lang: 'de',
         theme_color: '#faf4ea',

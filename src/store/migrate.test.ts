@@ -134,14 +134,25 @@ describe('Sicherung und Wiederherstellung', () => {
     expect(r.state.beans).toEqual([bean])
   })
 
+  it('Sicherungen aus der Café-Zeit lassen sich einspielen', () => {
+    const alt = JSON.stringify({
+      app: 'cafe', schemaVersion: 1, exportedAt: jetzt.toISOString(),
+      state: alterZustand(),
+    })
+    const r = parseBackup(alt)
+    expect('error' in r).toBe(false)
+    if ('error' in r) return
+    expect(r.state.beans).toEqual([bean])
+  })
+
   it('fremde Dateien werden abgelehnt statt Daten zu zerstören', () => {
     expect(parseBackup('{"app":"etwas-anderes","state":{}}')).toHaveProperty('error')
     expect(parseBackup('kein json')).toHaveProperty('error')
-    expect(parseBackup('{"app":"cafe"}')).toHaveProperty('error')
+    expect(parseBackup('{"app":"brew-buddy"}')).toHaveProperty('error')
   })
 
   it('Dateiname trägt das Datum', () => {
-    expect(backupFilename(jetzt)).toBe('cafe-backup-2026-08-26.json')
+    expect(backupFilename(jetzt)).toBe('brew-buddy-backup-2026-08-26.json')
   })
 })
 

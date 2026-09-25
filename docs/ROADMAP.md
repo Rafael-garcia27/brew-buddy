@@ -1,4 +1,4 @@
-# ROADMAP — Café
+# ROADMAP — Brew Buddy
 
 Grundlage: `docs/AUDIT.md`, 19 Befunde. Zugeschnitten auf die Antworten
 vom 12.09.2026:
@@ -157,7 +157,7 @@ minimal dunkler. Vorher/nachher-Screenshot.
 
 **Abnahme.**
 ```bash
-npx lighthouse https://cafe.garciahub.de/ --quiet --output json \
+npx lighthouse https://brewbuddy.garciahub.de/ --quiet --output json \
   --output-path ./docs/lighthouse-after-p6.json \
   --chrome-flags="--headless=new"
 # Accessibility ≥ 95 (Baseline: 86)

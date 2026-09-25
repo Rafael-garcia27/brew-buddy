@@ -17,7 +17,7 @@ export { migrate, buildBackup, backupFilename, parseBackup }
 export type { BackupFile } from './migrate'
 
 // ACHTUNG: Der Datenbankname bleibt 'dialed', obwohl die App inzwischen
-// Café heißt. Eine Umbenennung würde eine NEUE, leere Datenbank anlegen und
+// Brew Buddy heißt. Eine Umbenennung würde eine NEUE, leere Datenbank anlegen und
 // alle bisherigen Bohnen, Tüten und Protokolle verwaisen lassen. Der Name ist
 // ein interner Schlüssel, kein Anzeigetext — er darf nie geändert werden.
 const DB_NAME = 'dialed'
@@ -263,7 +263,7 @@ export async function liefere(json: string, name: string): Promise<Auslieferung>
   const file = new File([json], name, { type: 'application/json' })
   if (navigator.canShare?.({ files: [file] })) {
     try {
-      await navigator.share({ files: [file], title: 'Café — Sicherung' })
+      await navigator.share({ files: [file], title: 'Brew Buddy — Sicherung' })
       return 'shared'
     } catch {
       /* Nutzer hat abgebrochen — auf die nächste Ebene fallen */

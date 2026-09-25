@@ -1,4 +1,4 @@
-# ARCHITECTURE — Café
+# ARCHITECTURE — Brew Buddy
 
 Stand: Commit `2f153e0`, 11.09.2026. Jede Aussage verweist auf eine Datei,
 die für dieses Dokument tatsächlich gelesen wurde. Wo etwas nur vermutet
@@ -91,7 +91,8 @@ zweiten Weg, auf dem Daten in die Datenbank kommen.
 
 Der Kommentar darüber (`persist.ts:24–27`) ist eine harte Warnung: Der
 Datenbankname darf nie geändert werden, sonst verwaisen alle Daten. Die
-App heißt seit einer Umbenennung Café, die Datenbank weiter `dialed`.
+App heißt nach zwei Umbenennungen (Dialed → Café → Brew Buddy) inzwischen
+Brew Buddy, die Datenbank weiter `dialed`.
 
 Schreiben ist entprellt (`persist.ts:69–74`, 300 ms) mit `flush()` auf
 `pagehide` und `visibilitychange` (`persist.ts:90–97`).

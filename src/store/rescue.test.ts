@@ -30,9 +30,9 @@ describe('Rettungsdatei', () => {
     expect(JSON.parse(d.json).schemaVersion).toBe(1)
   })
 
-  it('lässt sich von der Import-Prüfung als Café-Sicherung erkennen', () => {
+  it('lässt sich von der Import-Prüfung als Brew-Buddy-Sicherung erkennen', () => {
     const d = rettungsdatei({ schemaVersion: 4, beans: [] }, jetzt)!
-    expect(JSON.parse(d.json).app).toBe('cafe')
+    expect(JSON.parse(d.json).app).toBe('brew-buddy')
   })
 
   it('rettet auch einen Blob, der gar nicht nach Zustand aussieht', () => {

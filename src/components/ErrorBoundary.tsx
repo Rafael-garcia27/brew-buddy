@@ -97,7 +97,7 @@ function Fehlerbildschirm({ error, anzahl }: { error: unknown; anzahl: number })
   return (
     <div className="flex min-h-[100dvh] flex-col justify-center px-6 py-10">
       <h1 className="titel text-3xl leading-tight">
-        Café ist abgestürzt.
+        Brew Buddy ist abgestürzt.
       </h1>
 
       <p className="mt-3 text-xl leading-relaxed text-mute">
