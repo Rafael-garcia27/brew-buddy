@@ -118,6 +118,9 @@
   --c-ok: #556f40;         /* Kaffeeblatt */
   --c-warn: #905d17;       /* Honig, jetzt wirklich dunkel genug */
   --c-bad: #a6402f;        /* Kaffeekirsche */
+  /* Bohnen der Bildmarke. Nicht der Akzent: In Hell trägt das Design-
+     System die Marke in Tinte, die Crema wäre auf Beige zu blass. */
+  --c-mark: #4e3629;
 
   /* Röstskala — die sieben Agtron-Bänder aus kb/05 §2.1, von hell nach
      dunkel. Keine erfundene Farbrampe: Jeder Ton entspricht einem Band,
@@ -183,6 +186,7 @@ html.dark {
   --c-ok: #8fb36b;
   --c-warn: #d9a566;
   --c-bad: #e0705c;
+  --c-mark: #d9a566;       /* Crema, wie im Design-System */
 
   /* Dieselben Bänder, angehoben: Auf #261d18 wäre #3a2011 kein Ton mehr,
      sondern ein Loch. Die Reihenfolge hell → dunkel bleibt erhalten,
@@ -242,6 +246,7 @@ html.organic {
   --c-bad: #a6402f;
 
   --c-crema-ink: #8c491a;  /* Akzent als Text, dunkler für AA */
+  --c-mark: #8c491a;       /* Bildmarke: Terracotta-Text, wie im Design-System */
   /* Hier trägt die hervorgehobene Karte den Akzent als Fläche — der
      Wert ist die Karte mit zehn Prozent Terracotta darüber, ausgerechnet
      statt durchsichtig gelegt: Eine halbtransparente Fläche sähe je
@@ -369,32 +374,32 @@ textarea {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
-/* Untere Sicherheitszone für die Navigationsleiste.
-
-   Die volle Zone sind auf dem iPhone 12 im Standalone-Modus 34 px — im
-   Browser mit Werkzeugleiste dagegen 0. Beim Start vom Homebildschirm
-   wuchs die Leiste dadurch schlagartig um ein Drittel, und unter den
-   Beschriftungen stand mehr leere Fläche als Inhalt darüber.
-
-   Die 6 px Abzug sind kein Trick an Apples Vorgabe vorbei: Der Home
-   Indicator ist rund 5 px hoch und sitzt 8 px über der Kante. Was bleibt,
-   sind 28 px Abstand — reichlich, und die Leiste baut dafür 74 px statt
-   88. `max(…, 0px)` sorgt dafür, dass Geräte ohne Indicator nichts
-   Negatives bekommen. */
-.pb-nav {
-  padding-bottom: max(calc(env(safe-area-inset-bottom) - 6px), 0px);
-}
-
 /**
- * Wie hoch die Reiterleiste baut — Inhalt plus gekürzte Sicherheitszone.
+ * Wie hoch die Reiterleiste baut — und warum ihr Inhalt mittig sitzt.
+ *
+ * Bisher: 46 px Inhalt oben, darunter die Sicherheitszone um 6 px
+ * gekürzt, auf dem iPhone 12 also 28 px Leerraum. Zusammen 74 px, und
+ * Symbol und Beschriftung klebten im oberen Drittel. Auf dem Gerät sah
+ * das aus wie eine Leiste, die zu groß geraten ist und deren Knöpfe
+ * verrutscht sind.
+ *
+ * Jetzt: eine feste Höhe, und der Inhalt steht in ihrer Mitte. Von der
+ * Sicherheitszone zählen höchstens 18 px — der Home Indicator ist rund
+ * 5 px hoch und sitzt 8 px über der Kante, belegt also die unteren 13 px.
+ * Auf dem iPhone 12 baut die Leiste damit 68 px, und unter der
+ * Beschriftung bleiben 15 px bis zur Kante: frei vom Indicator, aber
+ * nicht mehr als leeres Band erkennbar. Im Browser ohne Zone sind es
+ * 50 px.
  *
  * Steht hier und nicht in der Komponente, weil etwas anderes es braucht:
- * Der schwebende Brüh-Knopf auf „Heute" liegt fest über dem Inhalt und
- * muss wissen, wo die Leiste anfängt. Ohne diese Zahl müsste er sie
- * raten — und bei jeder Änderung an der Leiste verrutschen.
+ * Der schwebende Brüh-Knopf auf „Brühen" liegt fest über dem Inhalt und
+ * muss wissen, wo die Leiste anfängt.
  */
 :root {
-  --nav-h: calc(46px + max(calc(env(safe-area-inset-bottom) - 6px), 0px));
+  --nav-h: calc(50px + min(env(safe-area-inset-bottom), 18px));
+}
+.h-nav {
+  height: var(--nav-h);
 }
 
 .h-safe-bottom {

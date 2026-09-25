@@ -220,10 +220,10 @@ export default function App() {
 
       {/* Nur die beiden Einstiege. Profil, Log und Setup sind Ziele und
           gehören nicht in eine Leiste, die immer sichtbar ist. */}
-      {/* `pb-nav` statt `pb-safe`: die gekürzte Sicherheitszone. Warum
-          gekürzt, steht bei der Klasse in index.css. */}
-      <nav className="pb-nav border-t border-line bg-paper/95 backdrop-blur-xl">
-        <div className="flex">
+      {/* Feste Höhe statt Inhalt plus Sicherheitszone — warum, steht bei
+          `--nav-h` in index.css. */}
+      <nav className="h-nav border-t border-line bg-paper/95 backdrop-blur-xl">
+        <div className="flex h-full">
           {REITER.map((t) => {
             /**
              * `brew` gehört unter „Heute": Von dort aus wird gebrüht, und
@@ -239,14 +239,18 @@ export default function App() {
                 key={t.id}
                 onClick={() => navigate({ tab: t.id })}
                 aria-current={aktiv ? 'page' : undefined}
-                className={`flex h-[46px] flex-1 flex-col items-center justify-center gap-0.5 ${
+                className={`flex h-full flex-1 flex-col items-center justify-center gap-1 ${
                   aktiv ? 'text-crema-ink' : 'text-faint'
                 }`}
               >
                 <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden>
                   {t.icon}
                 </svg>
-                <span className="text-2xs font-medium">{t.label}</span>
+                {/* `leading-none`: Die Zeilenhöhe der Beschriftung zählte bisher
+                    mit, und der Block aus Symbol und Wort war 42 px hoch.
+                    Mit 38 px bleibt ober- und unterhalb gleich viel Luft,
+                    unten frei vom Home Indicator. */}
+                <span className="text-2xs leading-none font-medium">{t.label}</span>
               </button>
             )
           })}

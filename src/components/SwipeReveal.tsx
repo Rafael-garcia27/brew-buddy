@@ -285,7 +285,10 @@ export default function SwipeReveal({
           transition: zieht ? 'none' : 'transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 220ms',
           willChange: 'transform',
         }}
-        className="relative"
+        /* Deckend, egal was darin liegt: Die Aktionen liegen darunter.
+           Ein halbdurchsichtiger Inhalt (so war die gewählte Bohne unter
+           „Brühen" markiert) ließ sonst „Edit" und „Löschen" durchscheinen. */
+        className="relative bg-card"
       >
         {/* Solange Aktionen offen stehen, schließt ein Tipp auf die Karte
             sie wieder, statt darunterliegende Knöpfe auszulösen. */}

@@ -8,6 +8,7 @@
 import { useEffect, useRef, useState, type ReactNode, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import { getTerm } from '@/kb'
+import Bildmarke from './Bildmarke'
 
 /**
  * Zahl in deutscher Schreibweise.
@@ -35,34 +36,56 @@ export function Screen({ children }: { children: ReactNode }) {
   )
 }
 
+/**
+ * Der eine Kopf der App.
+ *
+ * Vorher gab es drei: „Brühen" baute sich einen eigenen (58 px, großer
+ * Titel), „Regal" nahm diesen hier mit `large` (70 px, großer Titel),
+ * „Verlauf" denselben ohne `large` (58 px, kleiner Titel, Zurück-Pfeil).
+ * Drei Reiter nebeneinander, drei Köpfe — beim Umschalten sprang der
+ * Titel in Größe und Lage. Jetzt entscheidet eine einzige Frage, wie er
+ * aussieht: Ist das ein Bereich (einer der Reiter) oder eine Seite darin?
+ *
+ *   Bereich  kein Zurück, Titel groß
+ *   Seite    Zurück-Pfeil, Titel eine Stufe kleiner, darunter ggf. ein Untertitel
+ *
+ * Höhe, Linie und Bildmarke sind in beiden Fällen dieselben.
+ *
+ * Die Bildmarke steht in jedem Kopf. Nicht als Knopf und nicht als
+ * Logo-Leiste über dem Titel, die eine Zeile kostete, sondern als Zeichen
+ * vor dem Titel: So ist sie überall sichtbar, ohne dass der Titel dafür
+ * seinen Platz aufgibt.
+ */
 export function Header({
   title,
   subtitle,
   right,
   onBack,
-  large,
+  children,
 }: {
   title: string
   subtitle?: string
   right?: ReactNode
+  /** Gesetzt: eine Seite innerhalb eines Bereichs, mit Weg zurück. */
   onBack?: () => void
   /**
-   * Für die Hauptoberfläche. Seit die Navigationsleiste weg ist, ist der
-   * Kopf das einzige Element, das sagt, wo man ist — auf dem Startbild­
-   * schirm darf er das deutlich sagen.
+   * Was mit dem Kopf zusammen angeheftet bleibt — die Methodenreihe von
+   * „Brühen". Eine zweite angeheftete Leiste darunter müsste die Höhe
+   * des Kopfs kennen und würde bei jeder Änderung daran verrutschen.
    */
-  large?: boolean
+  children?: ReactNode
 }) {
+  const bereich = !onBack
   return (
     <header className="pt-safe sticky top-0 z-20 border-b border-line bg-paper/90 backdrop-blur-xl">
       {/* Feste Höhe: Der Kopf darf nicht springen, wenn ein Untertitel
           fehlt oder eine Schaltfläche dazukommt. */}
-      <div className={`flex items-center gap-3 px-4 ${large ? 'h-[70px]' : 'h-[58px]'}`}>
+      <div className="flex h-[58px] items-center gap-2.5 px-4">
         {onBack && (
           <button
             onClick={onBack}
             aria-label="Zurück"
-            className="-ml-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-crema-ink active:bg-raised"
+            className="-mr-2 -ml-3 flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-crema-ink active:bg-raised"
           >
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
               <path
@@ -75,16 +98,16 @@ export function Header({
             </svg>
           </button>
         )}
+        <Bildmarke size={bereich ? 32 : 28} />
         <div className="min-w-0 flex-1">
-          <h1
-            className={`titel truncate leading-tight ${large ? 'text-3xl' : 'text-2xl'}`}
-          >
+          <h1 className={`titel truncate leading-tight ${bereich ? 'text-3xl' : 'text-2xl'}`}>
             {title}
           </h1>
-          {subtitle && <p className="mt-0.5 truncate text-sm text-mute">{subtitle}</p>}
+          {subtitle && <p className="truncate text-sm leading-tight text-mute">{subtitle}</p>}
         </div>
         {right}
       </div>
+      {children}
     </header>
   )
 }
@@ -112,32 +135,6 @@ export function GearButton({ onClick }: { onClick: () => void }) {
         <path
           d="M19.4 15a1.7 1.7 0 00.3 1.9l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.9-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1A1.7 1.7 0 008.9 19a1.7 1.7 0 00-1.9.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.9 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1A1.7 1.7 0 004.6 8.9a1.7 1.7 0 00-.3-1.9l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.9.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.9-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.9V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"
           strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    </button>
-  )
-}
-
-/**
- * Logbuch-Zugang im Kopf.
- *
- * Wie das Zahnrad ein Symbol ohne Beschriftung, aber eine Stufe
- * präsenter: Das Logbuch wird häufiger geöffnet als das Setup.
- */
-export function LogButton({ onClick }: { onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label="Logbuch"
-      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-mute active:bg-raised"
-    >
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden>
-        <path
-          d="M5 4h11l3 3v13H5V4zm3 5h8M8 13h8M8 17h5"
-          strokeWidth="1.8"
           strokeLinecap="round"
           strokeLinejoin="round"
         />

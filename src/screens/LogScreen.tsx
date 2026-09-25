@@ -14,6 +14,7 @@ import { METHODS, METHOD_LABEL, METHOD_SHORT, DEFECT_LABEL, CHARACTER_LABEL, FLO
 import {
   Screen,
   Header,
+  GearButton,
   Section,
   Card,
   Empty,
@@ -140,7 +141,13 @@ export default function LogScreen({ route, navigate, back }: Props) {
 
   return (
     <Screen>
-      <Header title="Log" subtitle={gefilterteBohne?.name} onBack={back} />
+      {/* „Verlauf" wie der Reiter, der hierher führt — nicht „Log".
+          Und ohne Zurück-Pfeil: Das ist ein Bereich, keine Seite darin.
+          Der Pfeil führte in die Browser-Historie, also an einen Ort, den
+          man nicht vorhersagen konnte; die Reiterleiste ist der Weg
+          zwischen den Bereichen. Welche Bohne gefiltert ist, steht im
+          Filter darunter. */}
+      <Header title="Verlauf" right={<GearButton onClick={() => navigate({ tab: 'setup' })} />} />
 
       {brews.length === 0 ? (
         <Empty

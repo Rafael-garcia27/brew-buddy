@@ -32,13 +32,13 @@ import {
   PROCESS_FAMILIES,
   } from '@/kb'
 
-import { METHODS, ROAST_LABEL, PROCESS_LABEL, METHOD_LABEL, METHOD_SHORT } from '@/labels'
+import { METHODS, METHOD_LABEL, METHOD_SHORT } from '@/labels'
 import {
-  Screen, Header, Section, Card, Button, Empty, Chip, GearButton, LogButton, FilterRow, num,
+  Screen, Header, Section, Card, Button, Empty, Chip, GearButton, FilterRow, num,
 } from '@/components/ui'
 import { BackupBanner, SetupNudge } from '@/components/system'
-import SwipeReveal from '@/components/SwipeReveal'
-import { FactTable, BeanRing, type Fact } from '@/components/beanviz'
+import { FactTable, type Fact } from '@/components/beanviz'
+import { Liste, ListenZeile, BohnenZeile } from '@/components/Bohnenliste'
 
 interface Props {
   route: Route
@@ -171,7 +171,6 @@ export default function BeansScreen({ route, navigate, onDeleted }: Props) {
     <Screen>
       <Header
         title="Regal"
-        large
         right={
           <div className="flex items-center gap-1">
             {beans.length > 0 && (
@@ -179,14 +178,10 @@ export default function BeansScreen({ route, navigate, onDeleted }: Props) {
                 + Bohne
               </Button>
             )}
-            {/* Das Logbuch über ALLE Bohnen hat mit zwei Reitern keinen
-                eigenen Einstieg mehr. Es sitzt hier, weil „was habe ich
-                schon gebrüht?" am Regal am nächsten steht. */}
-            {beans.length > 0 && (
-              <LogButton onClick={() => navigate({ tab: 'log' })} />
-            )}
-            {/* Setup gehört nicht in den Weg: Es wird einmal eingerichtet
-                und danach selten angefasst. Ein Zahnrad reicht. */}
+            {/* Kein Logbuch-Symbol mehr: Es stammte aus der Zeit mit zwei
+                Reitern. Seit „Verlauf" unten ein eigener Reiter ist, war es
+                ein zweiter Weg an dasselbe Ziel, zwei Zentimeter daneben.
+                Setup gehört nicht in den Weg — ein Zahnrad reicht. */}
             <GearButton onClick={() => navigate({ tab: 'setup' })} />
           </div>
         }
@@ -317,69 +312,40 @@ export default function BeansScreen({ route, navigate, onDeleted }: Props) {
               Rahmen bleibt der gewählten Bohne vorbehalten, und weil er
               dann das Einzige ist, bedeutet er wieder etwas.
             */}
-            <div className="overflow-hidden rounded-card border border-line bg-card">
+            <Liste>
               {ranked.map(({ bean, fresh, count, best, bag }) => {
                 const aktiv = bean.id === selected
-                /**
-                 * Die gewählte Karte tritt vor, die übrigen zurück.
-                 *
-                 * Vorher hingen die drei Aktionen als eigene Knopfreihe
-                 * UNTER der Karte — sie gehörten sichtbar zu nichts, und
-                 * bei vier Bohnen stand die Reihe irgendwo mitten in der
-                 * Liste. Jetzt sitzen sie in der Karte, die Karte wächst,
-                 * und alles andere verblasst: Damit ist ohne ein einziges
-                 * Wort klar, worauf sich „Brühen" bezieht.
-                 */
-                const zurueckgesetzt = !!selected && !aktiv
                 return (
-                  <div
+                  /* Die gewählte Bohne tritt vor, die übrigen zurück —
+                     damit ist ohne ein Wort klar, worauf sich „Brühen"
+                     in der aufgeklappten Zeile bezieht. */
+                  <ListenZeile
                     key={bean.id}
-                    /*
-                      Die Haarlinie sitzt als Pseudoelement auf der Zeile,
-                      eingerückt bis zum Textanfang: Eine durchgezogene
-                      Linie schnitte den Frischering mittendurch und machte
-                      aus der Trennung wieder eine Kiste. Die erste Zeile
-                      bekommt keine — dort trennt schon der Rahmen.
-
-                      Kein `scale` mehr: In einer gemeinsamen Fläche sähe
-                      eine schrumpfende Zeile aus wie ein Fehler. Das
-                      Zurücktreten macht die Deckkraft allein.
-                    */
-                    className="relative transition-opacity duration-200 before:absolute before:top-0 before:right-4 before:left-[68px] before:h-px before:bg-line first:before:hidden"
-                    style={{ opacity: zurueckgesetzt ? 0.38 : 1 }}
-                  >
-                    {/* Wischen legt Bearbeiten frei, weiter ziehen deutet
-                        Löschen an, ganz hinausschieben löscht. Die
-                        Aktionsflächen sind so hoch wie die Zeile —
-                        deshalb sitzt die Geste hier und nicht im Profil,
-                        wo sie über eine ganze Karte gehen müsste. */}
-                    <SwipeReveal
-                      /* Die Ecken rundet das Regal, nicht die Zeile. */
-                      className=""
-                      actions={[
+                    zurueck={!!selected && !aktiv}
+                    wischen={{
+                      actions: [
                         { label: 'Edit', onClick: () => setEditBean(bean) },
                         { label: 'Löschen', tone: 'bad', onClick: () => loeschen(bean) },
-                      ]}
-                      onSwipeAway={() => loeschen(bean)}
-                      swipeAwayLabel="Loslassen zum Löschen"
-                    >
-                      <BohnenKarte
-                        bean={bean}
-                        fresh={fresh}
-                        bag={bag}
-                        count={count}
-                        best={best.method}
-                        aktiv={aktiv}
-                        onToggle={() => waehle(aktiv ? undefined : bean.id)}
-                        onBruehen={() => navigate({ tab: 'brew', detail: bean.id })}
-                        onProfil={() => navigate({ tab: 'profile', id: bean.id })}
-                        onLog={() => navigate({ tab: 'log', id: bean.id })}
-                      />
-                    </SwipeReveal>
-                  </div>
+                      ],
+                      onSwipeAway: () => loeschen(bean),
+                    }}
+                  >
+                    <BohnenKarte
+                      bean={bean}
+                      fresh={fresh}
+                      bag={bag}
+                      count={count}
+                      best={best.method}
+                      aktiv={aktiv}
+                      onToggle={() => waehle(aktiv ? undefined : bean.id)}
+                      onBruehen={() => navigate({ tab: 'brew', detail: bean.id })}
+                      onProfil={() => navigate({ tab: 'profile', id: bean.id })}
+                      onLog={() => navigate({ tab: 'log', id: bean.id })}
+                    />
+                  </ListenZeile>
                 )
               })}
-            </div>
+            </Liste>
           </Section>
 
           {/* Ein Filter, der nichts übrig lässt, sieht ohne diesen Satz
@@ -471,79 +437,39 @@ function BohnenKarte({
    */
   const abTag = fresh.state === 'too-fresh' ? restWindowFor(bean, best).min : null
 
-  const kopf = (
-    <div className="flex items-center gap-3">
-      {/* Drei Angaben statt einer: Ring = Frische, Füllung = Röstgrad,
-          Zahl = Tage. Die Zeile bleibt eine Zeile — eine Liste aus lauter
-          Bohnenschaltflächen ohne Namen wäre ein Ratespiel
-          (docs/05 §4.5). */}
-      <BeanRing
-        bean={bean}
-        score={fresh.score}
-        label={fresh.days !== null ? String(fresh.days) : '?'}
-        size={aktiv ? 48 : 40}
-      />
-      <div className="min-w-0 flex-1">
-        <p
-          className={`truncate leading-tight font-semibold ${
-            aktiv ? 'text-2xl' : 'text-xl'
-          }`}
-        >
-          {bean.name}
-        </p>
-        <p className="mt-0.5 truncate text-sm text-mute">
-          {bean.roaster ? `${bean.roaster} · ` : ''}
-          {ROAST_LABEL[bean.roastLevel]} · {PROCESS_LABEL[bean.process]}
-        </p>
-        {/* Geschlossen steht hier nur die Empfehlung.
-            Die Liste beantwortet eine Frage — „welche Bohne?" —, und dafür
-            reichen Name, Röster, Röstung, Aufbereitung und wofür sie
-            taugt. Frische und Zähler beantworten schon die nächste Frage
-            und stehen deshalb erst in der aufgeklappten Karte; als
-            Reserve trägt der Ring die Frische ohnehin sichtbar mit. */}
-        <p className="mt-1 truncate text-xs text-crema-ink">
-          Am besten als {METHOD_LABEL[best]}
-        </p>
-        {/* Aufgeklappt kommt die Lage dazu, und zwar die dringendere
-            Aussage zuerst: „überaltert" neben einem Zähler würde sich
-            für den Leser widersprechen. */}
-        {aktiv &&
-          (fresh.state === 'stale' ? (
-            <p className="mt-1 truncate text-xs text-bad">
-              {fresh.short} — die Bag gibt nichts mehr her
-            </p>
-          ) : bag?.remainingGrams !== undefined && bag.remainingGrams < 20 ? (
-            <p className="mt-1 truncate text-xs text-warn">
-              Nur noch {num(bag.remainingGrams, 0)} g in der Bag
-            </p>
-          ) : (
-            /* `short` statt `label`: Die Tageszahl steht einen Zentimeter
-               weiter links im Ring, und zweimal dieselbe Zahl in einer
-               Zeile liest sich wie zwei verschiedene Angaben. Bei „noch zu
-               frisch" gehört der Tag dazu, ab dem es losgeht — sonst steht
-               dort eine Absage ohne Termin. */
-            <p className="mt-1 truncate text-xs text-faint">
-              {fresh.short}
-              {fresh.state === 'too-fresh' && abTag !== null && ` · ab Tag ${abTag}`}
-              {count > 0 && ` · ${count}× gebrüht`}
-            </p>
-          ))}
-      </div>
-      <span className={aktiv ? 'text-crema-ink' : 'text-faint'}>{aktiv ? '✕' : '›'}</span>
-    </div>
+  /**
+   * Geschlossen steht unter dem Namen nur die Empfehlung — die Liste
+   * beantwortet „welche Bohne?". Aufgeklappt kommt die Lage dazu, die
+   * dringendere Aussage zuerst: „überaltert" neben einem Zähler würde
+   * sich für den Leser widersprechen.
+   */
+  const lage = !aktiv ? undefined : fresh.state === 'stale' ? (
+    <p className="mt-1 truncate text-xs text-bad">{fresh.short} — die Bag gibt nichts mehr her</p>
+  ) : bag?.remainingGrams !== undefined && bag.remainingGrams < 20 ? (
+    <p className="mt-1 truncate text-xs text-warn">
+      Nur noch {num(bag.remainingGrams, 0)} g in der Bag
+    </p>
+  ) : (
+    /* `short` statt `label`: Die Tageszahl steht schon im Ring. Bei
+       „noch zu frisch" gehört der Tag dazu, ab dem es losgeht. */
+    <p className="mt-1 truncate text-xs text-faint">
+      {fresh.short}
+      {fresh.state === 'too-fresh' && abTag !== null && ` · ab Tag ${abTag}`}
+      {count > 0 && ` · ${count}× gebrüht`}
+    </p>
   )
 
-  if (!aktiv) {
-    return (
-      <button
-        type="button"
-        onClick={onToggle}
-        className="w-full bg-card px-4 py-3 text-left active:bg-raised"
-      >
-        {kopf}
-      </button>
-    )
+  const zeile = {
+    bean,
+    score: fresh.score,
+    tage: fresh.days,
+    hinweis: `Am besten als ${METHOD_LABEL[best]}`,
+    zusatz: lage,
+    rechts: aktiv ? '✕' : '›',
+    onClick: onToggle,
   }
+
+  if (!aktiv) return <BohnenZeile {...zeile} />
 
   /**
    * Die Vorschau aus dem Profil.
@@ -578,19 +504,7 @@ function BohnenKarte({
   ].filter((f) => f.value)
 
   return (
-    /*
-      Die gewählte Bohne ist die einzige Fläche im Regal, die sich vom
-      Rest abhebt — deshalb reicht ein Flächenwechsel, und es braucht
-      keinen zweiten Rahmen in einem Rahmen. `raised` gibt es in allen
-      drei Themen und hebt sich in jedem sichtbar von `card` ab.
-    */
-    <div className="bg-raised px-4 py-4">
-      {/* Die Kopfzeile klappt wieder zu — dieselbe Fläche, die sie
-          aufgeklappt hat. */}
-      <button type="button" onClick={onToggle} className="w-full text-left">
-        {kopf}
-      </button>
-
+    <BohnenZeile {...zeile}>
       {vorschau.length > 0 && (
         <div className="mt-3">
           <FactTable facts={vorschau} />
@@ -611,7 +525,7 @@ function BohnenKarte({
           Log
         </Button>
       </div>
-    </div>
+    </BohnenZeile>
   )
 }
 

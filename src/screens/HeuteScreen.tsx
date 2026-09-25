@@ -25,15 +25,14 @@ import type { Route } from '@/router'
 import type { Bean, BrewMethod } from '@domain'
 import { useStore } from '@/store'
 import type { BeanTrash } from '@/domain'
-import { daysOffRoast } from '@/domain'
 import { heuteVorschlag } from '@/engine/heute'
 import { bestBeansFor } from '@/engine/suitability'
 import { getMethod } from '@/kb'
 import { METHOD_LABEL, METHOD_SHORT, METHODS } from '@/labels'
 import { MethodIcon } from '@/components/methodicons'
-import { Screen, Section, Card, Button, Empty, FreshnessRing, GearButton, LogButton } from '@/components/ui'
+import { Screen, Header, Section, Button, Empty, GearButton } from '@/components/ui'
 import { BackupBanner, SetupNudge } from '@/components/system'
-import SwipeReveal from '@/components/SwipeReveal'
+import { Liste, ListenZeile, BohnenZeile } from '@/components/Bohnenliste'
 import { BeanSheet } from './BeanForms'
 
 interface Props {
@@ -176,49 +175,40 @@ export default function HeuteScreen({ navigate, onDeleted }: Props) {
       <BackupBanner />
       <SetupNudge onGrinder={() => navigate({ tab: 'setup', detail: 'grinder' })} />
 
+      {/* Dieselbe Liste wie im Regal, aus demselben Baustein. Was sich
+          unterscheidet, ist nur, was sie sagt: Hier steht unter dem Namen,
+          wie die Bohne zur gewählten Methode passt, dort, wofür sie am
+          besten taugt. Und Tippen wählt hier aus, statt aufzuklappen. */}
       <Section>
-        <div className="space-y-2">
+        <Liste>
           {liste.map((r) => {
             const aktiv = r.bean.id === gewaehlt.bean.id
-            const tage = daysOffRoast(r.bag, new Date())
             return (
-              <SwipeReveal
+              <ListenZeile
                 key={r.bean.id}
-                actions={[
-                  { label: 'Edit', onClick: () => setEditBean(r.bean) },
-                  { label: 'Löschen', tone: 'bad', onClick: () => loeschen(r.bean) },
-                ]}
-                onSwipeAway={() => loeschen(r.bean)}
-                swipeAwayLabel="Loslassen zum Löschen"
+                wischen={{
+                  actions: [
+                    { label: 'Edit', onClick: () => setEditBean(r.bean) },
+                    { label: 'Löschen', tone: 'bad', onClick: () => loeschen(r.bean) },
+                  ],
+                  onSwipeAway: () => loeschen(r.bean),
+                }}
               >
-              <Card
-                onClick={() => setBohne(r.bean.id)}
-                className={aktiv ? 'border-crema bg-crema/5' : ''}
-              >
-                <div className="flex items-center gap-3">
-                  <FreshnessRing
-                    score={r.freshness.score}
-                    size={44}
-                    {...(tage !== null ? { label: String(tage) } : {})}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-baseline gap-2">
-                      <p className="truncate text-lg font-semibold tracking-tight">{r.bean.name}</p>
-                      {r.bean.id === zuletzt && (
-                        <span className="shrink-0 text-2xs text-faint">zuletzt</span>
-                      )}
-                    </div>
-                    <p className="truncate text-sm text-mute">
-                      {r.note ?? r.freshness.label}
-                    </p>
-                  </div>
-                  {aktiv && <span className="shrink-0 text-lg text-crema-ink">✓</span>}
-                </div>
-              </Card>
-              </SwipeReveal>
+                <BohnenZeile
+                  bean={r.bean}
+                  score={r.freshness.score}
+                  tage={r.freshness.days}
+                  hinweis={r.note ?? r.freshness.label}
+                  hinweisTon={r.suitability.isWarning ? 'warn' : 'still'}
+                  {...(r.bean.id === zuletzt ? { marke: 'zuletzt' } : {})}
+                  rechts={aktiv ? '✓' : ''}
+                  gewaehlt={aktiv}
+                  onClick={() => setBohne(r.bean.id)}
+                />
+              </ListenZeile>
             )
           })}
-        </div>
+        </Liste>
       </Section>
 
       {/* Platz, damit die letzte Bohne nicht unter dem Knopf verschwindet. */}
@@ -256,12 +246,12 @@ export default function HeuteScreen({ navigate, onDeleted }: Props) {
 }
 
 /**
- * Kopf und Methodenreihe als ein angehefteter Block.
+ * Der Kopf von „Brühen" — der gemeinsame, mit der Methodenreihe darin.
  *
- * Der Standardkopf ist für sich schon `sticky`; eine zweite angeheftete
- * Leiste darunter müsste seine Höhe kennen und würde bei jeder Änderung
- * daran verrutschen. Beides zusammen als ein Block hat keine solche
- * Fuge — und spart die Zeile, die der große Titel sonst kostet.
+ * Bis hierher baute sich dieser Bildschirm einen eigenen Kopf, damit die
+ * Methoden mit ihm zusammen angeheftet bleiben. Das kann der gemeinsame
+ * inzwischen selbst (`children`), und damit sehen alle drei Reiter oben
+ * gleich aus.
  */
 function Kopf({
   navigate,
@@ -271,13 +261,8 @@ function Kopf({
   children?: React.ReactNode
 }) {
   return (
-    <header className="pt-safe sticky top-0 z-20 border-b border-line bg-paper/90 backdrop-blur-xl">
-      <div className="flex h-[58px] items-center gap-3 px-4">
-        <h1 className="titel flex-1 truncate text-3xl leading-tight">Brühen</h1>
-        <LogButton onClick={() => navigate({ tab: 'log' })} />
-        <GearButton onClick={() => navigate({ tab: 'setup' })} />
-      </div>
+    <Header title="Brühen" right={<GearButton onClick={() => navigate({ tab: 'setup' })} />}>
       {children}
-    </header>
+    </Header>
   )
 }

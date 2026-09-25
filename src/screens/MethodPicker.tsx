@@ -103,7 +103,6 @@ export default function MethodPicker({ bean, navigate, back }: Props) {
     <Screen>
       <Header
         title={bean ? bean.name : 'Brew'}
-        large={!bean}
         subtitle={
           bean ? `${ROAST_LABEL[bean.roastLevel]} · ${PROCESS_LABEL[bean.process]}` : undefined
         }

@@ -19,7 +19,7 @@ import {
   SUITABILITY_LABEL,
   } from '@/engine/suitability'
 
-import { METHODS, ROAST_LABEL, PROCESS_LABEL, METHOD_LABEL, METHOD_SHORT } from '@/labels'
+import { METHODS, METHOD_LABEL, METHOD_SHORT } from '@/labels'
 import {
   Screen, Header, Section, Card, Button, FreshnessRing, num,
 } from '@/components/ui'
@@ -30,7 +30,7 @@ import {
  * verschiebt.
  */
 const OriginMap = lazy(() => import('@/components/OriginMap'))
-import SwipeReveal from '@/components/SwipeReveal'
+import { Liste, ListenZeile } from '@/components/Bohnenliste'
 import { Bereichsgrenze } from '@/components/ErrorBoundary'
 import { RoastScale, ProcessMark, FactTable, type Fact } from '@/components/beanviz'
 
@@ -43,20 +43,19 @@ import { BeanSheet, BagSheet } from './BeanForms'
  * Das Profil einer Bohne — von der Grafik zur Tabelle.
  *
  * Die Reihenfolge ist die Aussage: Was man ohne Lesen erfasst, steht
- * oben, was man nachschlägt, unten.
+ * oben, was man nachschlägt, unten. Vier Gruppen, je eine Frage:
  *
- *   1  Karte      wo sie wächst
- *   2  Legende    welche Herkunft welche Farbe hat
- *   3  Röstung    auf der Agtron-Skala, gemessen oder geschätzt
- *   4  Aufbereitung  mit dem Fruchtkontakt als Achse
- *   5  Fit        welche Methode passt, nach Eignung sortiert
- *   6  Fakten     Name, Röster, Höhe, Varietät — schmucklos
+ *   Steckbrief  Karte · Röstung · Aufbereitung · Fakten
+ *   Methoden    welche passt, nach Eignung sortiert
+ *   Bags        was im Schrank steht, mit Vorrat und Frischefenster
+ *   Bestwerte   was schon geklappt hat
  *
- * Vorher lagen Röstgrad, Aufbereitung, Herkunft, Farm, Höhe, Varietät und
- * Koffein als sieben gleich große Kacheln in einem Raster. Sieben
- * gleichrangige Angaben sind keine Hierarchie, sondern eine Liste — und
- * die drei, die tatsächlich die Empfehlung bestimmen, verschwanden darin.
- * Jetzt bekommen die drei den Platz und die vier die Tabelle.
+ * Früher lagen Röstgrad, Aufbereitung, Herkunft, Farm, Höhe, Varietät und
+ * Koffein als sieben gleich große Kacheln in einem Raster; danach als
+ * sieben einzelne Karten. Beides ist keine Hierarchie, sondern eine
+ * Liste. Die drei Werte, die die Empfehlung bestimmen, bekommen eine
+ * Grafik, der Rest die Tabelle — und alles, was die Bohne beschreibt,
+ * steht in einer Fläche.
  */
 export function BeanDetail({
   bean,
@@ -148,16 +147,16 @@ export function BeanDetail({
     .filter((b) => !b.depleted && typeof b.remainingGrams === 'number')
     .reduce((sum, b) => sum + (b.remainingGrams ?? 0), 0)
 
+  /**
+   * Nur, was nirgends sonst auf dieser Seite steht.
+   *
+   * Name und Röster stehen im Kopf, Röstung und Aufbereitung als Skala
+   * direkt darüber (die Skala trägt auch den Agtron-Wert), der Vorrat bei
+   * den Bags. Vorher standen sie hier ein zweites Mal — eine Tabelle, die
+   * zur Hälfte wiederholt, bringt einem bei, sie zu überspringen, und dann
+   * überliest man auch die Höhe.
+   */
   const fakten: Fact[] = [
-    { label: 'Name', value: bean.name },
-    { label: 'Röster', value: bean.roaster ?? '' },
-    {
-      label: 'Röstung',
-      value: bean.agtron
-        ? `${ROAST_LABEL[bean.roastLevel]} · Agtron ${bean.agtron}`
-        : ROAST_LABEL[bean.roastLevel],
-    },
-    { label: 'Aufbereitung', value: PROCESS_LABEL[bean.process] },
     {
       label: 'Höhe',
       value: bean.altitudeMasl ? `${bean.altitudeMasl[0]}–${bean.altitudeMasl[1]} m` : '',
@@ -167,9 +166,6 @@ export function BeanDetail({
     { label: 'Dichte', value: bean.densityGL ? `${bean.densityGL} g/l` : '' },
     { label: 'Koffein', value: bean.isDecaf ? 'entkoffeiniert' : '' },
     { label: 'Preis', value: bean.pricePerKg ? `${num(bean.pricePerKg, 2)} €/kg` : '' },
-    // Vorrat aus den Tüten, nicht aus der Bohne: Die Bohne ist die Sorte,
-    // die Tüte ist das, was im Schrank steht.
-    { label: 'Vorrat', value: vorrat > 0 ? `${num(vorrat, 0)} g` : '' },
     { label: 'Notizen', value: bean.flavorNotes?.join(', ') ?? '' },
   ].filter((f) => f.value)
 
@@ -194,14 +190,29 @@ export function BeanDetail({
         }
       />
 
-      {/* 1 + 2 — Karte und Legende. Der einzige Teil dieses Bildschirms,
-          den man ohne Lesen erfasst, steht deshalb zuerst. */}
-      <Section>
+      {/*
+        Vier Gruppen statt sieben Kästen.
+
+        Vorher stand jeder Baustein in einer eigenen Karte: Karte, Röstung,
+        Aufbereitung, Fit, Fakten, jede Bag, jede beste Einstellung. Sieben
+        gleich gerahmte Flächen ohne Überschrift sagen nicht, was
+        zusammengehört — dieselbe Lektion wie im Regal (090d2f0). Jetzt
+        ordnet die Seite nach Fragen:
+
+          Steckbrief   was ist das für eine Bohne?   Karte, Röstung, Aufbereitung, Fakten
+          Methoden     womit brühe ich sie?
+          Bags         was steht im Schrank?
+          Bestwerte    was hat schon geklappt?
+
+        Innerhalb einer Gruppe trennt eine Haarlinie, nicht ein Rahmen.
+        Nichts ist weggefallen außer Wiederholungen; alle Bedienelemente
+        stehen, wo sie standen, nur in weniger Behältern.
+      */}
+      <Section title="Steckbrief">
         <Card>
           {/* Beiwerk mit eigenem Netz: Der Kartenbrocken wird nachgeladen
               und kann nach einer Aktualisierung fehlen. Ohne diese Grenze
-              nähme er das ganze Profil mit — die Fakten darunter sind
-              aber das Eigentliche. */}
+              nähme er das ganze Profil mit. */}
           <Bereichsgrenze was="Die Karte" neustartBei={bean.id}>
           <Suspense
             fallback={
@@ -214,30 +225,28 @@ export function BeanDetail({
             <OriginMap origins={bean.origins} />
           </Suspense>
           </Bereichsgrenze>
+
+          {/* Röstung und Aufbereitung zusammen, weil sie zusammen gelesen
+              werden: Ein helles Natural und ein dunkles Washed sind zwei
+              verschiedene Kaffees. */}
+          <Fach>
+            <RoastScale bean={bean} />
+          </Fach>
+          <Fach>
+            <ProcessMark process={bean.process} />
+          </Fach>
+          {fakten.length > 0 && (
+            <Fach>
+              <FactTable facts={fakten} />
+            </Fach>
+          )}
         </Card>
       </Section>
 
-      {/* 3 + 4 — die zwei Werte mit einer echten Skala. Zusammen in einem
-          Abschnitt, weil sie zusammen gelesen werden: Ein helles Natural
-          und ein dunkles Washed sind zwei verschiedene Kaffees. */}
-      <Section>
-        <Card>
-          <RoastScale bean={bean} />
-        </Card>
-        <Card className="mt-2">
-          <ProcessMark process={bean.process} />
-        </Card>
-      </Section>
-
-      {/* 5 — Fit.
-          Zwei Achsen, und das ist der ganze Grund für die Legende oben
-          in der Karte: Die Reihenfolge sagt, wo die Bohne glänzt
-          (Herkunftsprofil), das Wort sagt, wie leicht die Methode zu
-          treffen ist (Eignung). Ohne diese Erklärung stand hier eine
-          Liste, in der die French Press unter dem Espresso saß und
-          trotzdem „gut geeignet" hieß — sichtbar widersprüchlich in
-          einem einzigen Blick. */}
-      <Section>
+      {/* Zwei Achsen: Die Reihenfolge sagt, wo die Bohne glänzt
+          (Herkunftsprofil), das Wort, wie leicht die Methode zu treffen
+          ist (Eignung). */}
+      <Section title="Methoden">
         <Card>
           <p className="mb-3 text-2xs leading-snug text-faint">
             Balken: wo die Bohne ihre Stärken ausspielt. Wort: wie leicht die Methode zu treffen
@@ -246,8 +255,10 @@ export function BeanDetail({
           <div className="space-y-2.5">
             {fit.map(({ method: m, suitability: f, rank, viable }, i) => (
               <div key={m} className="flex items-center gap-3">
+                {/* Silbentrennung statt Überlauf: „Filterkaffeemaschine" ist
+                    breiter als die Spalte und lief in die Balken hinein. */}
                 <span
-                  className={`w-24 shrink-0 text-base ${i === 0 ? 'font-semibold' : ''} ${
+                  className={`w-24 shrink-0 text-base leading-tight hyphens-auto ${i === 0 ? 'font-semibold' : ''} ${
                     imHaus.includes(m) ? '' : 'text-mute'
                   }`}
                 >
@@ -283,35 +294,29 @@ export function BeanDetail({
               </div>
             ))}
           </div>
-          {/* Die Begründung gehört zur obersten Zeile — und die ist jetzt
-              die empfohlene, nicht mehr die erste in der Anzeigereihenfolge. */}
+          {/* Die Begründung gehört zur obersten, der empfohlenen Zeile. */}
           <p className="mt-3 border-t border-line pt-3 text-sm leading-relaxed text-mute">
             {fit[0]!.suitability.reason}
           </p>
         </Card>
       </Section>
 
-      {/* 6 — die trockenen Fakten. Schmucklos ist hier die Absicht: Sie
-          konkurrieren nicht mit den Grafiken darüber. */}
-      <Section>
-        <Card>
-          <FactTable facts={fakten} />
-        </Card>
-      </Section>
-
-      {/* Welche Methode das Fenster bestimmt, gehört hierhin: Die Fit-Liste
+      {/* Welche Methode das Fenster bestimmt, gehört hierhin: Die Liste
           darüber zeigt fünf Methoden, und das Ruhefenster gilt nur für
-          eine davon (kb/05 §4). Ohne diesen Zusatz stünde eine Tageszahl
-          über einer Liste, die fünf verschiedene richtig macht. */}
+          eine davon (kb/05 §4). Der Vorrat über alle Bags steht daneben —
+          er stand vorher in der Faktentabelle, weit weg von den Bags,
+          aus denen er sich zusammensetzt. */}
       <Section
+        title="Bags"
         action={
           <div className="flex items-baseline gap-2">
             {bags.length > 0 && (
               <span className="text-xs text-faint">
-                Fenster für {METHOD_SHORT[freshnessMethod(bean)]}
+                {vorrat > 0 ? `${num(vorrat, 0)} g · ` : ''}Fenster für{' '}
+                {METHOD_SHORT[freshnessMethod(bean)]}
               </span>
             )}
-            <Button size="sm" variant="ghost" onClick={() => setShowBag(true)}>
+            <Button size="sm" variant="ghost" className="-mr-3" onClick={() => setShowBag(true)}>
               + Bag
             </Button>
           </div>
@@ -324,12 +329,9 @@ export function BeanDetail({
             </p>
           </Card>
         ) : (
-          <div className="space-y-2">
+          <Liste>
             {bags.map((bag) => {
-              // Dieselbe Funktion wie in der Übersicht. Der Kommentar hier
-              // behauptete das schon vorher — die Rechnung war trotzdem
-              // eine andere, sobald eine Bohne `preferredMethod` gesetzt
-              // hätte.
+              // Dieselbe Funktion wie in der Übersicht.
               const f = freshnessFor(bean, bag)
               return (
                 /**
@@ -337,64 +339,75 @@ export function BeanDetail({
                  *
                  * „Leer" ist eine Tatsache über eine Tüte, die es gab —
                  * ihre Protokolle bleiben und zählen weiter fürs Lernen.
-                 * „Löschen" ist für die Tüte, die es nie gab: falsch
-                 * angelegt, Datum vertippt. Sie nimmt ihre Protokolle mit,
-                 * und deshalb fragt sie nach, sobald welche daran hängen.
+                 * „Löschen" ist für die Tüte, die es nie gab: Sie nimmt
+                 * ihre Protokolle mit und fragt deshalb nach.
                  */
-                <SwipeReveal
+                <ListenZeile
                   key={bag.id}
-                  actions={[
-                    { label: 'Edit', onClick: () => setEditBag(bag) },
-                    { label: 'Löschen', tone: 'bad', onClick: () => bagLoeschen(bag) },
-                  ]}
-                  onSwipeAway={() => bagLoeschen(bag)}
-                  swipeAwayLabel="Loslassen zum Löschen"
+                  wischen={{
+                    actions: [
+                      { label: 'Edit', onClick: () => setEditBag(bag) },
+                      { label: 'Löschen', tone: 'bad', onClick: () => bagLoeschen(bag) },
+                    ],
+                    onSwipeAway: () => bagLoeschen(bag),
+                  }}
                 >
-                  <Card>
-                    <div className="flex items-center gap-3">
-                      <FreshnessRing score={bag.depleted ? 0 : f.score} label={f.days !== null ? String(f.days) : '?'} />
-                      <div className="flex-1">
-                        <p className="text-lg">
-                          {bag.roastDate
-                            ? `Geröstet ${new Date(bag.roastDate).toLocaleDateString('de-DE')}`
-                            : 'Röstdatum fehlt'}
-                        </p>
-                        <p className="text-sm text-mute">
-                          {bag.remainingGrams !== undefined ? `${bag.remainingGrams} g übrig` : ''}
-                          {bag.storage === 'frozen' ? ' · eingefroren' : ''}
-                          {bag.depleted ? ' · leer' : ''}
-                        </p>
-                      </div>
-                      {!bag.depleted && (
-                        <Button size="sm" variant="ghost" onClick={() => updateBag(bag.id, { depleted: true })}>
-                          leer
-                        </Button>
-                      )}
+                  <div className="flex items-center gap-3 bg-card px-4 py-3">
+                    <FreshnessRing
+                      score={bag.depleted ? 0 : f.score}
+                      size={40}
+                      label={f.days !== null ? String(f.days) : '?'}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-lg leading-tight">
+                        {bag.roastDate
+                          ? `Geröstet ${new Date(bag.roastDate).toLocaleDateString('de-DE')}`
+                          : 'Röstdatum fehlt'}
+                      </p>
+                      <p className="mt-0.5 text-sm text-mute">
+                        {bag.remainingGrams !== undefined ? `${bag.remainingGrams} g übrig` : ''}
+                        {bag.storage === 'frozen' ? ' · eingefroren' : ''}
+                        {bag.depleted ? ' · leer' : ''}
+                      </p>
                     </div>
-                  </Card>
-                </SwipeReveal>
+                    {!bag.depleted && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="-mr-3"
+                        onClick={() => updateBag(bag.id, { depleted: true })}
+                      >
+                        leer
+                      </Button>
+                    )}
+                  </div>
+                </ListenZeile>
               )
             })}
-          </div>
+          </Liste>
         )}
       </Section>
 
       {bestByMethod.length > 0 && (
         <Section title="Deine besten Einstellungen">
-          <div className="space-y-2">
+          <Liste>
             {bestByMethod.map(({ method, brew }) => (
-              <Card key={method}>
-                <p className="text-sm text-mute">{METHOD_LABEL[method]}</p>
-                <p className="mt-1 text-xl">
-                  {brew.actual.doseG} g →{' '}
-                  {brew.actual.yieldG ? `${brew.actual.yieldG} g` : `${brew.actual.waterG} g Wasser`} ·{' '}
-                  {brew.actual.timeS} s
-                  {brew.actual.grindSetting ? ` · Mahlgrad ${brew.actual.grindSetting.value}` : ''}
-                </p>
-                <p className="mt-1 text-sm text-crema-ink">{'★'.repeat(brew.tasting?.rating ?? 0)}</p>
-              </Card>
+              <ListenZeile key={method} einzug={16}>
+                <div className="px-4 py-3">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <p className="text-sm text-mute">{METHOD_LABEL[method]}</p>
+                    <p className="text-sm text-crema-ink">{'★'.repeat(brew.tasting?.rating ?? 0)}</p>
+                  </div>
+                  <p className="tnum mt-0.5 text-xl">
+                    {brew.actual.doseG} g →{' '}
+                    {brew.actual.yieldG ? `${brew.actual.yieldG} g` : `${brew.actual.waterG} g Wasser`} ·{' '}
+                    {brew.actual.timeS} s
+                    {brew.actual.grindSetting ? ` · Mahlgrad ${brew.actual.grindSetting.value}` : ''}
+                  </p>
+                </div>
+              </ListenZeile>
             ))}
-          </div>
+          </Liste>
         </Section>
       )}
 
@@ -439,4 +452,14 @@ export function BeanDetail({
       )}
     </Screen>
   )
+}
+
+/**
+ * Ein Fach in einer Karte: Haarlinie darüber, Luft darum.
+ *
+ * Der Steckbrief ist eine Fläche mit vier Teilen. Ein eigener Rahmen je
+ * Teil machte daraus wieder vier Karten.
+ */
+function Fach({ children }: { children: React.ReactNode }) {
+  return <div className="mt-4 border-t border-line pt-4">{children}</div>
 }

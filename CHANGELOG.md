@@ -25,6 +25,30 @@ der Git-Historie.
   dem Sefed, dem geflochtenen Tablett der äthiopischen Kaffeezeremonie.
   Auch das Favicon im Browser ist neu.
 
+### Ein Kopf, eine Leiste, eine Bohnenliste
+
+- **Die Bildmarke steht in jedem Kopf.** Klein vor dem Titel, in den
+  Farben des gewählten Themas.
+- **Brühen, Regal und Verlauf haben denselben Kopf.** Vorher war er je
+  Reiter anders hoch, der Titel anders groß, und „Verlauf" hieß oben
+  „Log" und hatte einen Zurück-Pfeil. Den gibt es nur noch auf Seiten
+  innerhalb eines Bereichs. Das Logbuch-Symbol oben rechts ist weg: Es
+  führte an dasselbe Ziel wie der Reiter „Verlauf" daneben.
+- **Die Reiterleiste ist auf dem iPhone kleiner, und ihr Inhalt sitzt
+  mittig.** 68 statt 74 px, Symbol und Wort nicht mehr im oberen Drittel.
+- **Unter „Brühen" schienen „Edit" und „Löschen" durch die gewählte Bohne.**
+  Sie war mit einer fast durchsichtigen Fläche markiert. Jetzt ist sie
+  deckend, und die Wischgeste deckt ihre Knöpfe grundsätzlich ab, egal
+  was darin liegt.
+- **Die Bohnenliste unter „Brühen" sieht aus wie das Regal**, mit Röstfarbe
+  im Ring und Röster in der zweiten Zeile. Beide und die Bohnenwahl kommen
+  aus demselben Baustein; wer ihn ändert, ändert alle drei.
+- **Das Bohnenprofil hat vier Gruppen statt sieben Kästen:** Steckbrief
+  (Karte, Röstung, Aufbereitung, Fakten), Methoden, Bags, beste
+  Einstellungen. Was doppelt stand, steht einmal: Name und Röster im Kopf,
+  Röstung und Aufbereitung als Skala, der Vorrat bei den Bags.
+  „Filterkaffeemaschine" läuft nicht mehr in die Balken.
+
 ### Regal, Röstdatum, Brühen
 
 - **Das Regal ist ein Regal, keine Kistensammlung.** Neun Bohnen waren
