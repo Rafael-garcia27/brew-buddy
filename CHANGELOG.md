@@ -19,7 +19,11 @@ der Git-Historie.
 - **Neue Adresse: brewbuddy.garciahub.de.** Die Daten liegen im Browser
   und gehören zur alten Adresse. Umzug: in der alten App eine Sicherung
   machen, die neue Adresse in Safari öffnen, zum Home-Bildschirm
-  hinzufügen, Sicherung einspielen, altes Icon löschen. Die Daten gehen dabei nicht verloren.
+  hinzufügen, Sicherung einspielen, altes Icon löschen.
+- **Neues Icon.** Statt des Mahlrings aus dem ersten Tag zeigt das Icon
+  jetzt die Bildmarke aus dem Design-System: zwei B aus Kaffeebohnen auf
+  dem Sefed, dem geflochtenen Tablett der äthiopischen Kaffeezeremonie.
+  Auch das Favicon im Browser ist neu.
 
 ### Regal, Röstdatum, Brühen
 
