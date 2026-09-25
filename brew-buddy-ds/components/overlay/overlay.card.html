@@ -1,0 +1,33 @@
+<!-- @dsCard group="Components" viewport="700x400" name="Overlay" subtitle="Sheet und InfoDot" -->
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
+<script src="../../components/_preview/bb-loader.js"></script>
+</head>
+<body style="padding:12px; background:#fff">
+<div id="root"></div>
+<script type="text/babel">
+BB_READY.then((BB) => {
+
+  const { Themes, Sheet, InfoDot, Button } = BB
+  function Demo() {
+    return <Themes pad={0} render={() => (
+      <div style={{ position: 'relative', height: 340 }}>
+        <div style={{ padding: 14, display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--color-mute)' }}>Ratio <InfoDot inline term={{ term: 'Ratio', short: 'Verhältnis Kaffee zu Wasser.' }} /></div>
+        <Sheet inline title="Ratio" onClose={() => {}} footer={<Button block size="sm">Verstanden</Button>}>
+          <p style={{ marginBottom: 8, fontSize: 14, color: 'var(--color-faint)' }}>auch: Brühverhältnis</p>
+          <p style={{ fontSize: 17, lineHeight: 1.375 }}>Wie viel Getränk aus wie viel Kaffee.</p>
+        </Sheet>
+      </div>
+    )} />
+  }
+  ReactDOM.createRoot(document.getElementById('root')).render(<Demo />)
+})
+</script>
+</body>
+</html>

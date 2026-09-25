@@ -1,0 +1,37 @@
+<!-- @dsCard group="Components" viewport="700x470" name="Brühen" subtitle="MethodIcon, BrewButton, TabBar, SwipeReveal" -->
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
+<script src="../../components/_preview/bb-loader.js"></script>
+</head>
+<body style="padding:12px; background:#fff">
+<div id="root"></div>
+<script type="text/babel">
+BB_READY.then((BB) => {
+
+  const { Themes, MethodIcon, BrewButton, TabBar, SwipeReveal, Card } = BB
+  function Demo() {
+    const [t, setT] = React.useState('heute')
+    return <Themes render={() => (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, color: 'var(--color-mute)' }}>
+          {['espresso', 'v60', 'aeropress', 'frenchpress', 'batchbrew', 'chemex', 'kalita', 'mokapot', 'cezve'].map((k) => <MethodIcon key={k} icon={k} size={24} />)}
+        </div>
+        <BrewButton icon="espresso" />
+        <SwipeReveal actions={[{ label: 'Edit' }, { label: 'Löschen', tone: 'bad' }]}>
+          <Card><div style={{ fontSize: 14, fontWeight: 600 }}>Nach links wischen</div></Card>
+        </SwipeReveal>
+        <div style={{ margin: '0 -14px -14px' }}><TabBar active={t} onChange={setT} /></div>
+      </div>
+    )} />
+  }
+  ReactDOM.createRoot(document.getElementById('root')).render(<Demo />)
+})
+</script>
+</body>
+</html>

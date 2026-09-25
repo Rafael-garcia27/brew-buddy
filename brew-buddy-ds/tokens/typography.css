@@ -1,0 +1,50 @@
+/* Quelle: src/index.css (@theme inline, --ff-*, .titel).
+   Neun Stufen: 2xs–xl (11–17 px) Fließtext, 2xl–4xl (20–34 px) Anzeige.
+   Zeilenhöhe erbt vom Elternelement (Grundwert 1,5). */
+:root {
+  --text-2xs: 11px;
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-lg: 15px;
+  --text-xl: 17px;
+  --text-2xl: 20px;
+  --text-3xl: 28px;
+  --text-4xl: 34px;
+  --text-stepper: 22px; /* Zahlenfeld im Stepper, fest */
+
+  --leading-none: 1;
+  --leading-tight: 1.25;
+  --leading-snug: 1.375;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.625;
+
+  --tracking-tight: -0.025em;
+  --tracking-wide: 0.025em;
+  --tracking-wider: 0.05em;
+
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+
+  --fw-display: 600;
+  --ls-display: -0.02em;
+
+  --font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', monospace;
+}
+:root, .theme-milchkaffee, html.dark, .theme-espresso {
+  --fw-display: 600;
+  --ls-display: -0.02em;
+  --ff-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
+  --ff-display: var(--ff-sans);
+  --font-sans: var(--ff-sans);
+  --font-display: var(--ff-display);
+}
+html.organic, .theme-organic {
+  --ff-sans: 'Figtree', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --ff-display: 'Caprasimo', ui-rounded, system-ui, serif;
+  --fw-display: 400; /* Caprasimo hat nur 400 — nie fett setzen */
+  --ls-display: -0.01em;
+  --font-sans: var(--ff-sans);
+  --font-display: var(--ff-display);
+}

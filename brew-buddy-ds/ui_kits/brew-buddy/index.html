@@ -1,0 +1,60 @@
+<!-- @dsCard group="UI-Kit" viewport="1100x900" name="Brew Buddy App" subtitle="Klickbarer Nachbau: Brühen, Regal, Log, Brüh-Ablauf" -->
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Brew Buddy — UI-Kit</title>
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
+<script src="../../components/_preview/bb-loader.js"></script>
+</head>
+<body style="background:#e9e2d6; min-height:100vh">
+<div id="root"></div>
+<script type="text/babel">
+BB_READY.then(() => BB_LOAD(['ui_kits/brew-buddy/data.js', 'ui_kits/brew-buddy/HeuteScreen.jsx', 'ui_kits/brew-buddy/RegalScreen.jsx', 'ui_kits/brew-buddy/LogScreen.jsx', 'ui_kits/brew-buddy/BrewScreen.jsx'])).then(() => {
+  const { TabBar, HeuteScreen, RegalScreen, LogScreen, BrewScreen, UndoBar } = window.BB
+  const THEMES = [['', 'Milchkaffee'], ['dark', 'Espresso'], ['organic', 'Organic']]
+  function App() {
+    const [theme, setTheme] = React.useState(localStorage.getItem('bb-kit-theme') || '')
+    const [route, setRoute] = React.useState({ tab: 'heute' })
+    const [stack, setStack] = React.useState([])
+    React.useEffect(() => {
+      document.documentElement.className = theme
+      localStorage.setItem('bb-kit-theme', theme)
+    }, [theme])
+    const go = (tab, params) => { setStack((s) => [...s, route]); setRoute({ tab, params }) }
+    const back = () => { setRoute(stack[stack.length - 1] || { tab: 'heute' }); setStack((s) => s.slice(0, -1)) }
+    const activeTab = route.tab === 'brew' ? 'heute' : route.tab === 'regal' ? 'coffee' : route.tab
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20, padding: '28px 16px 48px', fontFamily: 'var(--font-sans)' }}>
+        <div style={{ display: 'flex', gap: 6, background: 'rgba(255,255,255,.6)', borderRadius: 999, padding: 4 }}>
+          {THEMES.map(([k, l]) => (
+            <button key={l} type="button" onClick={() => setTheme(k)} style={{ height: 36, padding: '0 16px', borderRadius: 999, fontSize: 14, fontWeight: 600, background: theme === k ? '#4e3629' : 'transparent', color: theme === k ? '#f5e1a4' : '#4e3629' }}>{l}</button>
+          ))}
+        </div>
+        <div style={{ width: 375, height: 812, borderRadius: 48, padding: 10, background: '#1a1411', boxShadow: '0 30px 60px -20px rgba(0,0,0,.45)' }}>
+          <div style={{ position: 'relative', width: '100%', height: '100%', borderRadius: 40, overflow: 'hidden', background: 'var(--color-paper)', color: 'var(--color-ink)', display: 'flex', flexDirection: 'column', transform: 'translateZ(0)' }}>
+            <div style={{ height: 44, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 28px', fontSize: 15, fontWeight: 600 }} className="tnum"><span>7:12</span><span style={{ width: 110, height: 30, borderRadius: 20, background: '#000' }} /><span style={{ fontSize: 12 }}>100 %</span></div>
+            <main className="scroll-area bb-noscroll" style={{ position: 'relative', flex: 1, overflowY: 'auto' }}>
+              {route.tab === 'heute' && <HeuteScreen go={go} />}
+              {route.tab === 'regal' && <RegalScreen go={go} />}
+              {route.tab === 'log' && <LogScreen back={back} />}
+              {route.tab === 'brew' && <BrewScreen key={JSON.stringify(route.params)} params={route.params || {}} back={back} />}
+            </main>
+            <div style={{ flexShrink: 0 }}>
+              <TabBar active={activeTab} onChange={(id) => { setStack([]); setRoute({ tab: id === 'coffee' ? 'regal' : id }) }} />
+              <div style={{ height: 20, display: 'flex', justifyContent: 'center', alignItems: 'center', background: 'color-mix(in oklab, var(--color-paper) 95%, transparent)' }}><span style={{ width: 134, height: 5, borderRadius: 3, background: 'var(--color-ink)', opacity: 0.8 }} /></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+  ReactDOM.createRoot(document.getElementById('root')).render(<App />)
+})
+</script>
+</body>
+</html>

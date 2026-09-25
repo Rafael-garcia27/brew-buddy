@@ -54,5 +54,7 @@
     "browser": true
   },
 
-  "ignorePatterns": ["dist", "dev-dist", "scripts"]
+  // brew-buddy-ds/ ist das Design-System aus Claude Design: Vorlage und
+  // Referenz, kein App-Code. Seine Beispielkomponenten laufen nie in der App.
+  "ignorePatterns": ["dist", "dev-dist", "scripts", "brew-buddy-ds"]
 }

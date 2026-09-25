@@ -1,0 +1,18 @@
+/* Gedrückt-Zustände der Komponenten. Quelle: die active:-Klassen in ui.tsx.
+   !important, weil die Komponenten ihre Grundfarbe inline setzen. */
+.bb-press-raised:active { background: var(--color-raised) !important; }
+.bb-press-line:active { background: var(--color-line) !important; }
+.bb-press-scale { transition: transform 150ms cubic-bezier(0.4, 0, 0.2, 1); }
+.bb-press-scale:active { transform: scale(0.99); }
+.bb-press-95 { transition: transform 150ms cubic-bezier(0.4, 0, 0.2, 1); }
+.bb-press-95:active { transform: scale(0.95); }
+.bb-press-dim:active { opacity: 0.6; }
+.bb-btn:disabled { opacity: 0.4; cursor: default; }
+.bb-btn-primary:active:not(:disabled) { background: color-mix(in oklab, var(--color-crema) 85%, transparent) !important; }
+.bb-btn-secondary:active:not(:disabled) { background: var(--color-line) !important; }
+.bb-btn-ghost:active:not(:disabled) { background: var(--color-raised) !important; }
+.bb-btn-danger:active:not(:disabled) { background: color-mix(in oklab, var(--color-bad) 25%, transparent) !important; }
+.bb-input:focus { border-color: color-mix(in oklab, var(--color-crema) 60%, transparent) !important; }
+.bb-within:focus-within { border-color: var(--color-crema) !important; }
+.bb-noscroll { scrollbar-width: none; }
+.bb-noscroll::-webkit-scrollbar { display: none; }

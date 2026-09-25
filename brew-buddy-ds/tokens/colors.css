@@ -1,0 +1,135 @@
+/* Quelle: src/index.css — Werte 1:1 übernommen.
+   Ausgangspunkte: Pantone 476 C (#4e3629) und Pantone 7401 C (#f5e1a4).
+   Drei Darstellungen: :root = Milchkaffee (Standard), html.dark = Espresso, html.organic = Organic.
+   Die Oberfläche liest ausschließlich die semantischen --color-*-Namen. */
+
+/* Hell — „Milchkaffee" (Standard) */
+:root, .theme-milchkaffee {
+  --c-paper: #faf4ea;      /* Milchschaum */
+  --c-card: #fffdf9;       /* Porzellan */
+  --c-raised: #f3e8d6;     /* Beige, abgeleitet von 7401 C */
+  --c-line: #e2d2ba;       /* Sandkante */
+  --c-ink: #4e3629;        /* Pantone 476 C — Espressobraun */
+  --c-mute: #785d47;       /* Milchkaffee, 5,0:1 */
+  --c-faint: #736557;      /* Hafer */
+  --c-crema: #8c5a2b;      /* geröstetes Braun, der Akzent */
+  --c-on-crema: #fdf7ed;   /* Creme auf dem Akzent */
+  --c-crema-dim: #d9b98c;  /* Crema, aufgehellt */
+  --c-ok: #556f40;         /* Kaffeeblatt */
+  --c-warn: #905d17;       /* Honig */
+  --c-bad: #a6402f;        /* Kaffeekirsche */
+  --c-crema-ink: #8c5a2b;  /* Akzent als Text */
+  --c-card-accent: var(--c-card);
+
+  /* Röstskala — sieben Agtron-Bänder (kb/05 §2.1), hell → dunkel. Daten, keine Deko. */
+  --c-roast-1: #cdab7d;    /* 85–95 Extremely Light */
+  --c-roast-2: #bd9260;    /* 75–85 Light / Nordic */
+  --c-roast-3: #a97846;    /* 65–75 Medium-Light */
+  --c-roast-4: #935f32;    /* 55–65 Medium */
+  --c-roast-5: #7a4a26;    /* 45–55 Medium-Dark */
+  --c-roast-6: #5c351b;    /* 35–45 Dark */
+  --c-roast-7: #3a2011;    /* 25–35 Very Dark */
+
+  /* Herkunftsfarben der Karte — aus der Kaffeepflanze, nicht aus den Signalfarben. */
+  --c-origin-1: #8c5a2b;   /* Röstbohne */
+  --c-origin-2: #4f7440;   /* Kaffeeblatt */
+  --c-origin-3: #a6402f;   /* Kaffeekirsche */
+  --c-origin-4: #2f6b7a;   /* Waschkanal */
+  --c-origin-5: #7a5c96;   /* Fermentation */
+
+  /* Marke — die beiden Pantone-Ausgangstöne (docs/06-logo-briefing.md) */
+  --brand-espresso: #4e3629; /* Pantone 476 C */
+  --brand-creme: #f5e1a4;    /* Pantone 7401 C */
+
+  color-scheme: light;
+}
+
+/* Dunkel — „Espresso" */
+html.dark, .theme-espresso {
+  --c-paper: #1c1512;      /* Espresso in der Tasse */
+  --c-card: #261d18;       /* Röstbohne */
+  --c-raised: #33261f;     /* feuchter Puck */
+  --c-line: #453529;       /* Kante */
+  --c-ink: #f7efe3;        /* Creme */
+  --c-mute: #b8a291;       /* Milchschaum im Schatten */
+  --c-faint: #a48d7a;      /* Pergamenthaut, 4,6:1 */
+  --c-crema: #d9a566;      /* Crema */
+  --c-on-crema: #2a1c12;   /* Espresso auf dem Akzent */
+  --c-crema-dim: #8a6338;  /* Crema im Schatten */
+  --c-ok: #8fb36b;
+  --c-warn: #d9a566;
+  --c-bad: #e0705c;
+  --c-crema-ink: #d9a566;
+  --c-card-accent: var(--c-card);
+
+  --c-roast-1: #e8cda6;
+  --c-roast-2: #d9b689;
+  --c-roast-3: #c69c6c;
+  --c-roast-4: #b0814f;
+  --c-roast-5: #96683b;
+  --c-roast-6: #7a512c;
+  --c-roast-7: #5d3b20;
+
+  --c-origin-1: #d9a566;
+  --c-origin-2: #8fb36b;
+  --c-origin-3: #d96a56;
+  --c-origin-4: #6fa9ba;
+  --c-origin-5: #ab8fc7;
+
+  color-scheme: dark;
+}
+
+/* Organic — anderes Formvokabular (Radien, Schatten, Schrift in shape.css / typography.css).
+   Röst- und Herkunftsfarben bleiben die der hellen Palette. */
+html.organic, .theme-organic {
+  --c-paper: #f5ead8;
+  --c-card: #f9f4ed;
+  --c-raised: #ebddc5;
+  --c-line: #dcd3c4;
+  --c-ink: #201e1d;
+  --c-mute: #645c50;
+  --c-faint: #655e51;
+  --c-crema: #b2622d;      /* nur Fläche und Icon, NICHT als Text */
+  --c-on-crema: #fff2eb;
+  --c-crema-dim: #f6a06b;
+  --c-ok: #56633f;         /* Salbei */
+  --c-warn: #875716;
+  --c-bad: #a6402f;
+  --c-crema-ink: #8c491a;  /* Akzent als Text, AA */
+  --c-card-accent: #f4e7db; /* Karte + 10 % Terracotta, ausgerechnet */
+
+  color-scheme: light;
+}
+
+/* Semantische Namen (entsprechen @theme inline in src/index.css).
+   .theme-*-Klassen erlauben Vorschauen mehrerer Darstellungen nebeneinander. */
+:root, .theme-milchkaffee, .theme-espresso, .theme-organic {
+  --color-paper: var(--c-paper);
+  --color-card: var(--c-card);
+  --color-raised: var(--c-raised);
+  --color-line: var(--c-line);
+  --color-ink: var(--c-ink);
+  --color-mute: var(--c-mute);
+  --color-faint: var(--c-faint);
+  --color-crema: var(--c-crema);
+  --color-crema-dim: var(--c-crema-dim);
+  --color-on-crema: var(--c-on-crema);
+  --color-crema-ink: var(--c-crema-ink);
+  --color-card-accent: var(--c-card-accent);
+  --color-ok: var(--c-ok);
+  --color-warn: var(--c-warn);
+  --color-bad: var(--c-bad);
+
+  /* Verwendungsnamen */
+  --surface-page: var(--c-paper);
+  --surface-card: var(--c-card);
+  --surface-raised: var(--c-raised);
+  --border-default: var(--c-line);
+  --text-body: var(--c-ink);
+  --text-secondary: var(--c-mute);
+  --text-tertiary: var(--c-faint);
+  --text-accent: var(--c-crema-ink);
+  --fill-accent: var(--c-crema);
+  --text-on-accent: var(--c-on-crema);
+  --scrim: rgba(0, 0, 0, 0.6); /* bg-black/60 unter Blättern */
+}

@@ -1,0 +1,16 @@
+/* Quelle: src/index.css — selbst gehostet, weil die App offline laufen muss.
+   Figtree ist variabel (300–900), Caprasimo gibt es nur in 400. */
+@font-face {
+  font-family: 'Figtree';
+  font-weight: 300 900;
+  font-style: normal;
+  font-display: swap;
+  src: url('../fonts/figtree-var.woff2') format('woff2-variations');
+}
+@font-face {
+  font-family: 'Caprasimo';
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url('../fonts/caprasimo-400.woff2') format('woff2');
+}

@@ -1,0 +1,32 @@
+/* Quelle: Tailwind-Klassen in src/components/ui.tsx, App.tsx, index.css.
+   Grundraster 4 px (Tailwind-Skala). Die Maße darunter sind die tatsächlich verwendeten Festwerte. */
+:root {
+  --space-0-5: 2px;
+  --space-1: 4px;
+  --space-1-5: 6px;
+  --space-2: 8px;
+  --space-2-5: 10px;
+  --space-3: 12px;
+  --space-3-5: 14px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-10: 40px;
+  --space-16: 64px;
+
+  --screen-gutter: 16px;       /* px-4 an Section und Header */
+  --section-gap: 24px;         /* pt-6 an Section */
+  --card-padding: 16px;        /* p-4 */
+  --touch-target: 44px;        /* h-11: jede Schaltfläche, Chip, InfoDot */
+  --header-h: 58px;
+  --header-h-large: 70px;
+  --tabbar-h: 46px;
+  --nav-h: calc(46px + max(calc(env(safe-area-inset-bottom) - 6px), 0px));
+  --stepper-h: 56px;           /* h-14 */
+  --segment-h: 44px;
+  --segment-h-icon: 52px;
+  --brew-button: 132px;        /* runder Start-Knopf */
+  --swipe-action-w: 88px;
+  --filter-label-w: 68px;
+  --design-width: 375px;       /* iPhone 12 in Punkten, Zielbreite */
+}

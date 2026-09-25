@@ -1,0 +1,33 @@
+/* Quelle: src/index.css (Basis) + die nötigen Teile von Tailwinds Preflight. */
+*, *::before, *::after { box-sizing: border-box; border: 0 solid; margin: 0; padding: 0; }
+* { -webkit-tap-highlight-color: transparent; }
+html { line-height: 1.5; -webkit-text-size-adjust: 100%; }
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  overscroll-behavior: none;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+button, input, select, textarea { font: inherit; color: inherit; background: transparent; letter-spacing: inherit; }
+button, [role='button'] { cursor: pointer; }
+button, [role='button'], label { -webkit-user-select: none; user-select: none; touch-action: manipulation; }
+input, select, textarea { font-size: max(16px, 1em); }
+svg { display: block; }
+a { color: var(--color-crema-ink); text-decoration: none; }
+a:hover { text-decoration: underline; }
+:focus-visible { outline: 2px solid var(--color-crema); outline-offset: 2px; border-radius: 8px; }
+
+/* Überschriften: Familie, Gewicht und Laufweite hängen am Thema. */
+.titel { font-family: var(--ff-display); font-weight: var(--fw-display); letter-spacing: var(--ls-display); }
+/* Zahlen in Tabellen und Timern dürfen nicht springen. */
+.tnum { font-variant-numeric: tabular-nums; font-feature-settings: 'tnum'; }
+.scroll-area { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+.pt-safe { padding-top: env(safe-area-inset-top); }
+.pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+.pb-nav { padding-bottom: max(calc(env(safe-area-inset-bottom) - 6px), 0px); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

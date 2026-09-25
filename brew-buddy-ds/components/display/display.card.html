@@ -1,0 +1,40 @@
+<!-- @dsCard group="Components" viewport="700x400" name="Anzeige" subtitle="Triad, MetaRow, Stat, FreshnessRing, Empty" -->
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
+<script src="../../components/_preview/bb-loader.js"></script>
+</head>
+<body style="padding:12px; background:#fff">
+<div id="root"></div>
+<script type="text/babel">
+BB_READY.then((BB) => {
+
+  const { Themes, Card, Triad, MetaRow, Stat, FreshnessRing } = BB
+  function Demo() {
+    return <Themes render={() => (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <Card tone="accent">
+          <Triad items={[{ label: 'In', value: '18,0', unit: 'g', onEdit: () => {} }, { label: 'Time', value: '27–30', unit: 's' }, { label: 'Out', value: '36,0', unit: 'g', onEdit: () => {} }]} />
+          <div style={{ marginTop: 16, borderTop: '1px solid var(--color-line)', paddingTop: 12 }}>
+            <MetaRow items={[{ label: 'Ratio', value: '1:2,0', tone: 'ok' }, { label: 'Temp', value: '93 °C', onEdit: () => {} }, { label: 'Grind', value: '12' }]} />
+          </div>
+        </Card>
+        <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+          <FreshnessRing score={82} size={44} label="9" />
+          <FreshnessRing score={50} size={44} label="24" />
+          <FreshnessRing score={20} size={44} label="51" />
+        </div>
+        <div style={{ display: 'flex', gap: 16 }}><Stat label="Extraktion" value="20,4" unit="%" tone="ok" /><Stat label="TDS" value="9,1" unit="%" hint="geschätzt" /></div>
+      </div>
+    )} />
+  }
+  ReactDOM.createRoot(document.getElementById('root')).render(<Demo />)
+})
+</script>
+</body>
+</html>

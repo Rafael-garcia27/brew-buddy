@@ -1,0 +1,39 @@
+/* Quelle: src/index.css — Radien und Schatten hängen am Thema.
+   Hell und Dunkel: 16/12 px, keine Schatten (Sandkante statt Schatten).
+   Organic: stärker gerundet, Pillen, weiche warme Schatten. */
+:root, .theme-milchkaffee, .theme-espresso {
+  --r-card: 1rem;
+  --r-panel: 1rem;
+  --r-btn: 1rem;
+  --r-input: 0.75rem;
+  --r-sheet: 1.5rem;
+  --sh-soft: none;
+  --sh-float: none;
+
+}
+:root, .theme-milchkaffee, .theme-espresso, .theme-organic {
+  --radius-card: var(--r-card);
+  --radius-panel: var(--r-panel);
+  --radius-btn: var(--r-btn);
+  --radius-input: var(--r-input);
+  --radius-sheet: var(--r-sheet);
+  --radius-pill: 9999px;
+  --radius-icon: 22.5%;        /* iOS-Maske des App-Icons, nur für Vorschauen */
+
+  --shadow-soft: var(--sh-soft);
+  --shadow-float: var(--sh-float);
+  /* Schwebende Leisten (UndoBar, UpdateToast): Tailwind shadow-lg */
+  --shadow-bar: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  /* BrewButton */
+  --shadow-brew: 0 6px 20px -8px rgba(0, 0, 0, 0.45);
+  --blur-bar: 24px;            /* backdrop-blur-xl an Kopf und Leisten */
+}
+html.organic, .theme-organic {
+  --r-card: 24px;
+  --r-panel: 28px;
+  --r-btn: 9999px;
+  --r-input: 16px;
+  --r-sheet: 32px;
+  --sh-soft: 0 3px 10px rgba(46, 43, 37, 0.16);
+  --sh-float: 0 12px 32px rgba(46, 43, 37, 0.22);
+}
